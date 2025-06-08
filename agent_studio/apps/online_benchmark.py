@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import datetime
 import logging
 import sys
 import threading
@@ -1018,15 +1019,17 @@ def wait_finish(is_eval: bool, response: AgentStudioStatusResponse):
 def eval(args, interface: NonGUI | None = None) -> None:
     try:
         # Setup agent
+        results_dir = Path(f"{args.log_dir}/{args.model}/{args.agent}")
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        (results_dir / timestamp).mkdir(parents=True, exist_ok=True)
         agent = setup_agent(
             agent_name=args.agent,
             model=args.model,
             remote=args.remote,
             runtime_server_addr=config.env_server_addr,
             runtime_server_port=config.env_server_port,
+            results_dir=results_dir / timestamp,
         )
-        results_dir = Path(f"{args.log_dir}/{args.model}/{args.agent}")
-        results_dir.mkdir(parents=True, exist_ok=True)
 
         # Setup tasks
         if args.ignore_finished:
@@ -1132,7 +1135,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                         and action_memory[-1] == action_memory[-2] == action_memory[-3]
                     ):
                         failure_msg = "Repeated action."
-                    _, done = agent.step_action(
+                    result, done = agent.step_action(
                         failure_msg=failure_msg, step_info=step_info
                     )
                     time.sleep(config.min_action_interval)

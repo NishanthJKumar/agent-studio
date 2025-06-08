@@ -1,5 +1,8 @@
+import copy
+import datetime
 import logging
 import time
+from pathlib import Path
 
 import numpy as np
 
@@ -31,6 +34,7 @@ class BaseAgent:
         remote: bool,
         runtime_server_addr: str,
         runtime_server_port: int,
+        results_dir: Path,
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
         model_manager = ModelManager()
@@ -40,6 +44,7 @@ class BaseAgent:
         self.runtime_server_port = runtime_server_port
         self.runtime: PythonRuntime | RemotePythonRuntime
         self.runtime_init_code: str = RUNTIME_INIT_CODE.strip()
+        self.results_dir: Path = results_dir
 
         if self.remote:
             self.runtime = RemotePythonRuntime(
@@ -80,6 +85,21 @@ class BaseAgent:
         self.total_tokens += info.get("total_tokens", 0)
         action = extract_from_response(response).strip()
 
+        # Logging model outputs.
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"output_{timestamp}.txt"
+        log_dir = self.results_dir / "model_query_logs"
+        log_dir.mkdir(exist_ok=True)
+        filename = log_dir / filename
+        with open(filename, "w") as file:
+            file.write("Prompt:\n")
+            for i in range(len(prompt)):
+                file.write(f"Message {i}:\n")
+                file.write(f"Role: {prompt[i].role}\n")
+                file.write(f"Content: {prompt[i].content}\n\n")
+            file.write("Response:\n")
+            file.write(response + "\n")
+
         return StepInfo(
             obs=obs,
             prompt=prompt,
@@ -97,25 +117,26 @@ class BaseAgent:
         If failure_msg is not None, the action is cancelled.
         """
         result = {}
+        done = False
         if not failure_msg:
             code_clean = step_info.action
-            done = code_clean.endswith("exit()")
-            if done:
+            if code_clean.endswith("exit()"):
                 code = code_clean[: -len("exit()")].strip()
             else:
                 code = code_clean
-
             logger.debug(f"Code to execute:\n{code}\n")
             result = self.runtime(code)
+            # TODO: there might be other conditions to check for.
+            if len(result.keys()) == 0:
+                done = True
         else:
             result["force_stop_reason"] = failure_msg
             done = True
 
-        step_info.result = result
+        step_info.result = copy.deepcopy(result)
         step_info.timestamp = time.time()
         self.trajectory.append(step_info)
         logger.info(f"Output: {result}")
-
         return result, done
 
     @property

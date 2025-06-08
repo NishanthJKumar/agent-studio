@@ -34,6 +34,8 @@ class Config(metaclass=ThreadSafeSingleton):
     anthropic_api_key: str = "LOAD_FROM_API_KEY_PATH_AUTOMATICALLY"
     vertexai_project_id: str = "LOAD_FROM_API_KEY_PATH_AUTOMATICALLY"
     vertexai_location: str = "LOAD_FROM_API_KEY_PATH_AUTOMATICALLY"
+    pretrained_model_cache_dir: str = "pretrained_model_cache"
+    use_pretrained_model_cache: bool = True
 
     # Google API config
     google_credential_path: str = "LOAD_FROM_API_KEY_PATH_AUTOMATICALLY"

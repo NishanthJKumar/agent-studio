@@ -66,9 +66,14 @@ class GeminiProvider(BaseModel):
         self, messages: MessageList, **kwargs
     ) -> tuple[str, dict[str, Any]]:
         """Creates a chat completion using the Gemini API."""
-        model_message = self._format_messages(raw_messages=messages)
-
         model_name = kwargs.get("model", None)
+        # Start by checking for the response in the cache.
+        cache_ret = self._load_from_cache(model_name, self._hash_input(messages))
+        if cache_ret is not None:
+            logger.info("Found response in cache.")
+            return cache_ret, {}  # TODO: for now we don't have any info to return
+        # Else, generate a new response.
+        model_message = self._format_messages(raw_messages=messages)
         if model_name is not None:
             model = genai.GenerativeModel(model_name)
         else:
@@ -107,6 +112,7 @@ class GeminiProvider(BaseModel):
                 logger.error(f"Failed to generate response: {e}")
 
             logger.info(f"\nReceived response:\n{message}\nInfo:\n{info}")
+            self._save_to_cache(model_name, self._hash_input(messages), message)
             return message, info
 
         return _generate_response_with_retry()

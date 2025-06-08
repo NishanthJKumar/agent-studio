@@ -182,3 +182,4 @@ trajectories
 gpt4v_som
 logs/*
 eval_online_benchmarks/files/*
+pretrained_model_cache/*
