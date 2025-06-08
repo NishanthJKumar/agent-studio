@@ -418,6 +418,7 @@ class GUI(QMainWindow):
             remote=self.args.remote,
             runtime_server_addr=config.env_server_addr,
             runtime_server_port=config.env_server_port,
+            feedback_model=args.feedback_model,
         )
 
         # self.task_thread: None | TaskThread = None
@@ -1029,6 +1030,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
             runtime_server_addr=config.env_server_addr,
             runtime_server_port=config.env_server_port,
             results_dir=results_dir / timestamp,
+            feedback_model=args.feedback_model,
         )
 
         # Setup tasks
@@ -1271,6 +1273,9 @@ def main():
         "--ignore_finished", action="store_true", help="Only evaluate unfinished tasks"
     )
     parser.add_argument("--no_log", action="store_true", help="Do not log the results")
+    parser.add_argument(
+        "--feedback_model", type=str, help="Feedback model name", required=False
+    )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
     assert args.task_configs_path is not None, "Task config is not set."

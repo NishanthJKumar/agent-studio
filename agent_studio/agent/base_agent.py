@@ -79,6 +79,7 @@ class BaseAgent:
         prompt = self.action_prompt
         assert prompt is not None, "Invalid prompt"
         logger.debug(f"Prompt: {prompt}")
+
         response, info = self.model.generate_response(messages=prompt, model=model_name)
         logger.debug(f"Response: {response}")
         assert response is not None, "Failed to generate response."
