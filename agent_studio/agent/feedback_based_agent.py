@@ -38,7 +38,11 @@ creds = credentials.Credentials.from_authorized_user_info(token, [
 service = build("drive", "v3", credentials=creds)
 service.files().get_media(fileId=xxxxxxx)
 ```
-Also, you should assume the timezone is UTC+0 if there's no further specification."""  # noqa: E501
+Also, you should assume the timezone is UTC+0 if there's no further specification.
+
+In addition to the output code block, you should also explain your thinking, and why you generated this specific code block.
+Start with this at the top, and then generate the code block using the ```python``` format mentioned above.
+"""  # noqa: E501
 
 
 FEEDBACK_PROMPT = """You are an expert-level observer and critic watching a particular agent attempting to complete a task.
@@ -75,8 +79,11 @@ class FeedbackBasedAgent(BaseAgent):
             results_dir=results_dir,
         )
         self.feedback_history: MessageList = []
-        feedback_model_manager = ModelManager()
-        self.feedback_model = feedback_model_manager.get_model(feedback_model)
+        if feedback_model != "human":
+            feedback_model_manager = ModelManager()
+            self.feedback_model = feedback_model_manager.get_model(feedback_model)
+        else:
+            self.feedback_model = None
         self.feedback_model_name = feedback_model
 
     @property
@@ -103,6 +110,8 @@ class FeedbackBasedAgent(BaseAgent):
                 f"Execution result:\n{self.trajectory[-1].result}",
             )
         )
+        if self.obs is not None:
+            messages.append(Message(role="user", content=self.obs))
         return messages
 
     def step_action(
@@ -126,10 +135,19 @@ class FeedbackBasedAgent(BaseAgent):
             self.trajectory.append(step_info)
             # Get feedback.
             feedback_prompt = self.feedback_model_prompt
-            response, info = self.feedback_model.generate_response(
-                messages=feedback_prompt, model=self.feedback_model_name
-            )
-            self.feedback_history.append(Message(role="assistant", content=response))
+            if self.feedback_model is None:
+                logger.info(feedback_prompt)
+                response = input("Feedback: ")
+                self.feedback_history.append(
+                    Message(role="assistant", content=response)
+                )
+            else:
+                response, info = self.feedback_model.generate_response(
+                    messages=feedback_prompt, model=self.feedback_model_name
+                )
+                self.feedback_history.append(
+                    Message(role="assistant", content=response)
+                )
             if len(result.keys()) == 0 and "No feedback." in response:
                 done = True
         else:

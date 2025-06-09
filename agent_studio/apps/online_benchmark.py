@@ -412,14 +412,23 @@ class GUI(QMainWindow):
         self.dlg: QDialog | None = None
         self.task_thread: TaskThread | None = None
 
-        self.agent = setup_agent(
-            agent_name=self.args.agent,
-            model=self.args.model,
-            remote=self.args.remote,
-            runtime_server_addr=config.env_server_addr,
-            runtime_server_port=config.env_server_port,
-            feedback_model=args.feedback_model,
-        )
+        if "feedback" in self.args.agent:
+            self.agent = setup_agent(
+                agent_name=self.args.agent,
+                model=self.args.model,
+                remote=self.args.remote,
+                runtime_server_addr=config.env_server_addr,
+                runtime_server_port=config.env_server_port,
+                feedback_model=args.feedback_model,
+            )
+        else:
+            self.agent = setup_agent(
+                agent_name=self.args.agent,
+                model=self.args.model,
+                remote=self.args.remote,
+                runtime_server_addr=config.env_server_addr,
+                runtime_server_port=config.env_server_port,
+            )
 
         # self.task_thread: None | TaskThread = None
         self.capture_thread: VNCStreamer | LocalStreamer | None = None
@@ -1023,15 +1032,25 @@ def eval(args, interface: NonGUI | None = None) -> None:
         results_dir = Path(f"{args.log_dir}/{args.model}/{args.agent}")
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         (results_dir / timestamp).mkdir(parents=True, exist_ok=True)
-        agent = setup_agent(
-            agent_name=args.agent,
-            model=args.model,
-            remote=args.remote,
-            runtime_server_addr=config.env_server_addr,
-            runtime_server_port=config.env_server_port,
-            results_dir=results_dir / timestamp,
-            feedback_model=args.feedback_model,
-        )
+        if args.agent == "feedback":
+            agent = setup_agent(
+                agent_name=args.agent,
+                model=args.model,
+                remote=args.remote,
+                runtime_server_addr=config.env_server_addr,
+                runtime_server_port=config.env_server_port,
+                results_dir=results_dir / timestamp,
+                feedback_model=args.feedback_model,
+            )
+        else:
+            agent = setup_agent(
+                agent_name=args.agent,
+                model=args.model,
+                remote=args.remote,
+                runtime_server_addr=config.env_server_addr,
+                runtime_server_port=config.env_server_port,
+                results_dir=results_dir / timestamp,
+            )
 
         # Setup tasks
         if args.ignore_finished:
