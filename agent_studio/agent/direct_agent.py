@@ -29,7 +29,13 @@ creds = credentials.Credentials.from_authorized_user_info(token, [
 service = build("drive", "v3", credentials=creds)
 service.files().get_media(fileId=xxxxxxx)
 ```
-Also, you should assume the timezone is UTC+0 if there's no further specification."""  # noqa: E501
+Also, you should assume the timezone is UTC+0 if there's no further specification.
+
+A history of actions you've taken in the past, as well as any errors or feedback that was given at that point, is provided to you. You should use this information to help you decide what to do next.
+
+In addition to the output code block, you should also explain your thinking, and why you generated this specific code block.
+Start with this at the top, and then generate the code block using the ```python``` format mentioned above.
+"""  # noqa: E501
 
 
 class DirectAgent(BaseAgent):
@@ -44,12 +50,13 @@ class DirectAgent(BaseAgent):
         messages.append(
             Message(role="user", content=f"The task instruction: {self.instruction}")
         )
-        for step in self.trajectory:
+        for i, step in enumerate(self.trajectory):
             messages.append(
                 Message(
                     role="assistant",
-                    content=f"Action:\n```python\n{step.action}\n```\n\n"
-                    f"Execution result:\n{step.result}",
+                    content=f"Step number: {i}.\nAction:\n\
+                    ```python\n{step.action}\n```\n\n"
+                    f"Error(s) from execution:\n{step.result}",
                 )
             )
 

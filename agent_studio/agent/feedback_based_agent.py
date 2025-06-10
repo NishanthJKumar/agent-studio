@@ -5,7 +5,7 @@ from pathlib import Path
 
 from agent_studio.agent.base_agent import BaseAgent
 from agent_studio.llm import ModelManager
-from agent_studio.utils.types import Message, MessageList, StepInfo
+from agent_studio.utils.types import Message, MessageList, StepInfo, TaskConfig
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,8 @@ service.files().get_media(fileId=xxxxxxx)
 ```
 Also, you should assume the timezone is UTC+0 if there's no further specification.
 
+A history of actions you've taken in the past, as well as any errors or feedback that was given at that point, is provided to you. You should use this information to help you decide what to do next.
+
 In addition to the output code block, you should also explain your thinking, and why you generated this specific code block.
 Start with this at the top, and then generate the code block using the ```python``` format mentioned above.
 """  # noqa: E501
@@ -52,6 +54,8 @@ and provide feedback on its latest action as well as the outcome.
 If everything looks correct, and you expect the agent to solve the task after executing the current step, then simply output (without the quotes): 'No feedback.'
 Otherwise, provide a free-form natural language description of what the problems are with the agent's current action given the history
 of actions it has executed, and their results (which are provided to you).
+
+Don't mind the use of the `exit()` function at the end of the code block: this is expected.
 """  # noqa: E501
 
 
@@ -94,25 +98,34 @@ class FeedbackBasedAgent(BaseAgent):
             Message(role="user", content=f"The task instruction: {self.instruction}")
         )
         assert len(self.feedback_history) == len(self.trajectory) - 1
-        for past_feedback, step in zip(self.feedback_history, self.trajectory[:-1]):
+        for i, content_tuple in enumerate(
+            zip(self.feedback_history, self.trajectory[:-1])
+        ):
+            past_feedback, step = content_tuple
             messages.append(
                 Message(
                     role="assistant",
-                    content=f"Action:\n```python\n{step.action}\n```\n\n"
-                    f"Execution result:\n{step.result}"
+                    content=f"Step number: {i}.\nAction:\n\
+                    ```python\n{step.action}\n```\n\n"
+                    f"Error(s) from execution:\n{step.result}"
                     f"Feedback:\n{past_feedback.content}",
                 )
             )
         messages.append(
             Message(
                 role="assistant",
-                content=f"Action:\n```python\n{self.trajectory[-1].action}\n```\n\n"
-                f"Execution result:\n{self.trajectory[-1].result}",
+                content=f"Step number: {len(self.trajectory)}.\nAction:\
+                \n```python\n{self.trajectory[-1].action}\n```\n\n"
+                f"Error(s) from execution:\n{self.trajectory[-1].result}",
             )
         )
         if self.obs is not None:
             messages.append(Message(role="user", content=self.obs))
         return messages
+
+    def reset(self, task_config: TaskConfig) -> None:
+        super().reset(task_config)
+        self.feedback_history = []
 
     def step_action(
         self, failure_msg: str | None, step_info: StepInfo
@@ -148,6 +161,10 @@ class FeedbackBasedAgent(BaseAgent):
                 self.feedback_history.append(
                     Message(role="assistant", content=response)
                 )
+                # print(response)
+                # import ipdb
+
+                # ipdb.set_trace()
             if len(result.keys()) == 0 and "No feedback." in response:
                 done = True
         else:
@@ -165,20 +182,29 @@ class FeedbackBasedAgent(BaseAgent):
         messages: MessageList = []
         messages.append(Message(role="system", content=SYSTEM_PROMPT))
         messages.append(
-            Message(role="user", content=f"The task instruction: {self.instruction}")
+            Message(
+                role="user",
+                content=f"The task instruction: \
+            {self.instruction}",
+            )
         )
-        assert len(self.feedback_history) == len(self.trajectory)
-        for past_feedback, step in zip(self.feedback_history, self.trajectory):
+        try:
+            assert len(self.feedback_history) == len(self.trajectory)
+        except AssertionError:
+            import ipdb
+
+            ipdb.set_trace()
+        for i, content_tuple in enumerate(zip(self.feedback_history, self.trajectory)):
+            past_feedback, step = content_tuple
             messages.append(
                 Message(
                     role="assistant",
-                    content=f"Action:\n```python\n{step.action}\n```\n\n"
-                    f"Execution result:\n{step.result}"
+                    content=f"Step number: {i}.\nAction:\n\
+                    ```python\n{step.action}\n```\n\n"
+                    f"Error(s) from execution:\n{step.result}"
                     f"Feedback:\n{past_feedback.content}",
                 )
             )
-
         if self.obs is not None:
             messages.append(Message(role="user", content=self.obs))
-
         return messages
