@@ -35,6 +35,8 @@ dependencies = [
     "cssselect",
     "xmltodict",
     "python-dateutil",
+    "xvfbwrapper",
+
 ]
 
 [tool.setuptools]
@@ -56,7 +58,7 @@ dev = [
 ]
 server = [
     "fastapi",
-    "uvicorn",
+    "uvicorn"
 ]
 client = [
     "backoff",

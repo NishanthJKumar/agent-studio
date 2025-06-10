@@ -10,10 +10,10 @@ from fastapi.responses import Response
 from xvfbwrapper import Xvfb
 
 from agent_studio.config import Config
-from agent_studio.envs.desktop_env.evaluators.evaluator_helper import (
-    EvaluatorComb,
-    evaluator_router,
-)
+# HACK: need to do this to avoid importing pyautogui before
+# xvfbwrapper display is created.
+EvaluatorComb = None
+evaluator_router = None
 from agent_studio.utils.communication import (
     AgentStudioEvalRequest,
     AgentStudioResetRequest,
@@ -38,15 +38,22 @@ current_thread: None | threading.Thread = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Start the virtual display
+    from xvfbwrapper import Xvfb
     vdisplay = Xvfb()
     vdisplay.start()
+
+    global EvaluatorComb, evaluator_router
+    from agent_studio.envs.desktop_env.evaluators.evaluator_helper import (
+        EvaluatorComb as ImportedComb,
+        evaluator_router as imported_router,
+    )
+    EvaluatorComb = ImportedComb
+    evaluator_router = imported_router
 
     try:
         runtimes["python"] = PythonRuntime()
         yield
     finally:
-        # Stop the virtual display
         vdisplay.stop()
         runtimes["python"].close()
 

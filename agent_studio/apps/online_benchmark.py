@@ -1237,6 +1237,8 @@ def eval(args, interface: NonGUI | None = None) -> None:
                         )
                         response = AgentStudioStatusResponse(**response_raw.json())
                         response = wait_finish(is_eval=False, response=response)
+                        print(">>> STATUS RESPONSE TEXT:", response_raw.text)
+                        print(">>> STATUS RESPONSE CODE:", response_raw.status_code)
                         assert (
                             response.status == "finished"
                             and response.content == "success"
