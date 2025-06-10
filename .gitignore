@@ -179,6 +179,7 @@ training_data
 results*
 trajectories
 *.tar.gz
+*.tar
 gpt4v_som
 logs/*
 eval_online_benchmarks/files/*
