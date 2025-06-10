@@ -70,7 +70,7 @@ if [ -n "$RELATIVE_URL_ROOT" ]; then
 	sed -i 's|_RELATIVE_URL_ROOT_|'"$RELATIVE_URL_ROOT"'|' /etc/nginx/sites-enabled/default
 fi
 
-# clearup
+# clearupth
 PASSWORD=
 HTTP_PASSWORD=
 
