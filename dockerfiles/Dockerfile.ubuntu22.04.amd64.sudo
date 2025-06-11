@@ -1,0 +1,43 @@
+FROM --platform=linux/amd64 thisiszy/ubuntu-22.04-desktop-lxde-vnc:latest
+
+# Install necessary packages and add repositories
+RUN apt update \
+    && apt install -y --no-install-recommends wget gnupg software-properties-common apt-transport-https \
+    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | apt-key add - \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" \
+    && apt update \
+    && apt install -y --no-install-recommends python3-pip build-essential python3-dev python3-tk libevdev-dev \
+    && apt install -y --no-install-recommends libreoffice code gimp \
+    && echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections \
+    && apt-get install -y --no-install-recommends ttf-mscorefonts-installer \
+    && apt autoclean -y \
+    && apt autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user and set up permissions
+RUN useradd -m ubuntu \
+    && echo "ubuntu:ubuntu" | chpasswd \
+    && usermod -aG sudo ubuntu \
+    && echo "ubuntu ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Change ownership of the agent_studio directory
+RUN mkdir -p /home/ubuntu/agent_studio/agent_studio
+COPY agent_studio/__init__.py /home/ubuntu/agent_studio/agent_studio/__init__.py
+ADD pyproject.toml /home/ubuntu/agent_studio/pyproject.toml
+ADD scripts/docker_startup_22.04.sh /home/ubuntu/agent_studio/scripts/docker_startup.sh
+RUN chown -R ubuntu:ubuntu /home/ubuntu
+
+# Copy necessary configuration files
+RUN cp -r /root/{.config,.gtkrc-2.0,.asoundrc} /home/ubuntu/ \
+    && chown -R ubuntu:ubuntu /home/ubuntu/
+
+WORKDIR /home/ubuntu/agent_studio
+RUN python3 -m pip install --upgrade pip && pip3 install -e .[server]
+RUN chmod +x /home/ubuntu/agent_studio/scripts/docker_startup.sh
+
+# Switch to the non-root user
+USER ubuntu
+
+ENTRYPOINT ["/home/ubuntu/agent_studio/scripts/docker_startup.sh"]
