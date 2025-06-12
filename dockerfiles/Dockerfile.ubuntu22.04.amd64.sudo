@@ -29,13 +29,33 @@ ADD pyproject.toml /home/ubuntu/agent_studio/pyproject.toml
 ADD scripts/docker_startup_22.04.sh /home/ubuntu/agent_studio/scripts/docker_startup.sh
 RUN chown -R ubuntu:ubuntu /home/ubuntu
 
-# Copy necessary configuration files
-RUN cp -r /root/{.config,.gtkrc-2.0,.asoundrc} /home/ubuntu/ \
-    && chown -R ubuntu:ubuntu /home/ubuntu/
+# Create necessary directories and set permissions
+RUN mkdir -p /etc/supervisor/conf.d /etc/nginx/ssl /home/ubuntu/log/supervisor /tmp \
+    && touch /etc/supervisor/conf.d/agent_server.conf \
+    && chown -R ubuntu:ubuntu /etc/supervisor/conf.d /etc/nginx/ssl /home/ubuntu/log/supervisor /tmp
+
+# Create a directory for the supervisor socket file
+RUN mkdir -p /home/ubuntu/supervisor \
+    && chown -R ubuntu:ubuntu /home/ubuntu/supervisor
+
+# Set fixed resolution in xvfb.sh
+RUN sed -i 's/RESOLUTION_PLACEHOLDER/1024x768/' /usr/local/bin/xvfb.sh
+
+# Modify nginx.conf to set worker_processes, listen on a non-privileged port, and change PID file location
+RUN sed -i 's|worker_processes .*|worker_processes 1;|' /etc/nginx/nginx.conf \
+    && sed -i 's|listen 80[^;]*;|listen 8080;|' /etc/nginx/sites-enabled/default \
+    && echo "pid /home/ubuntu/nginx.pid;" >> /etc/nginx/nginx.conf
+
+# Change ownership of /var/log, /run, and /var/lib/nginx to allow ubuntu user to write logs and create directories
+RUN chown -R ubuntu:ubuntu /var/log /run /var/lib/nginx
 
 WORKDIR /home/ubuntu/agent_studio
 RUN python3 -m pip install --upgrade pip && pip3 install -e .[server]
 RUN chmod +x /home/ubuntu/agent_studio/scripts/docker_startup.sh
+
+# Copy necessary configuration files
+RUN cp -r /root/.gtkrc-2.0 /home/ubuntu/ \
+    && chown -R ubuntu:ubuntu /home/ubuntu/
 
 # Switch to the non-root user
 USER ubuntu
