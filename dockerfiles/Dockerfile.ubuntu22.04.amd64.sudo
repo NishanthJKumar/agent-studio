@@ -47,8 +47,8 @@ RUN sed -i 's|worker_processes .*|worker_processes 1;|' /etc/nginx/nginx.conf \
     && sed -i 's|pid /run/nginx.pid;|# pid /run/nginx.pid;|' /etc/nginx/nginx.conf \
     && grep -q "pid /home/ubuntu/nginx.pid;" /etc/nginx/nginx.conf || echo "pid /home/ubuntu/nginx.pid;" >> /etc/nginx/nginx.conf
 
-# Change ownership of /var/log, /run, and /var/lib/nginx to allow ubuntu user to write logs and create directories
-RUN chown -R ubuntu:ubuntu /var/log /run /var/lib/nginx
+# Change ownership of /var/log, /run, /var/lib/nginx, and /usr/local/bin to allow ubuntu user to write logs and create directories
+RUN chown -R ubuntu:ubuntu /var/log /run /var/lib/nginx /usr/local/bin
 
 WORKDIR /home/ubuntu/agent_studio
 RUN python3 -m pip install --upgrade pip && pip3 install -e .[server]
