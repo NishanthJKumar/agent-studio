@@ -72,7 +72,8 @@ class RemotePythonRuntime:
         self.env_server_port = env_server_port
         self.python_timeout = python_timeout
         response = requests.post(
-            f"http://{self.env_server_addr}:{self.env_server_port}/runtime/reset"
+            f"http://{self.env_server_addr}:{self.env_server_port}/runtime/reset",
+            timeout=1.0,
         )
         assert response.json()["status"] == "success"
 
