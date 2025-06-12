@@ -9,7 +9,7 @@ RUN apt update \
     && add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" \
     && apt update \
     && apt install -y --no-install-recommends python3-pip build-essential python3-dev python3-tk libevdev-dev \
-    && apt install -y --no-install-recommends libreoffice code gimp \
+    && apt install -y --no-install-recommends libreoffice code gimp alsa-utils \
     && echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections \
     && apt-get install -y --no-install-recommends ttf-mscorefonts-installer \
     && apt autoclean -y \
@@ -19,7 +19,7 @@ RUN apt update \
 # Create a non-root user and set up permissions
 RUN useradd -m ubuntu \
     && echo "ubuntu:ubuntu" | chpasswd \
-    && usermod -aG sudo ubuntu \
+    && usermod -aG sudo,video,audio ubuntu \
     && echo "ubuntu ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # Change ownership of the agent_studio directory
@@ -30,9 +30,9 @@ ADD scripts/docker_startup_22.04.sh /home/ubuntu/agent_studio/scripts/docker_sta
 RUN chown -R ubuntu:ubuntu /home/ubuntu
 
 # Create necessary directories and set permissions
-RUN mkdir -p /etc/supervisor/conf.d /etc/nginx/ssl /home/ubuntu/log/supervisor /tmp \
+RUN mkdir -p /etc/supervisor/conf.d /etc/nginx/ssl /home/ubuntu/log/supervisor /tmp/.X11-unix \
     && touch /etc/supervisor/conf.d/agent_server.conf \
-    && chown -R ubuntu:ubuntu /etc/supervisor/conf.d /etc/nginx/ssl /home/ubuntu/log/supervisor /tmp
+    && chown -R ubuntu:ubuntu /etc/supervisor/conf.d /etc/nginx/ssl /home/ubuntu/log/supervisor /tmp/.X11-unix
 
 # Create a directory for the supervisor socket file
 RUN mkdir -p /home/ubuntu/supervisor \
