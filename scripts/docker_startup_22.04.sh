@@ -62,6 +62,10 @@ if [ -n "$RELATIVE_URL_ROOT" ]; then
     sed -i 's|_RELATIVE_URL_ROOT_|'"$RELATIVE_URL_ROOT"'|' /etc/nginx/sites-enabled/default
 fi
 
+# Make sure to not bind to a privileged port!
+sed -i 's|listen\s\+80\s\+default_server;|listen 8080;|' /etc/nginx/sites-enabled/default
+cat /etc/nginx/sites-enabled/default
+
 # Clear sensitive environment variables
 PASSWORD=
 HTTP_PASSWORD=

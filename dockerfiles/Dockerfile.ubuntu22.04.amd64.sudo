@@ -41,9 +41,9 @@ RUN mkdir -p /home/ubuntu/supervisor \
 # Set fixed resolution in xvfb.sh
 RUN sed -i 's/RESOLUTION_PLACEHOLDER/1024x768/' /usr/local/bin/xvfb.sh
 
-# Modify nginx.conf to set worker_processes, listen on a non-privileged port, and change PID file location
+# Modify nginx.conf to set worker_processes, and change PID file location
 RUN sed -i 's|worker_processes .*|worker_processes 1;|' /etc/nginx/nginx.conf \
-    && sed -i 's|listen 80[^;]*;|listen 8080;|' /etc/nginx/sites-enabled/default \
+    && sed -i 's|listen\s\+80\s\+default_server;|listen 8080;|' /etc/nginx/sites-enabled/default \
     && sed -i 's|pid /run/nginx.pid;|# pid /run/nginx.pid;|' /etc/nginx/nginx.conf \
     && grep -q "pid /home/ubuntu/nginx.pid;" /etc/nginx/nginx.conf || echo "pid /home/ubuntu/nginx.pid;" >> /etc/nginx/nginx.conf
 
