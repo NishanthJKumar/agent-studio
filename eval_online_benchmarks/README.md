@@ -18,7 +18,14 @@ For a clean start, you should specify a temporary email address for the benchmar
 
 > If you want to benchmark Google Workspace, you need to do the above steps before running the Evaluation scripts.
 
-## Setup Docker Image
+## Running a server
+AgentStudio works primarily by spawning an independent server within a containerized environment. This server includes a freshly-installed Ubuntu 22.04 operating system, along with the necessary dependencies and configurations for running AgentStudio. To complete tasks, the agent sends commands
+to the server, which then executes them and returns the results. The server also includes an option for human evaluation and visualization.
+
+The server can be run via a Docker container (useful for local hacking) or via Singularity (which is necessary for running on cluster environments
+like AWS). The instructions for each of these are as follows:
+
+### Docker
 
 First, please follow the instructions in the [README](../README.md) to install the AgentStudio python package and setup API keys.
 
@@ -27,6 +34,8 @@ We provide a lightweight Dockerfile of Ubuntu 22.04 for reproducible and reliabl
 ```bash
 docker build -f dockerfiles/Dockerfile.ubuntu22.04.amd64 . -t agent-studio:latest
 ```
+
+In `agent_studio/config.py`, modify api_key_path to be `agent_studio/config/api_key.json for docker`
 
 Run Docker:
 
@@ -37,6 +46,15 @@ docker run -d -e RESOLUTION=1024x768 -p 6080:80 -p 5900:5900 -p 8000:8000 -e VNC
 > You can also replace `-d` to `-it` to use interactive mode. If successful, you should see logs with a bunch of success followed by `INFO  Listening on http://localhost:6079` in the output.
 
 You can browse `http://127.0.0.1:6080` to interact with the remote machine through a browser. The port `6080`, `5900`, and `8000` are exposed for noVNC, VNC server, and AgentStudio HTTP, respectively.
+
+### Singularity.
+1. Obtain the `agent-studio-fixed.sif` file (ask if you don't have it).
+2. Clone AgentStudio (specifically this `apptainer-container` branch of Nishanth's fork of the repo [here](https://github.com/NishanthJKumar/agent-studio/tree/apptainer-conversion)).
+3. Move the `agent-studio-fixed.sif` file under the home directory.
+4. Run this command:
+```bash
+srun apptainer exec --no-home  --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot   --bind /home/njkmr/agent-studio/scripts/agent_server.py:/home/ubuntu/agent_studio/scripts/agent_server.py:ro   --bind /home/njkmr/agent-studio/agent_studio/envs:/home/ubuntu/agent_studio/agent_studio/envs:ro   --bind /home/njkmr/agent-studio/agent_studio/utils:/home/ubuntu/agent_studio/agent_studio/utils:ro   --bind /home/njkmr/agent-studio/agent_studio/agent:/home/ubuntu/agent_studio/agent_studio/agent:ro   --bind /home/njkmr/agent-studio/agent_studio/config:/home/ubuntu/agent_studio/agent_studio/config   --bind /home/njkmr/agent-studio/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:ro --bind supervisor_logs/:/var/log agent-studio-fixed.sif /home/ubuntu/agent_studio/scripts/docker_startup.sh
+```
 
 ## Task Description
 
