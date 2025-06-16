@@ -1304,6 +1304,10 @@ def main():
     parser.add_argument(
         "--feedback_model", type=str, help="Feedback model name", required=False
     )
+    parser.add_argument("--env_server_addr", type=str, default="127.0.0.1", help="Environment server address")
+    parser.add_argument("--env_server_port", type=int, default=8000, help="Environment server port")
+    parser.add_argument("--vnc_port", type=int, default=5900, help="VNC port")
+    parser.add_argument("--vnc_password", type=str, default="123456", help="VNC password")
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
     assert args.task_configs_path is not None, "Task config is not set."
@@ -1311,6 +1315,11 @@ def main():
     config.remote = args.remote
     config.headless = not args.render
     config.need_human_confirmation = args.need_human_confirmation
+    if config.remote:
+        config.env_server_addr = args.env_server_addr
+        config.env_server_port = args.env_server_port
+        config.vnc_port = args.vnc_port
+        config.vnc_password = args.vnc_password
 
     # Ensure a second screen is available.
     app = QApplication(sys.argv)
