@@ -1308,8 +1308,8 @@ def main():
     # Ensure a second screen is available.
     app = QApplication(sys.argv)
     screens = QApplication.screens()
-    if not args.remote and len(screens) < 2:
-        raise RuntimeError("A second screen is required for local annotation.")
+    # if not args.remote and len(screens) < 2:
+    #     raise RuntimeError("A second screen is required for local annotation.")
 
     if not args.render:
         interface = NonGUI(
