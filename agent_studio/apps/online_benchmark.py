@@ -44,7 +44,7 @@ from PyQt6.QtWidgets import (
 )
 from tqdm import tqdm
 
-# Import Xvfb
+# Import Xvfb and start the display before anything else!
 from xvfbwrapper import Xvfb
 
 from agent_studio.agent import setup_agent
@@ -77,9 +77,9 @@ from agent_studio.utils.json_utils import (
 )
 from agent_studio.utils.types import TaskConfig, VideoMeta
 
-# Start Xvfb display
 vdisplay = Xvfb()
 vdisplay.start()
+
 
 config = Config()
 
