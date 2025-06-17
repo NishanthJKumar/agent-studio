@@ -12,7 +12,7 @@ class Config(metaclass=ThreadSafeSingleton):
 
     api_key_path: str = (
         "/home/ubuntu/agent_studio/agent_studio/config/api_key.json"
-        # agent_studio/config/api_key.json for docker!
+        # "agent_studio/config/api_key.json" # for docker!
     )
     headless: bool = False  # True for CLI, False for GUI
     remote: bool = True  # True for remote, False for local

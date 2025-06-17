@@ -44,6 +44,9 @@ from PyQt6.QtWidgets import (
 )
 from tqdm import tqdm
 
+# Import Xvfb
+from xvfbwrapper import Xvfb
+
 from agent_studio.agent import setup_agent
 from agent_studio.agent.base_agent import BaseAgent
 from agent_studio.config.config import Config
@@ -73,6 +76,10 @@ from agent_studio.utils.json_utils import (
     read_unfinished_tasks,
 )
 from agent_studio.utils.types import TaskConfig, VideoMeta
+
+# Start Xvfb display
+vdisplay = Xvfb()
+vdisplay.start()
 
 config = Config()
 
@@ -1343,4 +1350,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    finally:
+        # Stop the Xvfb display
+        vdisplay.stop()
