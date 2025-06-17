@@ -44,9 +44,9 @@ from PyQt6.QtWidgets import (
 from tqdm import tqdm
 
 # Import Xvfb and start the display before anything else!
-from xvfbwrapper import Xvfb
-vdisplay = Xvfb()
-vdisplay.start()
+# from xvfbwrapper import Xvfb
+# vdisplay = Xvfb()
+# vdisplay.start()
 
 from agent_studio.agent import setup_agent
 from agent_studio.agent.base_agent import BaseAgent
@@ -1322,8 +1322,8 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    finally:
-        # Stop the Xvfb display
-        vdisplay.stop()
+    # try:
+    main()
+    # finally:
+    #     # Stop the Xvfb display
+    #     vdisplay.stop()
