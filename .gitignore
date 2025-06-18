@@ -183,3 +183,6 @@ trajectories
 gpt4v_som
 logs/*
 eval_online_benchmarks/files/*
+web.log.1
+web.log.2
+web.log.3

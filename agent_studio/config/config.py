@@ -55,7 +55,7 @@ class Config(metaclass=ThreadSafeSingleton):
     qa_answer_pattern: str = r"\[\[\[(.*?)\]\]\]"
 
     env_vars: dict[str, str] = {
-        "AS_ROOT": Path(os.getcwd()).as_posix(),
+        "AS_ROOT": "/home/ubuntu/agent_studio", #Path(os.getcwd()).as_posix(),
         "AS_HOME": Path(os.path.expanduser("~")).as_posix(),
         "AS_TEST": "test",
         "AS_GMAIL_RECIPIENT": json.load(open(api_key_path))["gmail_recipient"],

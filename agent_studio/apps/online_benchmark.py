@@ -44,9 +44,9 @@ from PyQt6.QtWidgets import (
 from tqdm import tqdm
 
 # Import Xvfb and start the display before anything else!
-# from xvfbwrapper import Xvfb
-# vdisplay = Xvfb()
-# vdisplay.start()
+from xvfbwrapper import Xvfb
+vdisplay = Xvfb()
+vdisplay.start()
 
 from agent_studio.agent import setup_agent
 from agent_studio.agent.base_agent import BaseAgent
@@ -1063,6 +1063,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                     env_vars = config.env_vars
                 logger.debug(f"Env vars: {env_vars}")
                 logger.debug(f"Task config before: {task_config}")
+                env_vars["AS_ROOT"] = "/home/ubuntu/agent_studio"
                 task_config = apply_env_vars(task_config, env_vars)
                 logger.debug(f"Task config after: {task_config}")
                 # Reset
@@ -1074,6 +1075,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                                 procedures=task_config.reset_procedure
                             ).model_dump(),
                         )
+                        import ipdb; ipdb.set_trace()
                         response = AgentStudioStatusResponse(**response_raw.json())
                         response = wait_finish(is_eval=False, response=response)
                         assert (
@@ -1322,8 +1324,8 @@ def main():
 
 
 if __name__ == "__main__":
-    # try:
-    main()
-    # finally:
-    #     # Stop the Xvfb display
-    #     vdisplay.stop()
+    try:
+        main()
+    finally:
+        # Stop the virtual Xvfb display
+        vdisplay.stop()
