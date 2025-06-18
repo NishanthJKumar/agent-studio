@@ -80,8 +80,8 @@ def register_evaluators(
                                         raise AttributeError
                                 except Exception as e:
                                     logger.error(
-                                        f"Error importing {module_name} {node.name}. "
-                                        f"Due to {e}. Skipping..."
+                                        f"Skip importing {module_name} {node.name} "
+                                        f"due to {e}."
                                     )
                                 break
     return registered_classes
@@ -96,7 +96,7 @@ def evaluator_router(
     evaluators: dict[str, Evaluator] = {}
     logger.info(f"Registered evaluators: {registered_evaluators.keys()}")
 
-    procedures = task_config.eval_procedure
+    procedures = task_config.eval_procedure.copy()
     if task_config.reset_procedure is not None:
         procedures += task_config.reset_procedure
     if task_config.cleanup_procedure is not None:
