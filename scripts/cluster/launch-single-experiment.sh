@@ -2,8 +2,8 @@
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/os/1d6765b3-b744-4aa4-8287-d14e6d3cddac.json"
-MODEL_NAME="gpt-4o-2024-08-06"
+PARTICULAR_PATH="<particular-path>"
+MODEL_NAME="<model-name>"
 
 # Step 1: Launch the server
 SERVER_JOB_ID=$(srun --parsable apptainer exec --no-home --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot \
@@ -15,14 +15,18 @@ SERVER_JOB_ID=$(srun --parsable apptainer exec --no-home --bind /dev/shm:/dev/sh
   --bind /home/$USER/agent-studio/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:ro \
   --bind supervisor_logs/:/var/log agent-studio-server.sif /home/ubuntu/agent_studio/scripts/docker_startup.sh)
 
-# Wait for the job to start and get the node name
+# Wait for the job to start running and get the node name
 while true; do
-  NODE_NAME=$(squeue -j $SERVER_JOB_ID -o "%N" -h)
-  if [ -n "$NODE_NAME" ]; then
+  JOB_STATE=$(squeue -j $SERVER_JOB_ID -o "%T" -h)
+  if [ "$JOB_STATE" == "RUNNING" ]; then
+    NODE_NAME=$(squeue -j $SERVER_JOB_ID -o "%N" -h)
     break
   fi
   sleep 1
 done
+
+# Wait for a few seconds for the server to properly start up.
+sleep 5
 
 # Step 3: SSH into the node and run the client container
 ssh $USER@$NODE_NAME << EOF
