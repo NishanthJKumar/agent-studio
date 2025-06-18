@@ -5,15 +5,8 @@ USER="njkmr"
 PARTICULAR_PATH="<particular-path>"
 MODEL_NAME="<model-name>"
 
-# Step 1: Launch the server and capture the job ID
-SERVER_JOB_ID=$(srun apptainer exec --no-home --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot \
-  --bind /home/$USER/agent-studio/scripts/agent_server.py:/home/ubuntu/agent_studio/scripts/agent_server.py:ro \
-  --bind /home/$USER/agent-studio/agent_studio/envs:/home/ubuntu/agent_studio/agent_studio/envs:ro \
-  --bind /home/$USER/agent-studio/agent_studio/utils:/home/ubuntu/agent_studio/agent_studio/utils:ro \
-  --bind /home/$USER/agent-studio/agent_studio/agent:/home/ubuntu/agent_studio/agent_studio/agent:ro \
-  --bind /home/$USER/agent-studio/agent_studio/config:/home/ubuntu/agent_studio/agent_studio/config \
-  --bind /home/$USER/agent-studio/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:ro \
-  --bind supervisor_logs/:/var/log agent-studio-server.sif /home/ubuntu/agent_studio/scripts/docker_startup.sh & echo $!)
+# Step 1: Submit the server job and capture the job ID
+SERVER_JOB_ID=$(sbatch --parsable server_job.sh)
 
 # Wait for the job to start running and get the node name
 while true; do
@@ -39,4 +32,4 @@ EOF
 # Step 7: Kill the server job
 scancel $SERVER_JOB_ID
 
-echo "Workflow completed and server job $SERVER_JOB_ID has been cancelled."
+echo "Workflow completed and server job $SERVER_JOB_ID has been cancelled
