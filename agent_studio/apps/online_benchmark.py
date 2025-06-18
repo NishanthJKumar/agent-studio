@@ -1075,7 +1075,6 @@ def eval(args, interface: NonGUI | None = None) -> None:
                                 procedures=task_config.reset_procedure
                             ).model_dump(),
                         )
-                        import ipdb; ipdb.set_trace()
                         response = AgentStudioStatusResponse(**response_raw.json())
                         response = wait_finish(is_eval=False, response=response)
                         assert (
