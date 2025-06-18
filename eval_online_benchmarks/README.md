@@ -32,7 +32,7 @@ First, please follow the instructions in the [README](../README.md) to install t
 We provide a lightweight Dockerfile of Ubuntu 22.04 for reproducible and reliable online benchmarks.
 
 ```bash
-docker build -f dockerfiles/Dockerfile.ubuntu22.04.amd64 . -t agent-studio:latest
+docker build -f dockerfiles/server/Dockerfile.ubuntu22.04.amd64 . -t agent-studio:latest
 ```
 
 In `agent_studio/config.py`, modify api_key_path to be `agent_studio/config/api_key.json for docker`
@@ -49,9 +49,23 @@ You can browse `http://127.0.0.1:6080` to interact with the remote machine throu
 
 ### Singularity.
 1. Obtain the `agent-studio-fixed.sif` file (ask if you don't have it).
-2. Clone AgentStudio (specifically this `apptainer-container` branch of Nishanth's fork of the repo [here](https://github.com/NishanthJKumar/agent-studio/tree/apptainer-conversion)).
-3. Move the `agent-studio-fixed.sif` file under the home directory.
-4. Run this command:
+    1. If you want to build the sif file from scratch:
+        1. First, on a machine with docker, build the sudo docker container via:
+        ```bash
+        docker build -f dockerfiles/server/Dockerfile.ubuntu22.04.amd64.sudo . -t agent-studio:latest
+        ```
+        1. Next, save that dockerfile into a `.tar` file.
+        ```bash
+        docker save -o agent-studio-client.tar agent-studio-client:latest
+        ```
+        1. scp this onto the cluster or somewhere with apptainer/singularity
+        1. run the singularity build to produce the sif file
+        ```bash
+        srun apptainer build agent-studio.sif dockerr-archive://agent-studio.tar
+        ```
+1. Clone AgentStudio (specifically this `apptainer-container` branch of Nishanth's fork of the repo [here](https://github.com/NishanthJKumar/agent-studio/tree/apptainer-conversion)).
+1. Move the `agent-studio-fixed.sif` file under the home directory.
+1. Run this command:
 ```bash
 srun apptainer exec --no-home  --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot   --bind /home/njkmr/agent-studio/scripts/agent_server.py:/home/ubuntu/agent_studio/scripts/agent_server.py:ro   --bind /home/njkmr/agent-studio/agent_studio/envs:/home/ubuntu/agent_studio/agent_studio/envs:ro   --bind /home/njkmr/agent-studio/agent_studio/utils:/home/ubuntu/agent_studio/agent_studio/utils:ro   --bind /home/njkmr/agent-studio/agent_studio/agent:/home/ubuntu/agent_studio/agent_studio/agent:ro   --bind /home/njkmr/agent-studio/agent_studio/config:/home/ubuntu/agent_studio/agent_studio/config   --bind /home/njkmr/agent-studio/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:ro --bind supervisor_logs/:/var/log agent-studio-fixed.sif /home/ubuntu/agent_studio/scripts/docker_startup.sh
 ```
