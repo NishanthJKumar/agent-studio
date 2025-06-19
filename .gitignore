@@ -182,7 +182,9 @@ trajectories
 *.tar
 gpt4v_som
 logs/*
-eval_online_benchmarks/data/*
+eval_online_benchmarks/files/*
+pretrained_model_cache/*
 web.log.1
 web.log.2
 web.log.3
+eval_online_benchmarks/data/*

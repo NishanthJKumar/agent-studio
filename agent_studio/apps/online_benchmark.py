@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import datetime
 import logging
 import sys
 import threading
@@ -419,13 +420,23 @@ class GUI(QMainWindow):
         self.dlg: QDialog | None = None
         self.task_thread: TaskThread | None = None
 
-        self.agent = setup_agent(
-            agent_name=self.args.agent,
-            model=self.args.model,
-            remote=self.args.remote,
-            runtime_server_addr=config.env_server_addr,
-            runtime_server_port=config.env_server_port,
-        )
+        if "feedback" in self.args.agent:
+            self.agent = setup_agent(
+                agent_name=self.args.agent,
+                model=self.args.model,
+                remote=self.args.remote,
+                runtime_server_addr=config.env_server_addr,
+                runtime_server_port=config.env_server_port,
+                feedback_model=args.feedback_model,
+            )
+        else:
+            self.agent = setup_agent(
+                agent_name=self.args.agent,
+                model=self.args.model,
+                remote=self.args.remote,
+                runtime_server_addr=config.env_server_addr,
+                runtime_server_port=config.env_server_port,
+            )
 
         # self.task_thread: None | TaskThread = None
         self.capture_thread: VNCStreamer | LocalStreamer | None = None
@@ -1026,15 +1037,28 @@ def wait_finish(is_eval: bool, response: AgentStudioStatusResponse):
 def eval(args, interface: NonGUI | None = None) -> None:
     try:
         # Setup agent
-        agent = setup_agent(
-            agent_name=args.agent,
-            model=args.model,
-            remote=args.remote,
-            runtime_server_addr=config.env_server_addr,
-            runtime_server_port=config.env_server_port,
-        )
         results_dir = Path(f"{args.log_dir}/{args.model}/{args.agent}")
-        results_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        (results_dir / timestamp).mkdir(parents=True, exist_ok=True)
+        if args.agent == "feedback":
+            agent = setup_agent(
+                agent_name=args.agent,
+                model=args.model,
+                remote=args.remote,
+                runtime_server_addr=config.env_server_addr,
+                runtime_server_port=config.env_server_port,
+                results_dir=results_dir / timestamp,
+                feedback_model=args.feedback_model,
+            )
+        else:
+            agent = setup_agent(
+                agent_name=args.agent,
+                model=args.model,
+                remote=args.remote,
+                runtime_server_addr=config.env_server_addr,
+                runtime_server_port=config.env_server_port,
+                results_dir=results_dir / timestamp,
+            )
 
         # Setup tasks
         if args.ignore_finished:
@@ -1141,7 +1165,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                         and action_memory[-1] == action_memory[-2] == action_memory[-3]
                     ):
                         failure_msg = "Repeated action."
-                    _, done = agent.step_action(
+                    result, done = agent.step_action(
                         failure_msg=failure_msg, step_info=step_info
                     )
                     time.sleep(config.min_action_interval)
@@ -1280,14 +1304,10 @@ def main():
     )
     parser.add_argument("--no_log", action="store_true", help="Do not log the results")
     parser.add_argument(
-        "--env_server_addr",
-        type=str,
-        default="127.0.0.1",
-        help="Environment server address",
+        "--feedback_model", type=str, help="Feedback model name", required=False
     )
-    parser.add_argument(
-        "--env_server_port", type=int, default=8000, help="Environment server port"
-    )
+    parser.add_argument("--env_server_addr", type=str, default="127.0.0.1", help="Environment server address")
+    parser.add_argument("--env_server_port", type=int, default=8000, help="Environment server port")
     parser.add_argument("--vnc_port", type=int, default=5900, help="VNC port")
     parser.add_argument(
         "--vnc_password", type=str, default="123456", help="VNC password"

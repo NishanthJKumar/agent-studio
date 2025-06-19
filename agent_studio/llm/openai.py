@@ -57,13 +57,19 @@ class OpenAIProvider(BaseModel):
     ) -> tuple[str, dict[str, Any]]:
         """Creates a chat completion using the OpenAI API."""
 
-        model = kwargs.get("model", None)
-        if model is None:
+        model_name = kwargs.get("model", None)
+        if model_name is None:
             raise ValueError("Model name is not set")
         temperature = kwargs.get("temperature", config.temperature)
         max_tokens = kwargs.get("max_tokens", config.max_tokens)
+        # Start by checking for the response in the cache.
+        cache_ret = self._load_from_cache(model_name, self._hash_input(messages))
+        if cache_ret is not None:
+            logger.info("Found response in cache.")
+            return cache_ret, {}  # TODO: for now we don't have any info to return
+        # Else, generate a new response.
         model_message = self._format_messages(raw_messages=messages)
-        logger.info(f"Creating chat completion with model {model}.")
+        logger.info(f"Creating chat completion with model {model_name}.")
 
         @backoff.on_exception(
             backoff.constant,
@@ -73,7 +79,7 @@ class OpenAIProvider(BaseModel):
         )
         def _generate_response_with_retry() -> tuple[str, dict[str, int]]:
             response = self.client.chat.completions.create(
-                model=model,
+                model=model_name,
                 messages=model_message,
                 temperature=temperature,
                 seed=config.seed,
@@ -96,7 +102,9 @@ class OpenAIProvider(BaseModel):
                 }
 
             logger.info(f"\nReceived response:\n{response_message}\nInfo:\n{info}")
-
+            self._save_to_cache(
+                model_name, self._hash_input(messages), response_message
+            )
             return response_message, info
 
         return _generate_response_with_retry()
