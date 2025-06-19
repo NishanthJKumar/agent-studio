@@ -47,6 +47,11 @@ from tqdm import tqdm
 # Import Xvfb and start the display before anything else!
 from xvfbwrapper import Xvfb
 
+# isort: off
+vdisplay = Xvfb()
+vdisplay.start()
+# isort: on
+
 from agent_studio.agent import setup_agent
 from agent_studio.agent.base_agent import BaseAgent
 from agent_studio.config.config import Config
@@ -76,10 +81,6 @@ from agent_studio.utils.json_utils import (
     read_unfinished_tasks,
 )
 from agent_studio.utils.types import TaskConfig, VideoMeta
-
-vdisplay = Xvfb()
-vdisplay.start()
-
 
 config = Config()
 
@@ -1308,7 +1309,9 @@ def main():
     parser.add_argument("--env_server_addr", type=str, default="127.0.0.1", help="Environment server address")
     parser.add_argument("--env_server_port", type=int, default=8000, help="Environment server port")
     parser.add_argument("--vnc_port", type=int, default=5900, help="VNC port")
-    parser.add_argument("--vnc_password", type=str, default="123456", help="VNC password")
+    parser.add_argument(
+        "--vnc_password", type=str, default="123456", help="VNC password"
+    )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
     assert args.task_configs_path is not None, "Task config is not set."
