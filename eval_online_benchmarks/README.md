@@ -70,10 +70,11 @@ You can browse `http://127.0.0.1:6080` to interact with the remote machine throu
         ```
 1. Clone AgentStudio (specifically this `apptainer-container` branch of Nishanth's fork of the repo [here](https://github.com/NishanthJKumar/agent-studio/tree/apptainer-conversion)).
 1. Move the `agent-studio-server.sif` file under the home directory.
-1. Run this command to start the server:
+1. Run this command to launch an experiment on the server:
 ```bash
-srun apptainer exec --no-home  --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot   --bind /home/njkmr/agent-studio/scripts/agent_server.py:/home/ubuntu/agent_studio/scripts/agent_server.py:ro   --bind /home/njkmr/agent-studio/agent_studio/envs:/home/ubuntu/agent_studio/agent_studio/envs:ro   --bind /home/njkmr/agent-studio/agent_studio/utils:/home/ubuntu/agent_studio/agent_studio/utils:ro   --bind /home/njkmr/agent-studio/agent_studio/agent:/home/ubuntu/agent_studio/agent_studio/agent:ro   --bind /home/njkmr/agent-studio/agent_studio/config:/home/ubuntu/agent_studio/agent_studio/config   --bind /home/njkmr/agent-studio/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:ro --bind supervisor_logs/:/var/log agent-studio-server.sif /home/ubuntu/agent_studio/scripts/docker_startup.sh
+sbatch scripts/cluster/launch-single-experiment.sbatch
 ```
+You can set the config of what model, and what tasks you want to run, from within that `.sbatch` script.
 
 ## Task Description
 
