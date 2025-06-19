@@ -10,7 +10,10 @@ class Config(metaclass=ThreadSafeSingleton):
     Singleton for config.
     """
 
-    api_key_path: str = "agent_studio/config/api_key.json"
+    api_key_path: str = (
+        "/home/ubuntu/agent_studio/agent_studio/config/api_key.json"
+        # "agent_studio/config/api_key.json" # for docker!
+    )
     headless: bool = False  # True for CLI, False for GUI
     remote: bool = True  # True for remote, False for local
     min_action_interval: float = 3.0
@@ -52,7 +55,7 @@ class Config(metaclass=ThreadSafeSingleton):
     qa_answer_pattern: str = r"\[\[\[(.*?)\]\]\]"
 
     env_vars: dict[str, str] = {
-        "AS_ROOT": Path(os.getcwd()).as_posix(),
+        "AS_ROOT": "/home/ubuntu/agent_studio", #Path(os.getcwd()).as_posix(),
         "AS_HOME": Path(os.path.expanduser("~")).as_posix(),
         "AS_TEST": "test",
         "AS_GMAIL_RECIPIENT": json.load(open(api_key_path))["gmail_recipient"],

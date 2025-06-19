@@ -40,14 +40,15 @@ class EvaluatorComb:
 
 
 def register_evaluators(
-    base_path: str | Path = "agent_studio/envs/desktop_env/evaluators",
+    base_path: str | Path = "/home/ubuntu/agent_studio/agent_studio/envs/desktop_env/evaluators",
 ) -> dict[str, type[Evaluator]]:
     registered_classes = {}
+    base_path = os.path.abspath(base_path)
+
     for root, _, files in os.walk(base_path):
         for file in files:
             if file.endswith(".py"):
                 file_path = os.path.join(root, file)
-
                 # Parse the Python file
                 with open(file_path, "r") as f:
                     file_contents = f.read()
@@ -56,25 +57,20 @@ def register_evaluators(
                 except SyntaxError:
                     logger.error(f"Error parsing {file_path}. Skipping...")
                     continue
+
+                # Construct the module name
+                module_name = os.path.relpath(file_path, base_path).replace(os.sep, ".").rstrip(".py")
+                module_name = f"agent_studio.envs.desktop_env.evaluators.{module_name}"
+
                 # Check each class definition in the file
                 for node in ast.walk(tree):
-                    module_name = (
-                        os.path.relpath(file_path, ".")
-                        .replace(os.sep, ".")
-                        .rstrip(".py")
-                    )
                     if isinstance(node, ast.ClassDef):
                         for base in node.bases:
                             if isinstance(base, ast.Name) and base.id == "Evaluator":
                                 try:
                                     module = importlib.import_module(module_name)
-                                    new_class: type[Evaluator] | None = getattr(
-                                        module, node.name, None
-                                    )
-                                    if (
-                                        new_class is not None
-                                        and new_class.name not in registered_classes
-                                    ):
+                                    new_class: Type[Evaluator] | None = getattr(module, node.name, None)
+                                    if new_class is not None and new_class.name not in registered_classes:
                                         registered_classes[new_class.name] = new_class
                                     else:
                                         raise AttributeError

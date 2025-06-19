@@ -35,10 +35,16 @@ dependencies = [
     "cssselect",
     "xmltodict",
     "python-dateutil",
+    "xvfbwrapper",
+    "ipdb",
 ]
 
 [tool.setuptools]
 packages = ["agent_studio"]
+
+[tool.isort]
+known_third_party = ["xvfbwrapper"]
+no_lines_before = "xvfbwrapper"
 
 [project.optional-dependencies]
 dev = [

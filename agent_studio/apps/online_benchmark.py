@@ -43,6 +43,14 @@ from PyQt6.QtWidgets import (
 )
 from tqdm import tqdm
 
+# Import Xvfb and start the display before anything else!
+from xvfbwrapper import Xvfb
+
+# isort: off
+vdisplay = Xvfb()
+vdisplay.start()
+# isort: on
+
 from agent_studio.agent import setup_agent
 from agent_studio.agent.base_agent import BaseAgent
 from agent_studio.config.config import Config
@@ -1057,6 +1065,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                     env_vars = config.env_vars
                 logger.debug(f"Env vars: {env_vars}")
                 logger.debug(f"Task config before: {task_config}")
+                env_vars["AS_ROOT"] = "/home/ubuntu/agent_studio"
                 task_config = apply_env_vars(task_config, env_vars)
                 logger.debug(f"Task config after: {task_config}")
                 # Reset
@@ -1213,6 +1222,8 @@ def eval(args, interface: NonGUI | None = None) -> None:
                         )
                         response = AgentStudioStatusResponse(**response_raw.json())
                         response = wait_finish(is_eval=False, response=response)
+                        print(">>> STATUS RESPONSE TEXT:", response_raw.text)
+                        print(">>> STATUS RESPONSE CODE:", response_raw.status_code)
                         assert (
                             response.status == "finished"
                             and response.content == "success"
@@ -1268,10 +1279,19 @@ def main():
         "--ignore_finished", action="store_true", help="Only evaluate unfinished tasks"
     )
     parser.add_argument("--no_log", action="store_true", help="Do not log the results")
-    parser.add_argument("--env_server_addr", type=str, default="127.0.0.1", help="Environment server address")
-    parser.add_argument("--env_server_port", type=int, default=8000, help="Environment server port")
+    parser.add_argument(
+        "--env_server_addr",
+        type=str,
+        default="127.0.0.1",
+        help="Environment server address",
+    )
+    parser.add_argument(
+        "--env_server_port", type=int, default=8000, help="Environment server port"
+    )
     parser.add_argument("--vnc_port", type=int, default=5900, help="VNC port")
-    parser.add_argument("--vnc_password", type=str, default="123456", help="VNC password")
+    parser.add_argument(
+        "--vnc_password", type=str, default="123456", help="VNC password"
+    )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
     assert args.task_configs_path is not None, "Task config is not set."
@@ -1288,8 +1308,8 @@ def main():
     # Ensure a second screen is available.
     app = QApplication(sys.argv)
     screens = QApplication.screens()
-    if not args.remote and len(screens) < 2:
-        raise RuntimeError("A second screen is required for local annotation.")
+    # if not args.remote and len(screens) < 2:
+    #     raise RuntimeError("A second screen is required for local annotation.")
 
     if not args.render:
         interface = NonGUI(
@@ -1323,4 +1343,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    finally:
+        # Stop the virtual Xvfb display
+        vdisplay.stop()
