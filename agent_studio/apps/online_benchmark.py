@@ -1216,7 +1216,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                     try:
                         score, feedback = evaluators(task_config.eval_procedure)
                     except Exception as e:
-                        logger.error(f"[Unhandled Error] {str(e)}]")
+                        logger.error(f"[Caught Unhandled Error in Eval] {str(e)}]")
                         score = 0.0
                         feedback = "Evaluator broke for reason: " + str(e)
                         error_in_eval = True
