@@ -1212,7 +1212,14 @@ def eval(args, interface: NonGUI | None = None) -> None:
                     )
                 else:
                     logger.info("Start evaluation")
-                    score, feedback = evaluators(task_config.eval_procedure)
+                    error_in_eval = False
+                    try:
+                        score, feedback = evaluators(task_config.eval_procedure)
+                    except Exception as e:
+                        logger.error(f"[Unhandled Error] {str(e)}]")
+                        score = 0.0
+                        feedback = "Evaluator broke for reason: " + str(e)
+                        error_in_eval = True
 
                 scores[task_config.task_id] = score
                 if score == 1.0:
@@ -1231,6 +1238,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                         token_count=agent.get_token_count(),
                         time_cost=stop_time - start_time,
                         video_meta=video_meta,
+                        error_in_eval=error_in_eval,
                     )
             except Exception as e:
                 import traceback
