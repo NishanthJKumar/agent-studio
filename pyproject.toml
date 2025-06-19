@@ -36,7 +36,7 @@ dependencies = [
     "xmltodict",
     "python-dateutil",
     "xvfbwrapper",
-
+    "ipdb",
 ]
 
 [tool.setuptools]
@@ -58,7 +58,7 @@ dev = [
 ]
 server = [
     "fastapi",
-    "uvicorn"
+    "uvicorn",
 ]
 client = [
     "backoff",
