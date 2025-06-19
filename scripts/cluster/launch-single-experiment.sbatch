@@ -33,7 +33,7 @@ echo "Starting client..."
 RETRIES=5
 for ((i=1; i<=RETRIES; i++)); do
   apptainer exec --no-home --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot \
-    --bind /home/$USER/agent-studio/agent_studio/:/home/ubuntu/agent_studio/ \
+    --bind /home/$USER/agent-studio/:/home/ubuntu/agent_studio/ \
     agent-studio-client.sif /bin/bash -c "
       cd /home/ubuntu/agent_studio
       as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --remote
