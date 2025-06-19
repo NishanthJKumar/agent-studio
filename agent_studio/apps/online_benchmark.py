@@ -1175,7 +1175,10 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 stop_time = time.time()
 
                 if not args.no_log:
-                    task_trajectory_path = results_dir / task_config.task_id
+                    results_json_dir = results_dir / "json_results"
+                    if not results_json_dir.exists():
+                        results_json_dir.mkdir(parents=True, exist_ok=True)
+                    task_trajectory_path = results_json_dir / task_config.task_id
                     if not task_trajectory_path.exists():
                         task_trajectory_path.mkdir(parents=True, exist_ok=True)
                     video_meta: VideoMeta | None = None
@@ -1218,7 +1221,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                     logger.info(f"[Result] (FAIL): {feedback}")
 
                 if not args.no_log:
-                    task_result_path = results_dir / task_config.task_id
+                    task_result_path = results_json_dir / task_config.task_id
                     export_trajectory(
                         task_config=task_config,
                         trajectory=agent.trajectory,
@@ -1306,8 +1309,15 @@ def main():
     parser.add_argument(
         "--feedback_model", type=str, help="Feedback model name", required=False
     )
-    parser.add_argument("--env_server_addr", type=str, default="127.0.0.1", help="Environment server address")
-    parser.add_argument("--env_server_port", type=int, default=8000, help="Environment server port")
+    parser.add_argument(
+        "--env_server_addr",
+        type=str,
+        default="127.0.0.1",
+        help="Environment server address",
+    )
+    parser.add_argument(
+        "--env_server_port", type=int, default=8000, help="Environment server port"
+    )
     parser.add_argument("--vnc_port", type=int, default=5900, help="VNC port")
     parser.add_argument(
         "--vnc_password", type=str, default="123456", help="VNC password"
