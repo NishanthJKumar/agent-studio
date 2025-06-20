@@ -244,6 +244,7 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
             result["unfinished_task_count"] += report["unfinished_task_count"]
             result["succ_task_count"] += report["succ_task_count"]
             result["fail_task_count"] += report["fail_task_count"]
+            result["error_task_count"] += report["error_task_count"]
         else:
             task_configs = read_task_jsons(dir)
             assert (
@@ -260,7 +261,10 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
                 if results[0].score > 0:
                     result["succ_task_count"] += 1
                 else:
-                    result["fail_task_count"] += 1
+                    if results[0].error_in_eval:
+                        result["error_task_count"] += 1
+                    else:
+                        result["fail_task_count"] += 1
     result["average_score"] = (
         100 * result["succ_task_count"] / result["finished_task_count"]
         if result["finished_task_count"] > 0
@@ -271,8 +275,9 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
         f"{indent}{task_config_dir.name: <20}: "
         f"score: {result['average_score']: <10.2f}, "
         f"succ: {result['succ_task_count']: <10}, "
-        f"finished: {result['finished_task_count']: <10}, "
-        f"total: {result['total_task_count']: <10}"
+        f"fail: {result['fail_task_count']: <10}, "
+        f"error: {result['error_task_count']: <10}, "
+        f"total: {result['total_task_count']: <10}, "
     )
     return result
 
