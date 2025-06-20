@@ -6,7 +6,7 @@ PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/os/1d6765b3-b744-4aa4-8
 MODEL_NAME="gpt-4o-2024-08-06"
 
 # Step 1: Submit the server job and capture the job ID
-SERVER_JOB_ID=$(sbatch --parsable scripts/cluster/server_job.sh)
+SERVER_JOB_ID=$(sbatch --parsable scripts/cluster/server-job.sh)
 
 echo "Launched server job with job ID $SERVER_JOB_ID!"
 
