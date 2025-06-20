@@ -235,6 +235,7 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
         "unfinished_task_count": 0,
         "succ_task_count": 0,
         "fail_task_count": 0,
+        "error_task_count": 0,
     }
     for dir in task_config_dir.iterdir():
         if dir.is_dir():
