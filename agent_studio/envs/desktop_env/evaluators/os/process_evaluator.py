@@ -25,6 +25,7 @@ def find_procs_by_name(name: str) -> list[psutil.Process]:
         try:
             name_ = p.name()
             exe = p.exe()
+            logging.info(f"Found process: {name_} {exe}")
         except (psutil.AccessDenied, psutil.ZombieProcess, psutil.NoSuchProcess):
             continue
         if template.match(name_) or template.match(os.path.basename(exe)):
@@ -65,10 +66,22 @@ class ProcessEvaluator(Evaluator):
         Raises:
             FeedbackException: If the process creation fails.
         """
-        subprocess.Popen(cmd)
+        logging.info(f"Creating process with command: {cmd}")
+        try:
+            process = subprocess.Popen(cmd)
+        except Exception as e:
+            logging.error(f"Failed to create process: {e}")
+            raise FeedbackException(f"Failed to create process: {e}")
+        logging.info(f"Process successfully created with id: {process}")
         if wait_for is not None:
-            while len(find_procs_by_name(wait_for)) == 0:
+            logging.info(f"Waiting for process matching: {wait_for}")
+            for process_matching_attempt_idx in range(10):
+                if len(find_procs_by_name(wait_for)) > 0:
+                    break
+                logging.info("No matching process found, sleeping...")
                 time.sleep(0.5)
+            logging.info("Matching process found.")
+        logging.info("Exiting process creation!")
 
     @reset_handler("pkill_by_name")
     def pkill_by_name(self, name: str) -> None:
