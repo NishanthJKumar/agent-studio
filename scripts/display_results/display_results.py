@@ -48,6 +48,7 @@ def main():
     print(f"Unfinished Tasks: {report['unfinished_task_count']}")
     print(f"Successful Tasks: {report['succ_task_count']}")
     print(f"Failed Tasks: {report['fail_task_count']}")
+    print(f"Error Task: {report['error_task_count']}")
 
 
 if __name__ == "__main__":
