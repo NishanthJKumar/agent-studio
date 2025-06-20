@@ -189,3 +189,4 @@ web.log.2
 web.log.3
 eval_online_benchmarks/data/*
 *.err
+data/*
