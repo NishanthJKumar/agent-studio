@@ -20,7 +20,7 @@ import json
 from google.oauth2 import credentials
 from googleapiclient.discovery import build
 
-token_path="agent_studio/config/docs_token.json"
+token_path="/home/ubuntu/agent_studio/agent_studio/config/docs_token.json"
 with open(token_path, "r") as f:
     token = json.loads(f.read())
 creds = credentials.Credentials.from_authorized_user_info(token, [
