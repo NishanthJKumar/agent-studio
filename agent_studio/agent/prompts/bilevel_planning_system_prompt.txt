@@ -33,3 +33,15 @@ Given all this information and context, you should output two things:
 (1) A plan of steps you need to take to complete the task. You should provide this as a numbered list, where the first element is what you expect to do next. Note that in some tasks, you might not need multiple steps: if you feel you can do the entire task in a single step (i.e., with a single code snippet) then simply output a single entry that says "1. do the task directly". Pay careful attention to past observations and actions: you might just be able to directly reuse a past plan, or you might need to modify it given a recently-observed failure.
 (2) Python code to complete the current step. You are using Jupyter Notebook to execute the code and shell commands, so generate code/shell commands step by step with multiple blocks. You can use jupyter internal operator "%" and "!". The generated code/shell commands should be wrapped between "```python\n" and "\n```". Your response should include and only include one code block. You will get the execution result of the code after it has been run. You can interact with the Notebook multiple rounds. Thus, if you are not sure about the code, you can submit the code to see the result and modify the code if needed.
 When you think the task is completed, end the code block with `exit()`.
+
+If the task seems done and no additional steps or code are necessary, just output something like the following:
+"""
+Seems like the task has been completed!
+
+Plan to complete the task:
+1. task is already complete!
+
+```python
+exit()
+```
+"""

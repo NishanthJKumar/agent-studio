@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import datetime
 import logging
+import os
 import sys
 import threading
 import time
@@ -45,11 +46,15 @@ from PyQt6.QtWidgets import (
 from tqdm import tqdm
 
 # Import Xvfb and start the display before anything else!
-from xvfbwrapper import Xvfb
-
 # isort: off
-vdisplay = Xvfb()
-vdisplay.start()
+SKIP_XVFB = os.getenv("SKIP_XVFB", "false").lower() == "true"
+if not SKIP_XVFB:
+    from xvfbwrapper import Xvfb
+
+    vdisplay = Xvfb()
+    vdisplay.start()
+else:
+    vdisplay = None
 # isort: on
 
 from agent_studio.agent import setup_agent
@@ -1051,6 +1056,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 runtime_server_port=config.env_server_port,
                 results_dir=results_dir / timestamp,
                 feedback_model=args.feedback_model,
+                prompt_approach=args.prompting_approach,
             )
         else:
             agent = setup_agent(
@@ -1060,6 +1066,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 runtime_server_addr=config.env_server_addr,
                 runtime_server_port=config.env_server_port,
                 results_dir=results_dir / timestamp,
+                prompt_approach=args.prompting_approach,
             )
 
         # Setup tasks
@@ -1398,5 +1405,6 @@ if __name__ == "__main__":
     try:
         main()
     finally:
-        # Stop the virtual Xvfb display
-        vdisplay.stop()
+        # Stop the virtual Xvfb display if it was started
+        if vdisplay is not None:
+            vdisplay.stop()
