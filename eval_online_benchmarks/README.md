@@ -45,7 +45,7 @@ In `agent_studio/config.py`, modify api_key_path to be `agent_studio/config/api_
 Run Docker:
 
 ```bash
-docker run -d -e RESOLUTION=1024x768 -p 6080:80 -p 5900:5900 -p 8000:8000 -e VNC_PASSWORD=123456 -v /dev/shm:/dev/shm -v ${PWD}/scripts/agent_server.py:/home/ubuntu/agent_studio/scripts/agent_server.py:ro -v ${PWD}/agent_studio/envs:/home/ubuntu/agent_studio/agent_studio/envs:ro -v ${PWD}/agent_studio/utils:/home/ubuntu/agent_studio/agent_studio/utils:ro -v ${PWD}/agent_studio/agent:/home/ubuntu/agent_studio/agent_studio/agent:ro -v ${PWD}/agent_studio/config:/home/ubuntu/agent_studio/agent_studio/config -v ${PWD}/eval_online_benchmarks/data:/home/ubuntu/agent_studio/data:ro agent-studio:latest
+docker run -it -e RESOLUTION=1024x768 -p 6080:80 -p 5900:5900 -p 8000:8000 -e VNC_PASSWORD=123456 -v /dev/shm:/dev/shm -v ${PWD}/scripts/agent_server.py:/home/ubuntu/agent_studio/scripts/agent_server.py:ro -v ${PWD}/agent_studio/envs:/home/ubuntu/agent_studio/agent_studio/envs:ro -v ${PWD}/agent_studio/utils:/home/ubuntu/agent_studio/agent_studio/utils:ro -v ${PWD}/agent_studio/agent:/home/ubuntu/agent_studio/agent_studio/agent:ro -v ${PWD}/agent_studio/config:/home/ubuntu/agent_studio/agent_studio/config -v ${PWD}/eval_online_benchmarks/data:/home/ubuntu/agent_studio/data:ro agent-studio:latest
 ```
 
 > You can also replace `-d` to `-it` to use interactive mode. If successful, you should see logs with a bunch of success followed by `INFO  Listening on http://localhost:6079` in the output.
