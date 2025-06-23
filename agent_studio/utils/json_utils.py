@@ -177,6 +177,7 @@ def export_trajectory(
     token_count: int | None,
     time_cost: float,
     video_meta: VideoMeta | None = None,
+    error_in_eval: bool = False,
 ) -> None:
     """Exports the trajectory data to a .jsonl file."""
     result_dict = {
@@ -188,6 +189,7 @@ def export_trajectory(
         "score": score,
         "feedback": feedback,
         "time_cost": time_cost,
+        "error_in_eval": error_in_eval,
     }
     parse_and_save_objects(obj=result_dict, folder_path=path)
     # model check
@@ -233,6 +235,7 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
         "unfinished_task_count": 0,
         "succ_task_count": 0,
         "fail_task_count": 0,
+        "error_task_count": 0,
     }
     for dir in task_config_dir.iterdir():
         if dir.is_dir():
@@ -242,6 +245,7 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
             result["unfinished_task_count"] += report["unfinished_task_count"]
             result["succ_task_count"] += report["succ_task_count"]
             result["fail_task_count"] += report["fail_task_count"]
+            result["error_task_count"] += report["error_task_count"]
         else:
             task_configs = read_task_jsons(dir)
             assert (
@@ -258,7 +262,10 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
                 if results[0].score > 0:
                     result["succ_task_count"] += 1
                 else:
-                    result["fail_task_count"] += 1
+                    if results[0].error_in_eval:
+                        result["error_task_count"] += 1
+                    else:
+                        result["fail_task_count"] += 1
     result["average_score"] = (
         100 * result["succ_task_count"] / result["finished_task_count"]
         if result["finished_task_count"] > 0
@@ -269,8 +276,9 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
         f"{indent}{task_config_dir.name: <20}: "
         f"score: {result['average_score']: <10.2f}, "
         f"succ: {result['succ_task_count']: <10}, "
-        f"finished: {result['finished_task_count']: <10}, "
-        f"total: {result['total_task_count']: <10}"
+        f"fail: {result['fail_task_count']: <10}, "
+        f"error: {result['error_task_count']: <10}, "
+        f"total: {result['total_task_count']: <10}, "
     )
     return result
 

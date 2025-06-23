@@ -80,6 +80,7 @@ class TaskResult(BaseModel):
     time_cost: float
     video: Optional[VideoMeta]
     trajectory: list[SavedStepInfo]
+    error_in_eval: bool
 
 
 class Action(BaseModel):

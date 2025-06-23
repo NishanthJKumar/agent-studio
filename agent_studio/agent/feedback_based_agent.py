@@ -191,9 +191,11 @@ class FeedbackBasedAgent(BaseAgent):
         try:
             assert len(self.feedback_history) == len(self.trajectory)
         except AssertionError:
-            import ipdb
-
-            ipdb.set_trace()
+            logger.error(
+                f"Feedback history length: {len(self.feedback_history)}\n"
+                f"Trajectory length: {len(self.trajectory)}"
+            )
+            raise AssertionError("Feedback history and trajectory length mismatch")
         for i, content_tuple in enumerate(zip(self.feedback_history, self.trajectory)):
             past_feedback, step = content_tuple
             messages.append(

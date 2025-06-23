@@ -1189,6 +1189,8 @@ def eval(args, interface: NonGUI | None = None) -> None:
                         video_meta = interface.save_video(video_path)
                         logger.info(f"Video saved to {video_path}")
 
+                # Evaluate
+                error_in_eval = False
                 if args.remote:
                     response_raw = requests.post(
                         f"{REMOTE_SERVER_ADDR}/task/eval",
@@ -1205,14 +1207,28 @@ def eval(args, interface: NonGUI | None = None) -> None:
                         response.status == "finished"
                         and isinstance(response.message, dict)  # noqa: E501
                     ):
-                        raise ValueError(f"Fail to evaluate task: {response.message}")
-                    score, feedback = (
-                        response.message["score"],
-                        response.message["feedback"],
-                    )
+                        logger.error(
+                            f"[Caught Unhandled Error in Eval] {str(response.message)}]"
+                        )
+                        score = 0.0
+                        feedback = "Evaluator broke for reason: " + str(
+                            response.message
+                        )
+                        error_in_eval = True
+                    else:
+                        score, feedback = (
+                            response.message["score"],
+                            response.message["feedback"],
+                        )
                 else:
                     logger.info("Start evaluation")
-                    score, feedback = evaluators(task_config.eval_procedure)
+                    try:
+                        score, feedback = evaluators(task_config.eval_procedure)
+                    except Exception as e:
+                        logger.error(f"[Caught Unhandled Error in Eval] {str(e)}]")
+                        score = 0.0
+                        feedback = "Evaluator broke for reason: " + str(e)
+                        error_in_eval = True
 
                 scores[task_config.task_id] = score
                 if score == 1.0:
@@ -1231,6 +1247,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                         token_count=agent.get_token_count(),
                         time_cost=stop_time - start_time,
                         video_meta=video_meta,
+                        error_in_eval=error_in_eval,
                     )
             except Exception as e:
                 import traceback

@@ -40,7 +40,7 @@ We provide a lightweight Dockerfile of Ubuntu 22.04 for reproducible and reliabl
 docker build -f dockerfiles/server/Dockerfile.ubuntu22.04.amd64 . -t agent-studio:latest
 ```
 
-In `agent_studio/config.py`, modify api_key_path to be `agent_studio/config/api_key.json for docker`
+In `agent_studio/config.py`, modify api_key_path to be `agent_studio/config/api_key.json` for docker
 
 Run Docker:
 
