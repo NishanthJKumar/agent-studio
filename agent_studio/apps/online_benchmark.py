@@ -427,6 +427,7 @@ class GUI(QMainWindow):
                 remote=self.args.remote,
                 runtime_server_addr=config.env_server_addr,
                 runtime_server_port=config.env_server_port,
+                prompt_approach=args.prompting_approach,
                 feedback_model=args.feedback_model,
             )
         else:
@@ -436,6 +437,7 @@ class GUI(QMainWindow):
                 remote=self.args.remote,
                 runtime_server_addr=config.env_server_addr,
                 runtime_server_port=config.env_server_port,
+                prompt_approach=args.prompting_approach,
             )
 
         # self.task_thread: None | TaskThread = None
@@ -1292,6 +1294,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, help="Model name")
     parser.add_argument("--agent", type=str, default="direct", help="Agent type")
+    parser.add_argument(
+        "--prompting_approach", type=str, default="naive", help="Prompting approach"
+    )
     parser.add_argument("--task_configs_path", type=str, help="Path to the task config")
     parser.add_argument(
         "--log_dir",
