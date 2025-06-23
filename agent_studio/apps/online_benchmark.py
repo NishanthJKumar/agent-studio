@@ -405,7 +405,7 @@ class GUI(QMainWindow):
         self.args = args
         self.remote = remote
         self.results_dir = Path(
-            f"{self.args.log_dir}/{self.args.model}/{self.args.agent}"
+            f"{args.log_dir}/{args.model}/{args.agent}/{args.prompting_approach}"
         )
         self.task_config_path = Path(self.args.task_configs_path)
         # Setup tasks
@@ -1044,7 +1044,9 @@ def wait_finish(is_eval: bool, response: AgentStudioStatusResponse):
 def eval(args, interface: NonGUI | None = None) -> None:
     try:
         # Setup agent
-        results_dir = Path(f"{args.log_dir}/{args.model}/{args.agent}")
+        results_dir = Path(
+            f"{args.log_dir}/{args.model}/{args.agent}/{args.prompting_approach}"
+        )
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         (results_dir / timestamp).mkdir(parents=True, exist_ok=True)
         if args.agent == "feedback":
