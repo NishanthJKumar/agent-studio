@@ -236,7 +236,7 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
         "succ_task_count": 0,
         "fail_task_count": 0,
         "error_task_count": 0,
-        "sub_reports": {}
+        "sub_reports": {},
     }
     for dir in task_config_dir.iterdir():
         if dir.is_dir():
@@ -276,10 +276,14 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
     return result
 
 
-def print_report(report, name='overall', depth=0):
-    indent = '    ' * depth
-    print(f"{indent}{name: <20}: succ. rate: {report['average_score']: <.2f}, succ: {report['succ_task_count']}, fail: {report['fail_task_count']}, tot: {report['total_task_count']}")
-    for sub_name, sub_report in report['sub_reports'].items():
+def print_report(report, name="overall", depth=0):
+    indent = "    " * depth
+    print(
+        f"{indent}{name: <20}: succ. rate: {report['average_score']: <.2f}, "
+        f"succ: {report['succ_task_count']}, fail: {report['fail_task_count']}, "
+        f"tot: {report['total_task_count']}"
+    )
+    for sub_name, sub_report in report["sub_reports"].items():
         print_report(sub_report, sub_name, depth + 1)
 
 
