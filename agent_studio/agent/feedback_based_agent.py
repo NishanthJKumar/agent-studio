@@ -105,6 +105,7 @@ class FeedbackBasedAgent(BaseAgent):
     def reset(self, task_config: TaskConfig) -> None:
         super().reset(task_config)
         self.feedback_history = []
+        self._plan_criticized = False
 
     def generate_action(self, obs: np.ndarray | None, model_name: str) -> StepInfo:
         """Generate an action based on the observation."""
@@ -253,25 +254,44 @@ class FeedbackBasedAgent(BaseAgent):
             {self.instruction}",
             )
         )
-        try:
-            assert len(self.feedback_history) == len(self.trajectory)
-        except AssertionError:
-            logger.error(
-                f"Feedback history length: {len(self.feedback_history)}\n"
-                f"Trajectory length: {len(self.trajectory)}"
-            )
-            raise AssertionError("Feedback history and trajectory length mismatch")
-        for i, content_tuple in enumerate(zip(self.feedback_history, self.trajectory)):
-            past_feedback, step = content_tuple
-            messages.append(
-                Message(
-                    role="assistant",
-                    content=f"Step number: {i}.\nAction:\n\
-                    ```python\n{step.action}\n```\n\n"
-                    f"Error(s) from execution:\n{step.result}"
-                    f"Feedback:\n{past_feedback.content}",
+        # In most cases, we want to add the feedback history to the prompt.
+        if (
+            self.feedback_prompt_approach != "plan_critique"
+            or not self._plan_criticized
+        ):
+            try:
+                assert len(self.feedback_history) == len(self.trajectory)
+            except AssertionError:
+                logger.error(
+                    f"Feedback history length: {len(self.feedback_history)}\n"
+                    f"Trajectory length: {len(self.trajectory)}"
                 )
-            )
+                raise AssertionError("Feedback history and trajectory length mismatch")
+            for i, content_tuple in enumerate(
+                zip(self.feedback_history, self.trajectory)
+            ):
+                past_feedback, step = content_tuple
+                messages.append(
+                    Message(
+                        role="assistant",
+                        content=f"Step number: {i}.\nAction:\n\
+                        ```python\n{step.action}\n```\n\n"
+                        f"Error(s) from execution:\n{step.result}"
+                        f"Feedback:\n{past_feedback.content}",
+                    )
+                )
+        else:
+            # In this case, there is no more critic feedback to add.
+            for i, step in enumerate(self.trajectory):
+                messages.append(
+                    Message(
+                        role="assistant",
+                        content=f"Step number: {i}.\nAction:\n\
+                        ```python\n{step.action}\n```\n\n"
+                        f"Error(s) from execution:\n{step.result}",
+                    )
+                )
+        # Finally, add in the observation.
         if self.obs is not None:
             messages.append(Message(role="user", content=self.obs))
         return messages
