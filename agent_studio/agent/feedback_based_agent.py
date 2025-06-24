@@ -140,7 +140,9 @@ class FeedbackBasedAgent(BaseAgent):
                 self.trajectory.append(step_info)
                 # Get feedback.
                 feedback_prompt = self.feedback_model_prompt
+                logger.debug(f"Feedback Prompt: {feedback_prompt}")
                 feedback_response = self._query_feedback_model(feedback_prompt)
+                logger.debug(f"Feedback Response: {feedback_response}")
                 self.feedback_history.append(
                     Message(role="assistant", content=feedback_response)
                 )
