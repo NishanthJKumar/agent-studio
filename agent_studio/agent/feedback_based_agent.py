@@ -156,6 +156,9 @@ class FeedbackBasedAgent(BaseAgent):
                     )
                     logger.debug(f"Response: {response}")
             self._plan_criticized = True
+            # We need to pop the last step from the trajectory since it
+            # will get added back.
+            self.trajectory.pop(-1)
         # Extract the action from the response.
         action = extract_from_response(response).strip()
         # Logging model outputs.
