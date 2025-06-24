@@ -3,7 +3,7 @@
 import argparse
 from pathlib import Path
 
-from agent_studio.utils.json_utils import make_report2
+from agent_studio.utils.json_utils import make_report2, print_report
 
 
 def main():
@@ -39,6 +39,7 @@ def main():
 
     # Run the make_report2 function
     report = make_report2(task_config_dir, results_dir, args.depth)
+    print_report(report)
 
     # Print the final report summary
     print("\nFinal Report Summary:")
