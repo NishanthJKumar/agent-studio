@@ -1,25 +1,17 @@
 import copy
+import datetime
 import logging
 import time
 from pathlib import Path
 
+import numpy as np
+
 from agent_studio.agent.base_agent import BaseAgent
 from agent_studio.llm import ModelManager
+from agent_studio.llm.utils import extract_from_response
 from agent_studio.utils.types import Message, MessageList, StepInfo, TaskConfig
 
 logger = logging.getLogger(__name__)
-
-
-FEEDBACK_PROMPT = """You are an expert-level observer and critic watching a particular agent attempting to complete a task.
-You are in the same environment as the agent, and your job is to provide descriptive, natural language critques of the agent's performance.
-Importantly, do not try to solve the agent's task: just identify what the agent has attempted to do
-and provide feedback on its latest action as well as the outcome.
-If everything looks correct, and you expect the agent to solve the task after executing the current step, then simply output (without the quotes): 'No feedback.'
-Otherwise, provide a free-form natural language description of what the problems are with the agent's current action given the history
-of actions it has executed, and their results (which are provided to you).
-
-Don't mind the use of the `exit()` function at the end of the code block: this is expected.
-"""  # noqa: E501
 
 
 class FeedbackBasedAgent(BaseAgent):
@@ -36,6 +28,7 @@ class FeedbackBasedAgent(BaseAgent):
         results_dir: Path,
         prompt_approach: str = "naive",
         feedback_model: str = "gpt-4o-2024-08-06",
+        feedback_prompt_approach: str = "direct",
     ) -> None:
         """Initialize everything the same way as the parent class, but also
         initialize a feedback model and buffer."""
@@ -51,6 +44,14 @@ class FeedbackBasedAgent(BaseAgent):
             f"agent_studio/agent/prompts/{prompt_approach}_system_prompt.txt", "r"
         ) as file:
             self._system_prompt = file.read()
+        with open(
+            (
+                f"agent_studio/agent/prompts/{feedback_prompt_approach}_"
+                "feedback_prompt.txt"
+            ),
+            "r",
+        ) as file:
+            self._feedback_prompt = file.read()
         self.feedback_history: MessageList = []
         if feedback_model != "human":
             feedback_model_manager = ModelManager()
@@ -58,11 +59,17 @@ class FeedbackBasedAgent(BaseAgent):
         else:
             self.feedback_model = None
         self.feedback_model_name = feedback_model
+        self.feedback_prompt_approach = feedback_prompt_approach
+        self._plan_criticized = False
+        if self.feedback_prompt_approach == "plan-critique":
+            assert (
+                prompt_approach == "bilevel_planning"
+            ), "Plan-critique only works with bilevel planning prompting."
 
     @property
     def feedback_model_prompt(self) -> MessageList:
         messages: MessageList = []
-        messages.append(Message(role="system", content=FEEDBACK_PROMPT))
+        messages.append(Message(role="system", content=self._feedback_prompt))
         messages.append(
             Message(role="user", content=f"The task instruction: {self.instruction}")
         )
@@ -96,6 +103,70 @@ class FeedbackBasedAgent(BaseAgent):
         super().reset(task_config)
         self.feedback_history = []
 
+    def generate_action(self, obs: np.ndarray | None, model_name: str) -> StepInfo:
+        """Generate an action based on the observation."""
+        self.obs = obs
+        prompt = self.action_prompt
+        assert prompt is not None, "Invalid prompt"
+        logger.debug(f"Prompt: {prompt}")
+        response, info = self.model.generate_response(messages=prompt, model=model_name)
+        logger.debug(f"Response: {response}")
+        assert response is not None, "Failed to generate response."
+        self.total_tokens += info.get("total_tokens", 0)
+        # In the case of the plan-critique approach, we need to iterate feedback
+        # until the feedback model is satisfied with the plan.
+        if (
+            self.feedback_prompt_approach == "plan-critique"
+            and not self._plan_criticized
+        ):
+            while True:
+                feedback_prompt = self.feedback_model_prompt
+                feedback_response = self._query_feedback_model(feedback_prompt)
+                self.feedback_history.append(
+                    Message(role="assistant", content=feedback_response)
+                )
+                if (
+                    len(feedback_response) > 0
+                    and "No feedback." not in feedback_response
+                ):
+                    break
+                else:
+                    logger.info("Feedback model is not satisfied with the plan.")
+                    prompt = self.action_prompt
+                    assert prompt is not None
+                    logger.debug(f"Prompt: {prompt}")
+                    response, info = self.model.generate_response(
+                        messages=prompt, model=model_name
+                    )
+                    logger.debug(f"Response: {response}")
+            self._plan_criticized = True
+        # Extract the action from the response.
+        action = extract_from_response(response).strip()
+        # Logging model outputs.
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"output_{timestamp}.txt"
+        log_dir = self.results_dir / "model_query_logs"
+        log_dir.mkdir(exist_ok=True)
+        filename = log_dir / filename
+        with open(filename, "w") as file:
+            file.write("Prompt:\n")
+            for i in range(len(prompt)):
+                file.write(f"Message {i}:\n")
+                file.write(f"Role: {prompt[i].role}\n")
+                file.write(f"Content: {prompt[i].content}\n\n")
+            file.write("Response:\n")
+            file.write(response + "\n")
+
+        return StepInfo(
+            obs=obs,
+            prompt=prompt,
+            response=response,
+            action=action,
+            info=info,
+            result={},
+            timestamp=0.0,
+        )
+
     def step_action(
         self, failure_msg: str | None, step_info: StepInfo
     ) -> tuple[dict, bool]:
@@ -116,35 +187,35 @@ class FeedbackBasedAgent(BaseAgent):
             step_info.timestamp = time.time()
             self.trajectory.append(step_info)
             # Get feedback.
-            feedback_prompt = self.feedback_model_prompt
-            if self.feedback_model is None:
-                logger.info(feedback_prompt)
-                response = input("Feedback: ")
+            if self.feedback_prompt_approach != "plan-critique":
+                feedback_prompt = self.feedback_model_prompt
+                response = self._query_feedback_model(feedback_prompt)
                 self.feedback_history.append(
                     Message(role="assistant", content=response)
                 )
+                if len(result.keys()) == 0 and "No feedback." in response:
+                    done = True
             else:
-                response, info = self.feedback_model.generate_response(
-                    messages=feedback_prompt, model=self.feedback_model_name
-                )
-                self.feedback_history.append(
-                    Message(role="assistant", content=response)
-                )
-                # print(response)
-                # import ipdb
-
-                # ipdb.set_trace()
-            if len(result.keys()) == 0 and "No feedback." in response:
-                done = True
+                if len(result.keys()) == 0:
+                    done = True
         else:
             result["force_stop_reason"] = failure_msg
             done = True
             step_info.result = copy.deepcopy(result)
             step_info.timestamp = time.time()
             self.trajectory.append(step_info)
-
         logger.info(f"Output: {result}")
         return result, done
+
+    def _query_feedback_model(self, feedback_prompt: str) -> str:
+        if self.feedback_model is None:
+            logger.info(feedback_prompt)
+            response = input("Feedback: ")
+        else:
+            response, info = self.feedback_model.generate_response(
+                messages=feedback_prompt, model=self.feedback_model_name
+            )
+        return response
 
     @property
     def action_prompt(self) -> MessageList:

@@ -432,8 +432,9 @@ class GUI(QMainWindow):
                 remote=self.args.remote,
                 runtime_server_addr=config.env_server_addr,
                 runtime_server_port=config.env_server_port,
-                prompt_approach=args.prompting_approach,
                 feedback_model=args.feedback_model,
+                prompt_approach=args.prompting_approach,
+                feedback_prompt_approach=args.feedback_prompting_approach,
             )
         else:
             self.agent = setup_agent(
@@ -1059,6 +1060,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 results_dir=results_dir / timestamp,
                 feedback_model=args.feedback_model,
                 prompt_approach=args.prompting_approach,
+                feedback_prompt_approach=args.feedback_prompting_approach,
             )
         else:
             agent = setup_agent(
@@ -1305,6 +1307,12 @@ def main():
     parser.add_argument("--agent", type=str, default="direct", help="Agent type")
     parser.add_argument(
         "--prompting_approach", type=str, default="naive", help="Prompting approach"
+    )
+    parser.add_argument(
+        "--feedback_prompting_approach",
+        type=str,
+        default="direct",
+        help="Feedback prompting approach",
     )
     parser.add_argument("--task_configs_path", type=str, help="Path to the task config")
     parser.add_argument(
