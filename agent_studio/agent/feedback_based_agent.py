@@ -29,6 +29,7 @@ class FeedbackBasedAgent(BaseAgent):
         prompt_approach: str = "naive",
         feedback_model: str = "gpt-4o-2024-08-06",
         feedback_prompt_approach: str = "direct",
+        max_critique_attempts: int = 3,
     ) -> None:
         """Initialize everything the same way as the parent class, but also
         initialize a feedback model and buffer."""
@@ -61,10 +62,11 @@ class FeedbackBasedAgent(BaseAgent):
         self.feedback_model_name = feedback_model
         self.feedback_prompt_approach = feedback_prompt_approach
         self._plan_criticized = False
-        if self.feedback_prompt_approach == "plan-critique":
+        self.max_critique_attempts = max_critique_attempts
+        if self.feedback_prompt_approach == "plan_critique":
             assert (
                 prompt_approach == "bilevel_planning"
-            ), "Plan-critique only works with bilevel planning prompting."
+            ), "plan_critique only works with bilevel planning prompting."
 
     @property
     def feedback_model_prompt(self) -> MessageList:
@@ -95,7 +97,8 @@ class FeedbackBasedAgent(BaseAgent):
                 f"Error(s) from execution:\n{self.trajectory[-1].result}",
             )
         )
-        if self.obs is not None:
+        if self.obs is not None and self.feedback_prompt_approach != "plan_critique":
+            # Plan critique doesn't use observations.
             messages.append(Message(role="user", content=self.obs))
         return messages
 
@@ -113,22 +116,35 @@ class FeedbackBasedAgent(BaseAgent):
         logger.debug(f"Response: {response}")
         assert response is not None, "Failed to generate response."
         self.total_tokens += info.get("total_tokens", 0)
-        # In the case of the plan-critique approach, we need to iterate feedback
+        # In the case of the plan_critique approach, we need to iterate feedback
         # until the feedback model is satisfied with the plan.
         if (
-            self.feedback_prompt_approach == "plan-critique"
+            self.feedback_prompt_approach == "plan_critique"
             and not self._plan_criticized
         ):
-            while True:
+            for _ in range(self.max_critique_attempts):
+                # Extract the action from the response and add it to the
+                # trajectory - needed to setup the proper prompt for the
+                # feedback model.
+                action = extract_from_response(response).strip()
+                step_info = StepInfo(
+                    obs=obs,
+                    prompt=prompt,
+                    response=response,
+                    action=action,
+                    info=info,
+                    result={},
+                    timestamp=0.0,
+                )
+                step_info.timestamp = time.time()
+                self.trajectory.append(step_info)
+                # Get feedback.
                 feedback_prompt = self.feedback_model_prompt
                 feedback_response = self._query_feedback_model(feedback_prompt)
                 self.feedback_history.append(
                     Message(role="assistant", content=feedback_response)
                 )
-                if (
-                    len(feedback_response) > 0
-                    and "No feedback." not in feedback_response
-                ):
+                if len(feedback_response) > 0 and "No feedback." in feedback_response:
                     break
                 else:
                     logger.info("Feedback model is not satisfied with the plan.")
@@ -187,9 +203,11 @@ class FeedbackBasedAgent(BaseAgent):
             step_info.timestamp = time.time()
             self.trajectory.append(step_info)
             # Get feedback.
-            if self.feedback_prompt_approach != "plan-critique":
+            if self.feedback_prompt_approach != "plan_critique":
                 feedback_prompt = self.feedback_model_prompt
+                logger.debug(f"Prompt: {feedback_prompt}")
                 response = self._query_feedback_model(feedback_prompt)
+                logger.debug(f"Response: {response}")
                 self.feedback_history.append(
                     Message(role="assistant", content=response)
                 )
@@ -212,9 +230,11 @@ class FeedbackBasedAgent(BaseAgent):
             logger.info(feedback_prompt)
             response = input("Feedback: ")
         else:
+            logger.debug(f"Feedback Prompt: {feedback_prompt}")
             response, info = self.feedback_model.generate_response(
                 messages=feedback_prompt, model=self.feedback_model_name
             )
+            logger.debug(f"Feedback Response: {response}")
         return response
 
     @property
