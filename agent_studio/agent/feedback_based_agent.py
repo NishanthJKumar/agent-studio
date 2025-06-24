@@ -111,9 +111,9 @@ class FeedbackBasedAgent(BaseAgent):
         self.obs = obs
         prompt = self.action_prompt
         assert prompt is not None, "Invalid prompt"
-        logger.debug(f"Prompt: {prompt}")
+        logger.info(f"Prompt: {prompt}")
         response, info = self.model.generate_response(messages=prompt, model=model_name)
-        logger.debug(f"Response: {response}")
+        logger.info(f"Response: {response}")
         assert response is not None, "Failed to generate response."
         self.total_tokens += info.get("total_tokens", 0)
         # In the case of the plan_critique approach, we need to iterate feedback
@@ -140,9 +140,9 @@ class FeedbackBasedAgent(BaseAgent):
                 self.trajectory.append(step_info)
                 # Get feedback.
                 feedback_prompt = self.feedback_model_prompt
-                logger.debug(f"Feedback Prompt: {feedback_prompt}")
+                logger.info(f"Feedback Prompt: {feedback_prompt}")
                 feedback_response = self._query_feedback_model(feedback_prompt)
-                logger.debug(f"Feedback Response: {feedback_response}")
+                logger.info(f"Feedback Response: {feedback_response}")
                 self.feedback_history.append(
                     Message(role="assistant", content=feedback_response)
                 )
@@ -152,11 +152,11 @@ class FeedbackBasedAgent(BaseAgent):
                     logger.info("Feedback model is not satisfied with the plan.")
                     prompt = self.action_prompt
                     assert prompt is not None
-                    logger.debug(f"Prompt: {prompt}")
+                    logger.info(f"Prompt: {prompt}")
                     response, info = self.model.generate_response(
                         messages=prompt, model=model_name
                     )
-                    logger.debug(f"Response: {response}")
+                    logger.info(f"Response: {response}")
             self._plan_criticized = True
             # We need to pop the last step from the trajectory since it
             # will get added back.
@@ -210,9 +210,9 @@ class FeedbackBasedAgent(BaseAgent):
             # Get feedback.
             if self.feedback_prompt_approach != "plan_critique":
                 feedback_prompt = self.feedback_model_prompt
-                logger.debug(f"Prompt: {feedback_prompt}")
+                logger.info(f"Prompt: {feedback_prompt}")
                 response = self._query_feedback_model(feedback_prompt)
-                logger.debug(f"Response: {response}")
+                logger.info(f"Response: {response}")
                 self.feedback_history.append(
                     Message(role="assistant", content=response)
                 )
@@ -235,11 +235,11 @@ class FeedbackBasedAgent(BaseAgent):
             logger.info(feedback_prompt)
             response = input("Feedback: ")
         else:
-            logger.debug(f"Feedback Prompt: {feedback_prompt}")
+            logger.info(f"Feedback Prompt: {feedback_prompt}")
             response, info = self.feedback_model.generate_response(
                 messages=feedback_prompt, model=self.feedback_model_name
             )
-            logger.debug(f"Feedback Response: {response}")
+            logger.info(f"Feedback Response: {response}")
         return response
 
     @property
