@@ -187,6 +187,9 @@ pretrained_model_cache/*
 web.log.1
 web.log.2
 web.log.3
+agent_server.err.log.1
 eval_online_benchmarks/data/*
 *.err
 data/*
+
+*.sif
