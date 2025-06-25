@@ -9,7 +9,7 @@
       "function": "verify_ini",
       "params": {
         "target_path": "${AS_ROOT}/tmp/config/settings.ini",
-        "ref_path": "data/4e95c9af-ed12-473f-901a-3100d61c80d4/settings_ref.ini"
+        "ref_path": "${AS_ROOT}/data/4e95c9af-ed12-473f-901a-3100d61c80d4/settings_ref.ini"
       }
     }
   ],

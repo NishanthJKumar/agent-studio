@@ -259,6 +259,7 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
             result["total_task_count"] += 1
             if len(results) == 0:
                 result["unfinished_task_count"] += 1
+                print(f"Unfinished task: {dir}")
             else:
                 result["finished_task_count"] += 1
                 if results[0].score > 0:
@@ -266,6 +267,7 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
                 else:
                     if results[0].error_in_eval:
                         result["error_task_count"] += 1
+                        print(f"Error task: {dir}")
                     else:
                         result["fail_task_count"] += 1
     result["average_score"] = (
