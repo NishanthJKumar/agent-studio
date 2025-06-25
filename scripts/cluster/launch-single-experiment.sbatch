@@ -12,6 +12,25 @@ USER="njkmr"
 PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/os/1d6765b3-b744-4aa4-8287-d14e6d3cddac.json"
 MODEL_NAME="gpt-4o-2024-08-06"
 
+# Generate random port numbers
+generate_random_port() {
+  while :; do
+    PORT=$((RANDOM % 64512 + 1024))  # Ports between 1024 and 65535
+    if ! netstat -tuln | grep -q ":$PORT "; then
+      echo $PORT
+      return
+    fi
+  done
+}
+
+ENV_SERVER_PORT=$(generate_random_port)
+VNC_PORT=$(generate_random_port)
+
+# Modify the config file
+CONFIG_FILE="/home/$USER/agent-studio/agent_studio/config/config.py"
+sed -i "s/vnc_port: int = [0-9]*/vnc_port: int = $VNC_PORT/" $CONFIG_FILE
+sed -i "s/env_server_port: int = [0-9]*/env_server_port: int = $ENV_SERVER_PORT/" $CONFIG_FILE
+
 echo "Starting server on node $(hostname)..."
 
 # Step 1: Launch the server
@@ -25,9 +44,11 @@ apptainer exec --no-home --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot \
   --bind supervisor_logs/:/var/log agent-studio-server.sif /home/ubuntu/agent_studio/scripts/docker_startup.sh &
 SERVER_PID=$!
 echo "Server launched with PID $SERVER_PID"
+
 # Step 2: Wait for the server to be ready
 echo "Waiting for the server to be ready..."
 sleep 10  # Adjust the sleep duration as needed
+
 # Step 3: Launch the client with retry logic
 echo "Starting client..."
 RETRIES=5
@@ -36,10 +57,8 @@ for ((i=1; i<=RETRIES; i++)); do
     --bind /home/$USER/agent-studio/:/home/ubuntu/agent_studio/ \
     agent-studio-client.sif /bin/bash -c "
       cd /home/ubuntu/agent_studio
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --remote
+      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --remote
     "
-
-# as-online-benchmark --agent feedback --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --prompting_approach bilevel_planning --feedback_prompting_approach plan_critique --feedback_model $MODEL_NAME --remote
 
   if [ $? -eq 0 ]; then
     echo "Client successfully connected and completed its task."
@@ -48,6 +67,7 @@ for ((i=1; i<=RETRIES; i++)); do
   echo "Client connection attempt $i failed, retrying..."
   sleep 5  # Wait before retrying
 done
+
 # Step 4: Clean up
 echo "Killing server process with PID $SERVER_PID"
 kill $SERVER_PID
