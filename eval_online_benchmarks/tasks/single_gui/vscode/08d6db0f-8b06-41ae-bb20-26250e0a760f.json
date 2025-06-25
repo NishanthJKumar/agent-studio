@@ -52,7 +52,7 @@
       "evaluator": "filesystem",
       "function": "copy",
       "params": {
-        "src": "data/08d6db0f-8b06-41ae-bb20-26250e0a760f/eamodio.gitlens-2024.3.604.vsix",
+        "src": "${AS_ROOT}/data/08d6db0f-8b06-41ae-bb20-26250e0a760f/eamodio.gitlens-2024.3.604.vsix",
         "dest": "${AS_ROOT}/vscode_workspace/extensions/my_extension.vsix"
       }
     },

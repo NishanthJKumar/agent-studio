@@ -9,7 +9,7 @@
       "function": "match_file",
       "params": {
         "file_to_check": {
-          "${AS_ROOT}/vscode_workspace/script.js": "data/083bee5b-24c1-43f9-9644-d1d04926000b/ref.js"
+          "${AS_ROOT}/vscode_workspace/script.js": "${AS_ROOT}/data/083bee5b-24c1-43f9-9644-d1d04926000b/ref.js"
         }
       }
     }

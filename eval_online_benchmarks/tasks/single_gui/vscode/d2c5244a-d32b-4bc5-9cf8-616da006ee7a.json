@@ -55,7 +55,7 @@
       "evaluator": "filesystem",
       "function": "copy",
       "params": {
-        "src": "data/d2c5244a-d32b-4bc5-9cf8-616da006ee7a/vscode_workspace.code-workspace",
+        "src": "${AS_ROOT}/data/d2c5244a-d32b-4bc5-9cf8-616da006ee7a/vscode_workspace.code-workspace",
         "dest": "${AS_ROOT}/vscode_workspace/vscode_workspace.code-workspace"
       }
     },

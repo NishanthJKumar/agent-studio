@@ -9,7 +9,7 @@
       "function": "match_file",
       "params": {
         "file_to_check": {
-          "${AS_ROOT}/vscode_workspace/example_file.txt": "data/1c0ab6a9-2bde-49e7-9b9c-ab579ab3eab7/ref_file.txt"
+          "${AS_ROOT}/vscode_workspace/example_file.txt": "${AS_ROOT}/data/1c0ab6a9-2bde-49e7-9b9c-ab579ab3eab7/ref_file.txt"
         }
       }
     }
@@ -40,7 +40,7 @@
       "evaluator": "filesystem",
       "function": "copy",
       "params": {
-        "src": "data/1c0ab6a9-2bde-49e7-9b9c-ab579ab3eab7/example_file.txt",
+        "src": "${AS_ROOT}/data/1c0ab6a9-2bde-49e7-9b9c-ab579ab3eab7/example_file.txt",
         "dest": "${AS_ROOT}/vscode_workspace/example_file.txt"
       }
     },
