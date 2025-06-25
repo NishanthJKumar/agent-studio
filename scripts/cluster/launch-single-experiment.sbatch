@@ -38,6 +38,9 @@ for ((i=1; i<=RETRIES; i++)); do
       cd /home/ubuntu/agent_studio
       as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --remote
     "
+
+# as-online-benchmark --agent feedback --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --prompting_approach bilevel_planning --feedback_prompting_approach plan_critique --feedback_model $MODEL_NAME --remote
+
   if [ $? -eq 0 ]; then
     echo "Client successfully connected and completed its task."
     break

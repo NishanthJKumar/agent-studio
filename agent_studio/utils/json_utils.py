@@ -236,6 +236,7 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
         "succ_task_count": 0,
         "fail_task_count": 0,
         "error_task_count": 0,
+        "sub_reports": {},
     }
     for dir in task_config_dir.iterdir():
         if dir.is_dir():
@@ -246,6 +247,7 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
             result["succ_task_count"] += report["succ_task_count"]
             result["fail_task_count"] += report["fail_task_count"]
             result["error_task_count"] += report["error_task_count"]
+            result["sub_reports"][dir.name] = report
         else:
             task_configs = read_task_jsons(dir)
             assert (
@@ -271,16 +273,18 @@ def make_report2(task_config_dir: Path, result_dir: Path, depth: int = 0) -> dic
         if result["finished_task_count"] > 0
         else 0
     )
+    return result
+
+
+def print_report(report, name="overall", depth=0):
     indent = "    " * depth
     print(
-        f"{indent}{task_config_dir.name: <20}: "
-        f"score: {result['average_score']: <10.2f}, "
-        f"succ: {result['succ_task_count']: <10}, "
-        f"fail: {result['fail_task_count']: <10}, "
-        f"error: {result['error_task_count']: <10}, "
-        f"total: {result['total_task_count']: <10}, "
+        f"{indent}{name: <20}: succ. rate: {report['average_score']: <.2f}, "
+        f"succ: {report['succ_task_count']}, fail: {report['fail_task_count']}, "
+        f"tot: {report['total_task_count']}"
     )
-    return result
+    for sub_name, sub_report in report["sub_reports"].items():
+        print_report(sub_report, sub_name, depth + 1)
 
 
 def load_result(result_dir: Path) -> TaskResult:

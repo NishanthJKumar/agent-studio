@@ -10,10 +10,7 @@ class Config(metaclass=ThreadSafeSingleton):
     Singleton for config.
     """
 
-    api_key_path: str = (
-        "/home/ubuntu/agent_studio/agent_studio/config/api_key.json"
-        # "agent_studio/config/api_key.json" # for docker!
-    )
+    api_key_path: str = "/home/ubuntu/agent_studio/agent_studio/config/api_key.json"
     headless: bool = False  # True for CLI, False for GUI
     remote: bool = True  # True for remote, False for local
     min_action_interval: float = 3.0
@@ -56,13 +53,23 @@ class Config(metaclass=ThreadSafeSingleton):
     # QA config
     qa_answer_pattern: str = r"\[\[\[(.*?)\]\]\]"
 
-    env_vars: dict[str, str] = {
-        "AS_ROOT": "/home/ubuntu/agent_studio", #Path(os.getcwd()).as_posix(),
-        "AS_HOME": Path(os.path.expanduser("~")).as_posix(),
-        "AS_TEST": "test",
-        "AS_GMAIL_RECIPIENT": json.load(open(api_key_path))["gmail_recipient"],
-        "AS_GCALENDAR_ID": json.load(open(api_key_path))["google_calendar_id"],
-    }
+    try:
+        env_vars: dict[str, str] = {
+            "AS_ROOT": "/home/ubuntu/agent_studio",  # Path(os.getcwd()).as_posix(),
+            "AS_HOME": Path(os.path.expanduser("~")).as_posix(),
+            "AS_TEST": "test",
+            "AS_GMAIL_RECIPIENT": json.load(open(api_key_path))["gmail_recipient"],
+            "AS_GCALENDAR_ID": json.load(open(api_key_path))["google_calendar_id"],
+        }
+    except (FileNotFoundError, PermissionError):
+        api_key_path = "agent_studio/config/api_key.json"  # for display script/docker!
+        env_vars: dict[str, str] = {
+            "AS_ROOT": "/home/ubuntu/agent_studio",  # Path(os.getcwd()).as_posix(),
+            "AS_HOME": Path(os.path.expanduser("~")).as_posix(),
+            "AS_TEST": "test",
+            "AS_GMAIL_RECIPIENT": json.load(open(api_key_path))["gmail_recipient"],
+            "AS_GCALENDAR_ID": json.load(open(api_key_path))["google_calendar_id"],
+        }
 
     def __init__(self) -> None:
         with open(self.api_key_path, "r") as f:

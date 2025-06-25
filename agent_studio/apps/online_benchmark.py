@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import datetime
 import logging
+import os
 import sys
 import threading
 import time
@@ -45,11 +46,15 @@ from PyQt6.QtWidgets import (
 from tqdm import tqdm
 
 # Import Xvfb and start the display before anything else!
-from xvfbwrapper import Xvfb
-
 # isort: off
-vdisplay = Xvfb()
-vdisplay.start()
+SKIP_XVFB = os.getenv("SKIP_XVFB", "false").lower() == "true"
+if not SKIP_XVFB:
+    from xvfbwrapper import Xvfb
+
+    vdisplay = Xvfb()
+    vdisplay.start()
+else:
+    vdisplay = None
 # isort: on
 
 from agent_studio.agent import setup_agent
@@ -400,7 +405,7 @@ class GUI(QMainWindow):
         self.args = args
         self.remote = remote
         self.results_dir = Path(
-            f"{self.args.log_dir}/{self.args.model}/{self.args.agent}"
+            f"{args.log_dir}/{args.model}/{args.agent}/{args.prompting_approach}"
         )
         self.task_config_path = Path(self.args.task_configs_path)
         # Setup tasks
@@ -428,6 +433,8 @@ class GUI(QMainWindow):
                 runtime_server_addr=config.env_server_addr,
                 runtime_server_port=config.env_server_port,
                 feedback_model=args.feedback_model,
+                prompt_approach=args.prompting_approach,
+                feedback_prompt_approach=args.feedback_prompting_approach,
             )
         else:
             self.agent = setup_agent(
@@ -436,6 +443,7 @@ class GUI(QMainWindow):
                 remote=self.args.remote,
                 runtime_server_addr=config.env_server_addr,
                 runtime_server_port=config.env_server_port,
+                prompt_approach=args.prompting_approach,
             )
 
         # self.task_thread: None | TaskThread = None
@@ -1037,7 +1045,9 @@ def wait_finish(is_eval: bool, response: AgentStudioStatusResponse):
 def eval(args, interface: NonGUI | None = None) -> None:
     try:
         # Setup agent
-        results_dir = Path(f"{args.log_dir}/{args.model}/{args.agent}")
+        results_dir = Path(
+            f"{args.log_dir}/{args.model}/{args.agent}/{args.prompting_approach}"
+        )
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         (results_dir / timestamp).mkdir(parents=True, exist_ok=True)
         if args.agent == "feedback":
@@ -1049,6 +1059,8 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 runtime_server_port=config.env_server_port,
                 results_dir=results_dir / timestamp,
                 feedback_model=args.feedback_model,
+                prompt_approach=args.prompting_approach,
+                feedback_prompt_approach=args.feedback_prompting_approach,
             )
         else:
             agent = setup_agent(
@@ -1058,6 +1070,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 runtime_server_addr=config.env_server_addr,
                 runtime_server_port=config.env_server_port,
                 results_dir=results_dir / timestamp,
+                prompt_approach=args.prompting_approach,
             )
 
         # Setup tasks
@@ -1292,6 +1305,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, help="Model name")
     parser.add_argument("--agent", type=str, default="direct", help="Agent type")
+    parser.add_argument(
+        "--prompting_approach", type=str, default="naive", help="Prompting approach"
+    )
+    parser.add_argument(
+        "--feedback_prompting_approach",
+        type=str,
+        default="direct",
+        help="Feedback prompting approach",
+    )
     parser.add_argument("--task_configs_path", type=str, help="Path to the task config")
     parser.add_argument(
         "--log_dir",
@@ -1393,5 +1415,6 @@ if __name__ == "__main__":
     try:
         main()
     finally:
-        # Stop the virtual Xvfb display
-        vdisplay.stop()
+        # Stop the virtual Xvfb display if it was started
+        if vdisplay is not None:
+            vdisplay.stop()

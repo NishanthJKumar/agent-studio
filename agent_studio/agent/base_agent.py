@@ -35,6 +35,7 @@ class BaseAgent:
         runtime_server_addr: str,
         runtime_server_port: int,
         results_dir: Path,
+        prompt_approach: str = "naive",
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
         model_manager = ModelManager()
@@ -79,14 +80,7 @@ class BaseAgent:
         prompt = self.action_prompt
         assert prompt is not None, "Invalid prompt"
         logger.debug(f"Prompt: {prompt}")
-
         response, info = self.model.generate_response(messages=prompt, model=model_name)
-
-        # print(response)
-        # import ipdb
-
-        # ipdb.set_trace()
-
         logger.debug(f"Response: {response}")
         assert response is not None, "Failed to generate response."
         self.total_tokens += info.get("total_tokens", 0)
