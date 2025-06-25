@@ -61,7 +61,7 @@ class Config(metaclass=ThreadSafeSingleton):
             "AS_GMAIL_RECIPIENT": json.load(open(api_key_path))["gmail_recipient"],
             "AS_GCALENDAR_ID": json.load(open(api_key_path))["google_calendar_id"],
         }
-    except FileNotFoundError:
+    except (FileNotFoundError, PermissionError):
         api_key_path = "agent_studio/config/api_key.json"  # for display script/docker!
         env_vars: dict[str, str] = {
             "AS_ROOT": "/home/ubuntu/agent_studio",  # Path(os.getcwd()).as_posix(),
