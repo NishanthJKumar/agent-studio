@@ -3,7 +3,6 @@ from pathlib import Path
 from agent_studio.agent.base_agent import BaseAgent
 from agent_studio.utils.types import Message, MessageList
 
-
 class DirectAgent(BaseAgent):
     """Zero-shot agents."""
 
