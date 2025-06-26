@@ -36,7 +36,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/LibreOffice_Open_Source_Word_Processing.docx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

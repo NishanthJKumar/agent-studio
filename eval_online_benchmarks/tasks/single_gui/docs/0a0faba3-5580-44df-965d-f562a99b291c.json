@@ -41,7 +41,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/04_CHIN9505_EBook_Purchasing_info_2021_Jan.docx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

@@ -45,7 +45,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/Table_Of_Work_Effort_Instructions.docx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

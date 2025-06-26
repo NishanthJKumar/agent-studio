@@ -37,7 +37,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/sample-recruitment-phone-script.odt"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

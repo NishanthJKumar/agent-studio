@@ -37,7 +37,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/HK_train_record.docx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {
