@@ -37,7 +37,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/GEOG2169_Course_Outline_2022-23.docx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

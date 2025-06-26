@@ -49,7 +49,7 @@
           "libreoffice",
           "${AS_ROOT}/slides/31_2.pptx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

@@ -37,7 +37,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/NOVEL_Submission_Guidelines.docx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

@@ -40,7 +40,7 @@
           "libreoffice",
           "${AS_ROOT}/slides/9_1.pptx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {
