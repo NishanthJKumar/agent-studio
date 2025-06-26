@@ -52,7 +52,7 @@
           "libreoffice",
           "${AS_ROOT}/sheets/EntireSummerSales.xlsx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

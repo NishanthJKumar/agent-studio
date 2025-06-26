@@ -46,7 +46,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/H2O_Factsheet_WA.docx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

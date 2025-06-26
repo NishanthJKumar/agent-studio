@@ -41,7 +41,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/CCCH9003_Tutorial_guidelines.docx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

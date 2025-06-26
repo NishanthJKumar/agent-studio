@@ -40,7 +40,7 @@
           "libreoffice",
           "${AS_ROOT}/slides/Secrets-of-Monetizing-Video.pptx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

@@ -45,7 +45,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/Viewing_Your_Class_Schedule_and_Textbooks.docx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

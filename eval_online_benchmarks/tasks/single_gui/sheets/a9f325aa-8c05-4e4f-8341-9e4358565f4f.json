@@ -46,7 +46,7 @@
           "libreoffice",
           "${AS_ROOT}/sheets/Movie_titles_garbage_clean.xlsx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

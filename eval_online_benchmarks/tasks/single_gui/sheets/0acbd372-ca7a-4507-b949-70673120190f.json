@@ -46,7 +46,7 @@
           "libreoffice",
           "${AS_ROOT}/sheets/NetIncome.xlsx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

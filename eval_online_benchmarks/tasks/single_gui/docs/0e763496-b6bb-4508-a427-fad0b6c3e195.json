@@ -39,7 +39,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/Dublin_Zoo_Intro.docx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

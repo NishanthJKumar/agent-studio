@@ -63,7 +63,7 @@
           "libreoffice",
           "${AS_ROOT}/sheets/Customers_New_7digit_Id.xlsx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

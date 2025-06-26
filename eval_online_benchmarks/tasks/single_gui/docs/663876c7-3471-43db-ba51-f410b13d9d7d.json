@@ -45,7 +45,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/Factoring_Perfect_Square_Trinomials.docx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {
@@ -56,7 +56,7 @@
           "libreoffice",
           "${AS_ROOT}/docs/Factoring_Perfect_Square_Trinomials_Gold.docx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

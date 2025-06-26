@@ -38,7 +38,7 @@
           "libreoffice",
           "${AS_ROOT}/slides/MLA_Workshop_061X_Works_Cited.pptx"
         ],
-        "wait_for": "libreoffice"
+        "wait_for": "soffice"
       }
     },
     {

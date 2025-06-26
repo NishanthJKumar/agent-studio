@@ -67,6 +67,9 @@ class ProcessEvaluator(Evaluator):
             FeedbackException: If the process creation fails.
         """
         logging.info(f"Creating process with command: {cmd}")
+        # IMPORTANT: this needs to be set as below for the process to pop
+        # up in the gui properly!
+        os.environ["DISPLAY"] = ":1"
         try:
             process = subprocess.Popen(cmd)
         except Exception as e:
