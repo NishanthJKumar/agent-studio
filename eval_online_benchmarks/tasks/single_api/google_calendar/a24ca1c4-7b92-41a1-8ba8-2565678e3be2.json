@@ -2,7 +2,7 @@
   "task_id": "a24ca1c4-7b92-41a1-8ba8-2565678e3be2",
   "instruction": "Add the email 'jane@example.com' as attendees to the 'Project Kickoff' event on 2024-03-15 in Google Calendar. The calendar id is '${AS_GCALENDAR_ID}'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "google_calendar",

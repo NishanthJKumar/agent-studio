@@ -2,7 +2,7 @@
   "task_id": "ffcae34c-6301-407a-a87b-008c8efb6377",
   "instruction": "Mark the most recent sent email in Gmail with 'Automated Email' in the subject as important.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "gmail",

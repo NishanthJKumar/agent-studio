@@ -2,7 +2,7 @@
   "task_id": "cc3553b2-93da-4a3d-a461-459a2cc030cb",
   "instruction": "Move 'draft.txt' from '${AS_ROOT}/tmp/' to '${AS_ROOT}/tmp/archive/'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "filesystem",

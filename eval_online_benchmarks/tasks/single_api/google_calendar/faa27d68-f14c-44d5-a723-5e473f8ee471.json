@@ -2,7 +2,7 @@
   "task_id": "faa27d68-f14c-44d5-a723-5e473f8ee471",
   "instruction": "Create an 'Annual Strategy Meeting' event on 2024-06-15 from 2pm to 4pm, invite 'ceo@example.com', and set a pop-up reminder 30 minutes before in Google Calendar. The calendar id is '${AS_GCALENDAR_ID}'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "google_calendar",

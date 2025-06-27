@@ -2,7 +2,7 @@
   "task_id": "d96709c3-b648-44aa-8f92-7cbaba84bbd0",
   "instruction": "In a document titled 'Formatting Guide', change the font of the text 'important note' to Arial and size 14 in Google Docs.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "google_docs",

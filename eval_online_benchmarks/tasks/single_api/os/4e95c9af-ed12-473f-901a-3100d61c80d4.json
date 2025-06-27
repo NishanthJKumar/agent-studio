@@ -2,7 +2,7 @@
   "task_id": "4e95c9af-ed12-473f-901a-3100d61c80d4",
   "instruction": "In the '${AS_ROOT}/tmp/config/' directory, find the 'settings.ini' file and update the value of 'max_connections' under the '[Database]' section to '150'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "filesystem",
