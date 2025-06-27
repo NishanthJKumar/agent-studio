@@ -2,7 +2,7 @@
   "task_id": "314cad7b-f4d1-43c4-a332-605cbc948592",
   "instruction": "There are three data files stored in '${AS_ROOT}/tmp/data/'. Calculate the average of numbers in 'data1.txt', 'data2.txt', and 'data3.txt' and store it in 'average.txt' in '${AS_ROOT}/tmp/data/'. The average should be rounded to the nearest whole number. Each data file contains a set of numbers separated by a newline character.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "filesystem",

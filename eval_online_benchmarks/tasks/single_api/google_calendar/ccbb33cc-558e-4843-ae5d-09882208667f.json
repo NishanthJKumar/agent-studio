@@ -2,7 +2,7 @@
   "task_id": "ccbb33cc-558e-4843-ae5d-09882208667f",
   "instruction": "Cancel the 'Client Presentation' event scheduled on 2024-04-22 from 2pm to 3pm in Google Calendar. The calendar id is '${AS_GCALENDAR_ID}'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "google_calendar",

@@ -9,7 +9,7 @@ import numpy as np
 from agent_studio.llm import ModelManager
 from agent_studio.llm.utils import extract_from_response
 from agent_studio.utils.runtime import PythonRuntime, RemotePythonRuntime
-from agent_studio.utils.types import MessageList, StepInfo, TaskConfig
+from agent_studio.utils.types import Message, MessageList, StepInfo, TaskConfig
 
 logger = logging.getLogger(__name__)
 
@@ -79,12 +79,26 @@ class BaseAgent:
         self.obs = obs
         prompt = self.action_prompt
         assert prompt is not None, "Invalid prompt"
-        logger.debug(f"Prompt: {prompt}")
+        # logger.debug(f"Prompt: {prompt}")
         response, info = self.model.generate_response(messages=prompt, model=model_name)
-        logger.debug(f"Response: {response}")
+        # logger.debug(f"Response: {response}")
         assert response is not None, "Failed to generate response."
         self.total_tokens += info.get("total_tokens", 0)
         action = extract_from_response(response).strip()
+        if action == "":
+            logger.info("Output response didn't contain action; trying again!")
+            new_message = Message(
+                role="user",
+                content=f"ERROR! You just output {response}. However, this "
+                "did not contain a valid ```python``` code block. Please "
+                "try again and ensure your response contains a valid "
+                "```python``` codeblock.",
+            )
+            response, info = self.model.generate_response(
+                messages=prompt + [new_message], model=model_name
+            )
+            self.total_tokens += info.get("total_tokens", 0)
+            action = extract_from_response(response).strip()
 
         # Logging model outputs.
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")

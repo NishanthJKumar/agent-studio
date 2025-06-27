@@ -2,7 +2,7 @@
   "task_id": "9e3072d3-9c76-4e93-926a-5c599b7689b8",
   "instruction": "Create an event called 'Meeting with Team' with location at 'Office' on 2024-01-05 10am to 11am to 'Discuss project status' in Google Calendar. The calendar id is '${AS_GCALENDAR_ID}'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "google_calendar",

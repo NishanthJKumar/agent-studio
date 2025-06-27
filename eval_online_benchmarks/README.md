@@ -172,7 +172,7 @@ Example task:
     "task_id": "uuid string",
     "instruction": "Task instruction for the agent to complete",
     "visual": false,
-    "max_steps": 1,
+    "max_steps": 10,
     "max_time": 60,
     "eval_procedure": [
         {

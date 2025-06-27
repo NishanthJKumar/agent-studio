@@ -2,7 +2,7 @@
   "task_id": "31c509db-8a88-4112-940c-5db78819dfec",
   "instruction": "Create two files in '${AS_ROOT}/tmp/data/' directory: 'report1.txt' with content 'Report 1 data' and 'report2.txt' with content 'Report 2 data'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "filesystem",

@@ -2,7 +2,7 @@
   "task_id": "f428be13-f44a-4524-b2d1-3483c0ea1fe3",
   "instruction": "Delete all emails with subject 'Automated Email', 'AutoPlan1', 'AutoPlan2', 'Automated travel agent', and 'Automated travel plan' in Gmail.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "gmail",

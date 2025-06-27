@@ -2,7 +2,7 @@
   "task_id": "a1234567-8b90-4cde-f012-3456789abcde",
   "instruction": "Create a team meeting event in Google Calendar called 'Weekly Sync' at 2pm for 3 hour starting from 2024-04-02, with an email reminder 1 hour before. The calendar id is '${AS_GCALENDAR_ID}'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "google_calendar",

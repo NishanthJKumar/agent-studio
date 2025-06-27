@@ -2,7 +2,7 @@
   "task_id": "57a29306-f576-43ea-af08-9c3ca6da3469",
   "instruction": "A paper about AI regulation that was originally submitted to arXiv.org in June 2022 shows a figure with three axes, where each axis has a label word at both ends. Which of these words is used to describe a type of society in a Physics and Society article submitted to arXiv.org on August 11, 2016? Please create a new document with title 'Answer Document' and content containing the answer word in lowercase in Google Docs.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "google_docs",
