@@ -29,4 +29,5 @@ WORKDIR /home/ubuntu/agent_studio
 RUN python3 -m pip install --upgrade pip && pip3 install -e .[server]
 RUN chmod +x /home/ubuntu/agent_studio/scripts/docker_startup.sh
 USER root
+EXPOSE 5090
 ENTRYPOINT ["/home/ubuntu/agent_studio/scripts/docker_startup.sh"]

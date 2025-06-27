@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Set VNC password if provided
 if [ -n "$VNC_PASSWORD" ]; then
     echo -n "$VNC_PASSWORD" > /tmp/.password1
@@ -65,6 +64,11 @@ fi
 # Make sure to not bind to a privileged port!
 sed -i 's|listen\s\+80\s\+default_server;|listen 8080;|' /etc/nginx/sites-enabled/default
 cat /etc/nginx/sites-enabled/default
+
+# Set default VNC port if not provided
+VNC_PORT=${VNC_PORT:-5090}
+# Update supervisord configuration for VNC port
+sed -i "s/-display :1/-display :1 -rfbport $VNC_PORT/" /etc/supervisor/conf.d/supervisord.conf
 
 # Clear sensitive environment variables
 PASSWORD=
