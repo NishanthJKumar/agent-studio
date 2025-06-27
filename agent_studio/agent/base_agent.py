@@ -79,16 +79,16 @@ class BaseAgent:
         self.obs = obs
         prompt = self.action_prompt
         assert prompt is not None, "Invalid prompt"
-        logger.debug(f"Prompt: {prompt}")
+        # logger.debug(f"Prompt: {prompt}")
         response, info = self.model.generate_response(messages=prompt, model=model_name)
-        logger.debug(f"Response: {response}")
+        # logger.debug(f"Response: {response}")
         assert response is not None, "Failed to generate response."
         self.total_tokens += info.get("total_tokens", 0)
         action = extract_from_response(response).strip()
         if action == "":
-            logger.debug("Output response didn't contain action; trying again!")
+            logger.info("Output response didn't contain action; trying again!")
             new_message = Message(
-                role="assistant",
+                role="user",
                 content=f"ERROR! You just output {response}. However, this "
                 "did not contain a valid ```python``` code block. Please "
                 "try again and ensure your response contains a valid "
