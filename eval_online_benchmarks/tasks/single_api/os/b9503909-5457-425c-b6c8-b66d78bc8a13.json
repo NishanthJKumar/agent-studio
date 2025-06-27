@@ -2,7 +2,7 @@
   "task_id": "b9503909-5457-425c-b6c8-b66d78bc8a13",
   "instruction": "Copy 'config.json' from '${AS_ROOT}/tmp/settings/' to '${AS_ROOT}/tmp/backup/'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "filesystem",

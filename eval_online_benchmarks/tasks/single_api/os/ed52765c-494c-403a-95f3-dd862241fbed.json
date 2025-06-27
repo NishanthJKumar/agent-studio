@@ -2,7 +2,7 @@
   "task_id": "ed52765c-494c-403a-95f3-dd862241fbed",
   "instruction": "Rename 'old_report.txt' to 'new_report.txt' in '${AS_ROOT}/tmp/reports/'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "filesystem",

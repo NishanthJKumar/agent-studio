@@ -2,7 +2,7 @@
   "task_id": "b87bf58e-326c-4106-b49c-247434785261",
   "instruction": "Untrash the email with subject 'Meeting reminder' and body containing 'conference call' in Gmail.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "gmail",

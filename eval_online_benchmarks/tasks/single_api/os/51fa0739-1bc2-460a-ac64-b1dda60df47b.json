@@ -2,7 +2,7 @@
   "task_id": "51fa0739-1bc2-460a-ac64-b1dda60df47b",
   "instruction": "Increment the number in 'count.txt' in '${AS_ROOT}/tmp/data/' by 1.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "filesystem",

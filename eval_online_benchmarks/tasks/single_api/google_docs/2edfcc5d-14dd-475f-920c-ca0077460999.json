@@ -2,7 +2,7 @@
   "task_id": "2edfcc5d-14dd-475f-920c-ca0077460999",
   "instruction": "In a document titled 'Hyperlink Guide' in Google Docs, delete the hyperlink with text 'Click Here' in the doc that directs to 'https://www.example.com'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "google_docs",

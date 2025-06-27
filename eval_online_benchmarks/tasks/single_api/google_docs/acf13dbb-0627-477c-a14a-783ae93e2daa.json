@@ -2,7 +2,7 @@
   "task_id": "acf13dbb-0627-477c-a14a-783ae93e2daa",
   "instruction": "Permanently delete all documents with title 'Sample Document' in Google Docs.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "google_drive",

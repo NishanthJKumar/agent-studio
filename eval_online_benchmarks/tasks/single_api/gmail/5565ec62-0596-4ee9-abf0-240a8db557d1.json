@@ -2,7 +2,7 @@
   "task_id": "5565ec62-0596-4ee9-abf0-240a8db557d1",
   "instruction": "In Gmail, create a label named 'Benchmarking Agent'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "gmail",

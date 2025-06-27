@@ -2,7 +2,7 @@
   "task_id": "f188a494-3dad-44cf-a43c-5e6bfdbdda0d",
   "instruction": "In a document titled 'Formatting Guide', change the font of 'This' to Times New Roman and size 24 in Google Docs.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "google_docs",

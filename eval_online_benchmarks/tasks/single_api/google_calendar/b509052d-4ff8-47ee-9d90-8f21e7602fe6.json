@@ -2,7 +2,7 @@
   "task_id": "b509052d-4ff8-47ee-9d90-8f21e7602fe6",
   "instruction": "In Google Calendar, reschedule the 'Team Sync' event originally on 2024-05-10 12:00 AM to 2024-05-12 at 2:00 PM. The calendar id is '${AS_GCALENDAR_ID}'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "google_calendar",

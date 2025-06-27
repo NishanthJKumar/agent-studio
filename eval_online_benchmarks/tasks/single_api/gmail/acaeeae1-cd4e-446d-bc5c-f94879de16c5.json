@@ -2,7 +2,7 @@
   "task_id": "acaeeae1-cd4e-446d-bc5c-f94879de16c5",
   "instruction": "In Gmail, delete the label named 'Benchmarking Agent'.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "gmail",

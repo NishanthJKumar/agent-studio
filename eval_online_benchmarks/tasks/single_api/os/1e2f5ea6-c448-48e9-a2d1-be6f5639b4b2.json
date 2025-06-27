@@ -2,7 +2,7 @@
   "task_id": "1e2f5ea6-c448-48e9-a2d1-be6f5639b4b2",
   "instruction": "Delete the file 'temporary.docx' in the '${AS_ROOT}/tmp/docs/' directory.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "filesystem",

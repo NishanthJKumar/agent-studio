@@ -2,7 +2,7 @@
   "task_id": "9e3072d3-9c77-4e93-926a-5c599b7689b8",
   "instruction": "Create an empty file named 'new_file.txt' in the '${AS_ROOT}/tmp/' directory.",
   "visual": false,
-  "max_steps": 1,
+  "max_steps": 10,
   "eval_procedure": [
     {
       "evaluator": "filesystem",
