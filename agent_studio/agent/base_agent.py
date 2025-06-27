@@ -95,7 +95,7 @@ class BaseAgent:
                 "```python``` codeblock.",
             )
             response, info = self.model.generate_response(
-                messages=prompt + new_message, model=model_name
+                messages=prompt + [new_message], model=model_name
             )
             self.total_tokens += info.get("total_tokens", 0)
             action = extract_from_response(response).strip()
