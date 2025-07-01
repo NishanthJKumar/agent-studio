@@ -89,13 +89,14 @@ class BaseAgent:
             logger.info("Output response didn't contain action; trying again!")
             new_message = Message(
                 role="user",
-                content=f"ERROR! You just output {response}. However, this "
+                content=f"ERROR! You just output '''{response}'''. However, this "
                 "did not contain a valid ```python``` code block. Please "
                 "try again and ensure your response contains a valid "
                 "```python``` codeblock.",
             )
+            error_recovery_prompt = prompt[:-1] + [new_message] + [prompt[-1]]
             response, info = self.model.generate_response(
-                messages=prompt + [new_message], model=model_name
+                messages=error_recovery_prompt, model=model_name
             )
             self.total_tokens += info.get("total_tokens", 0)
             action = extract_from_response(response).strip()
