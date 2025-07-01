@@ -86,6 +86,7 @@ if [ -n "$VNC_PORT" ]; then
     sed -i "s/target-port 5900/target-port $VNC_PORT/" /usr/local/lib/web/frontend/static/websockify/other/websockify.clj
 fi
 
+
 # Clear sensitive environment variables
 PASSWORD=
 HTTP_PASSWORD=
