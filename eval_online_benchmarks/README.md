@@ -80,6 +80,7 @@ You can browse `http://127.0.0.1:6080` to interact with the remote machine throu
 sbatch scripts/cluster/launch-single-experiment.sbatch
 ```
 You can set the config of what model, and what tasks you want to run, from within that `.sbatch` script.
+Similarly, you can also run the `launch-batch-experiments.sbatch` script to run multiple experiments in parallel.
 
 ## Task Description
 
