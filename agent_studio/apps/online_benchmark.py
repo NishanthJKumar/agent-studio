@@ -1091,9 +1091,6 @@ def eval(args, interface: NonGUI | None = None) -> None:
             try:
                 # Get remote env_vars
                 if args.remote:
-                    import ipdb
-
-                    ipdb.set_trace()
                     response_raw = requests.get(f"{REMOTE_SERVER_ADDR}/env_vars")
                     response = AgentStudioStatusResponse(**response_raw.json())
                     assert (
