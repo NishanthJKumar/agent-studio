@@ -78,10 +78,10 @@ else
     sed -i "s|listen\s\+80\s\+default_server;|listen 8080;|" /etc/nginx/sites-enabled/default
 fi
 
-# Set default VNC port if not provided
-VNC_PORT=${VNC_PORT:-5090}
-# Update supervisord configuration for VNC port
-sed -i "s/-display :1/-display :1 -rfbport $VNC_PORT/" /etc/supervisor/conf.d/supervisord.conf
+if [ -n "$VNC_PORT" ]; then
+    # Update supervisord configuration for VNC port
+    sed -i "s/-display :1/-display :1 -rfbport $VNC_PORT/" /etc/supervisor/conf.d/supervisord.conf
+fi
 
 # Clear sensitive environment variables
 PASSWORD=
