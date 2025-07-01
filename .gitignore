@@ -191,5 +191,6 @@ agent_server.err.log.1
 eval_online_benchmarks/data/*
 *.err
 data/*
+web/*
 
 *.sif

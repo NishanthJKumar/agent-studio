@@ -64,18 +64,19 @@ fi
 # Update Nginx configuration with dynamic ports
 if [ -n "$API_WEB_SOCKET" ]; then
     sed -i "s|proxy_pass http://127.0.0.1:6081;|proxy_pass http://127.0.0.1:$API_WEB_SOCKET;|" /etc/nginx/sites-enabled/default
+    sed -i "s/--listen 6081/--listen $API_WEB_SOCKET/" /etc/supervisor/conf.d/supervisord.conf
 fi
 
 if [ -n "$API_SOCKET" ]; then
     sed -i "s|proxy_pass http://127.0.0.1:6079;|proxy_pass http://127.0.0.1:$API_SOCKET;|" /etc/nginx/sites-enabled/default
+    sed -i "s/PORT = 6079/PORT = $API_SOCKET/" /usr/local/lib/web/backend/run.py
 fi
 
 if [ -n "$SERVER_SOCKET" ]; then
     sed -i "s|listen\s\+80\s\+default_server;|listen $SERVER_SOCKET;|" /etc/nginx/sites-enabled/default
+else
+    sed -i "s|listen\s\+80\s\+default_server;|listen 8080;|" /etc/nginx/sites-enabled/default
 fi
-
-# Make sure to not bind to a privileged port!
-cat /etc/nginx/sites-enabled/default
 
 # Set default VNC port if not provided
 VNC_PORT=${VNC_PORT:-5090}
@@ -97,6 +98,14 @@ stderr_logfile=/var/log/agent_server.err.log
 stdout_logfile=/var/log/agent_server.out.log
 environment=HOME="/home/ubuntu",USER="ubuntu",PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",LOGNAME="ubuntu",DISPLAY=":1.0",DONT_PROMPT_WSL_INSTALL=True
 EOF
+
+# Make sure to not bind to a privileged port!
+echo NGINX
+cat /etc/nginx/sites-enabled/default
+echo SUPERVISORD
+cat /etc/supervisor/conf.d/supervisord.conf
+echo RUN
+cat /usr/local/lib/web/backend/run.py
 
 # Start supervisord
 exec /bin/tini -- supervisord -n -c /etc/supervisor/supervisord.conf || {
