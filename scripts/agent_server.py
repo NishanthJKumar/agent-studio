@@ -286,8 +286,4 @@ if __name__ == "__main__":
         port = config.env_server_port
         logger.info(f"Port set to 0! Defaulting to value in config: {port}")
     logger.info(f"Starting agent server on port {port}")
-    uvicorn.run(
-        app,
-        host=config.env_server_host,
-        port=config.env_server_port,
-    )
+    uvicorn.run(app, host=config.env_server_host, port=port)

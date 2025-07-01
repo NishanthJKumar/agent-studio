@@ -1091,6 +1091,9 @@ def eval(args, interface: NonGUI | None = None) -> None:
             try:
                 # Get remote env_vars
                 if args.remote:
+                    import ipdb
+
+                    ipdb.set_trace()
                     response_raw = requests.get(f"{REMOTE_SERVER_ADDR}/env_vars")
                     response = AgentStudioStatusResponse(**response_raw.json())
                     assert (
@@ -1373,6 +1376,10 @@ def main():
         config.env_server_port = args.env_server_port
         config.vnc_port = args.vnc_port
         config.vnc_password = args.vnc_password
+
+    # Update the REMOTE_SERVER_ADDR
+    global REMOTE_SERVER_ADDR
+    REMOTE_SERVER_ADDR = f"http://{config.env_server_addr}:{config.env_server_port}"
 
     # Ensure a second screen is available.
     app = QApplication(sys.argv)
