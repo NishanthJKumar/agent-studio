@@ -2,7 +2,7 @@
 #SBATCH --job-name=agent_experiment
 #SBATCH --output=experiment.log
 #SBATCH --error=experiment.err
-#SBATCH --time=02:00:00  # Adjust the time as needed
+#SBATCH --time=10:00:00  # Adjust the time as needed
 
 # Define variables
 USER="njkmr"
@@ -22,6 +22,9 @@ generate_random_port() {
 
 ENV_SERVER_PORT=$(generate_random_port)
 VNC_PORT=$(generate_random_port)
+API_WEB_SOCKET=$(generate_random_port)
+API_SOCKET=$(generate_random_port)
+SERVER_SOCKET=$(generate_random_port)
 
 # Modify the config file
 CONFIG_FILE="/home/$USER/agent-studio/agent_studio/config/config.py"
@@ -35,13 +38,17 @@ echo "ENV_SERVER_PORT: $ENV_SERVER_PORT"
 # Step 1: Launch the server
 apptainer exec --no-home --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot \
   --env VNC_PORT=$VNC_PORT \
+  --env SERVER_SOCKET=$SERVER_SOCKET\
+  --env API_WEB_SOCKET=$API_WEB_SOCKET\
+  --env API_SOCKET=$API_SOCKET\
   --bind /home/$USER/agent-studio/scripts/agent_server.py:/home/ubuntu/agent_studio/scripts/agent_server.py:ro \
   --bind /home/$USER/agent-studio/agent_studio/envs:/home/ubuntu/agent_studio/agent_studio/envs:ro \
   --bind /home/$USER/agent-studio/agent_studio/utils:/home/ubuntu/agent_studio/agent_studio/utils:ro \
   --bind /home/$USER/agent-studio/agent_studio/agent:/home/ubuntu/agent_studio/agent_studio/agent:ro \
   --bind /home/$USER/agent-studio/agent_studio/config:/home/ubuntu/agent_studio/agent_studio/config \
   --bind /home/$USER/agent-studio/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:ro \
-  --bind supervisor_logs/:/var/log agent-studio-server-dynamicvnc.sif /home/ubuntu/agent_studio/scripts/docker_startup.sh &
+  --bind supervisor_logs/:/var/log \
+  agent-studio-server-dynamicportrouting1.sif /home/ubuntu/agent_studio/scripts/docker_startup.sh &
 SERVER_PID=$!
 echo "Server launched with PID $SERVER_PID"
 
