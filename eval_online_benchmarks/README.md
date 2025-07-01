@@ -62,7 +62,7 @@ You can browse `http://127.0.0.1:6080` to interact with the remote machine throu
     1. If you want to build the sif file from scratch:
         1. First, on a machine with docker, build the sudo docker container via:
         ```bash
-        docker build -f dockerfiles/server/Dockerfile.ubuntu22.04.amd64.sudo . -t agent-studio:latest
+        docker build -f dockerfiles/server/Dockerfile.ubuntu22.04.amd64 . -t agent-studio:latest
         ```
         1. Next, save that dockerfile into a `.tar` file.
         ```bash
@@ -80,6 +80,7 @@ You can browse `http://127.0.0.1:6080` to interact with the remote machine throu
 sbatch scripts/cluster/launch-single-experiment.sbatch
 ```
 You can set the config of what model, and what tasks you want to run, from within that `.sbatch` script.
+Similarly, you can also run the `launch-batch-experiments.sbatch` script to run multiple experiments in parallel.
 
 ## Task Description
 

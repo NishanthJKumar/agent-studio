@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Set VNC password if provided
 if [ -n "$VNC_PASSWORD" ]; then
     echo -n "$VNC_PASSWORD" > /tmp/.password1
@@ -62,8 +61,31 @@ if [ -n "$RELATIVE_URL_ROOT" ]; then
     sed -i 's|_RELATIVE_URL_ROOT_|'"$RELATIVE_URL_ROOT"'|' /etc/nginx/sites-enabled/default
 fi
 
-# Make sure to not bind to a privileged port!
-sed -i 's|listen\s\+80\s\+default_server;|listen 8080;|' /etc/nginx/sites-enabled/default
+# Update Nginx configuration with dynamic ports
+if [ -n "$API_WEB_SOCKET" ]; then
+    sed -i "s|proxy_pass http://127.0.0.1:6081;|proxy_pass http://127.0.0.1:$API_WEB_SOCKET;|" /etc/nginx/sites-enabled/default
+    sed -i "s/--listen 6081/--listen $API_WEB_SOCKET/" /etc/supervisor/conf.d/supervisord.conf
+fi
+
+if [ -n "$API_SOCKET" ]; then
+    sed -i "s|proxy_pass http://127.0.0.1:6079;|proxy_pass http://127.0.0.1:$API_SOCKET;|" /etc/nginx/sites-enabled/default
+    sed -i "s/PORT = 6079/PORT = $API_SOCKET/" /usr/local/lib/web/backend/run.py
+fi
+
+if [ -n "$SERVER_SOCKET" ]; then
+    sed -i "s|listen\s\+80\s\+default_server;|listen $SERVER_SOCKET;|" /etc/nginx/sites-enabled/default
+else
+    sed -i "s|listen\s\+80\s\+default_server;|listen 8080;|" /etc/nginx/sites-enabled/default
+fi
+
+if [ -n "$VNC_PORT" ]; then
+    # Update supervisord configuration for VNC port
+    sed -i "s/-display :1/-display :1 -rfbport $VNC_PORT/" /etc/supervisor/conf.d/supervisord.conf
+    sed -i "s/VNC_DEST=\"localhost:5900\"/VNC_DEST=\"localhost:$VNC_PORT\"/" /usr/local/lib/web/frontend/static/novnc/utils/launch.sh
+    sed -i "s/VNC_DEST=\"localhost:5900\"/VNC_DEST=\"localhost:$VNC_PORT\"/" /usr/local/lib/web/frontend/static/websockify/other/launch.sh
+    sed -i "s/target-port 5900/target-port $VNC_PORT/" /usr/local/lib/web/frontend/static/websockify/other/websockify.clj
+fi
+
 
 # Clear sensitive environment variables
 PASSWORD=
@@ -90,7 +112,6 @@ echo RUN
 cat /usr/local/lib/web/backend/run.py
 
 # Start supervisord
-# exec /bin/tini -- supervisord -n -c /etc/supervisor/supervisord.conf
 exec /bin/tini -- supervisord -n -c /etc/supervisor/supervisord.conf || {
     echo "Supervisord exited with status $?"
     tail -n 50 /var/log/supervisor/supervisord.log

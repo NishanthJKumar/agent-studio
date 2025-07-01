@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=agent_experiment
-#SBATCH --output=experiment.log
-#SBATCH --error=experiment.err
+#SBATCH --array=1-3
+#SBATCH --output=process_%A_%a.log
+#SBATCH --error=process_%A_%a.err
 #SBATCH --time=10:00:00  # Adjust the time as needed
 
 # Define variables

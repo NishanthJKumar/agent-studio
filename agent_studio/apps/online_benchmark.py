@@ -1374,6 +1374,10 @@ def main():
         config.vnc_port = args.vnc_port
         config.vnc_password = args.vnc_password
 
+    # Update the REMOTE_SERVER_ADDR
+    global REMOTE_SERVER_ADDR
+    REMOTE_SERVER_ADDR = f"http://{config.env_server_addr}:{config.env_server_port}"
+
     # Ensure a second screen is available.
     app = QApplication(sys.argv)
     screens = QApplication.screens()
