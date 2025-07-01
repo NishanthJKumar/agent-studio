@@ -28,7 +28,6 @@ SERVER_SOCKET=$(generate_random_port)
 
 # Modify the config file
 CONFIG_FILE="/home/$USER/agent-studio/agent_studio/config/config.py"
-sed -i "s/vnc_port: int = [0-9]*/vnc_port: int = $VNC_PORT/" $CONFIG_FILE
 
 echo "Starting server on node $(hostname)..."
 echo "VNC PORT: $VNC_PORT"
@@ -40,6 +39,7 @@ apptainer exec --no-home --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot \
   --env SERVER_SOCKET=$SERVER_SOCKET\
   --env API_WEB_SOCKET=$API_WEB_SOCKET\
   --env API_SOCKET=$API_SOCKET\
+  --env ENV_SERVER_PORT=$ENV_SERVER_PORT\
   --bind /home/$USER/agent-studio/scripts/agent_server.py:/home/ubuntu/agent_studio/scripts/agent_server.py:ro \
   --bind /home/$USER/agent-studio/agent_studio/envs:/home/ubuntu/agent_studio/agent_studio/envs:ro \
   --bind /home/$USER/agent-studio/agent_studio/utils:/home/ubuntu/agent_studio/agent_studio/utils:ro \
