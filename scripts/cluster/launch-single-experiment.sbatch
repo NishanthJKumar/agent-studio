@@ -2,7 +2,7 @@
 #SBATCH --job-name=agent_experiment
 #SBATCH --output=experiment.log
 #SBATCH --error=experiment.err
-#SBATCH --time=02:00:00  # Adjust the time as needed
+#SBATCH --time=10:00:00  # Adjust the time as needed
 
 # Load any necessary modules or set up the environment
 # module load your_module
