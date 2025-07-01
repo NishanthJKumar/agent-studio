@@ -81,6 +81,9 @@ fi
 if [ -n "$VNC_PORT" ]; then
     # Update supervisord configuration for VNC port
     sed -i "s/-display :1/-display :1 -rfbport $VNC_PORT/" /etc/supervisor/conf.d/supervisord.conf
+    sed -i "s/VNC_DEST=\"localhost:5900\"/VNC_DEST=\"localhost:$VNC_PORT\"/" /usr/local/lib/web/frontend/static/novnc/utils/launch.sh
+    sed -i "s/VNC_DEST=\"localhost:5900\"/VNC_DEST=\"localhost:$VNC_PORT\"/" /usr/local/lib/web/frontend/static/websockify/other/launch.sh
+    sed -i "s/target-port 5900/target-port $VNC_PORT/" /usr/local/lib/web/frontend/static/websockify/other/websockify.clj
 fi
 
 # Clear sensitive environment variables

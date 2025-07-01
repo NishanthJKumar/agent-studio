@@ -26,7 +26,6 @@ VNC_PORT=$(generate_random_port)
 # Modify the config file
 CONFIG_FILE="/home/$USER/agent-studio/agent_studio/config/config.py"
 sed -i "s/vnc_port: int = [0-9]*/vnc_port: int = $VNC_PORT/" $CONFIG_FILE
-sed -i "s/env_server_port: int = [0-9]*/env_server_port: int = $ENV_SERVER_PORT/" $CONFIG_FILE
 
 echo "Starting server on node $(hostname)..."
 echo "VNC PORT: $VNC_PORT"

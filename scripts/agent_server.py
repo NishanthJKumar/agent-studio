@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 from contextlib import asynccontextmanager
 from typing import Any
@@ -276,6 +277,15 @@ async def submit_eval(request: AgentStudioEvalRequest) -> AgentStudioStatusRespo
 
 
 if __name__ == "__main__":
+    # Get the port from the environment variable, default to 0 if not set
+    server_port = os.getenv("ENV_SERVER_PORT")
+    if server_port is None:
+        raise RuntimeError("The ENV_SERVER_PORT environment variable must be set.")
+    port = int(server_port)
+    if port == 0:
+        port = config.env_server_port
+        logger.info(f"Port set to 0! Defaulting to value in config: {port}")
+    logger.info(f"Starting agent server on port {port}")
     uvicorn.run(
         app,
         host=config.env_server_host,
