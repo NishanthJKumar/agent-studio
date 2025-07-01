@@ -64,7 +64,6 @@ fi
 
 # Make sure to not bind to a privileged port!
 sed -i 's|listen\s\+80\s\+default_server;|listen 8080;|' /etc/nginx/sites-enabled/default
-cat /etc/nginx/sites-enabled/default
 
 # Clear sensitive environment variables
 PASSWORD=
@@ -81,6 +80,14 @@ stderr_logfile=/var/log/agent_server.err.log
 stdout_logfile=/var/log/agent_server.out.log
 environment=HOME="/home/ubuntu",USER="ubuntu",PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",LOGNAME="ubuntu",DISPLAY=":1.0",DONT_PROMPT_WSL_INSTALL=True
 EOF
+
+# Make sure to not bind to a privileged port!
+echo NGINX
+cat /etc/nginx/sites-enabled/default
+echo SUPERVISORD
+cat /etc/supervisor/conf.d/supervisord.conf
+echo RUN
+cat /usr/local/lib/web/backend/run.py
 
 # Start supervisord
 # exec /bin/tini -- supervisord -n -c /etc/supervisor/supervisord.conf
