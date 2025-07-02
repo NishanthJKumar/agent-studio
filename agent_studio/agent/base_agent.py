@@ -134,16 +134,18 @@ class BaseAgent:
         """
         result = {}
         done = False
+        exit_in_code = False
         if not failure_msg:
             code_clean = step_info.action
             if code_clean.endswith("exit()"):
                 code = code_clean[: -len("exit()")].strip()
+                exit_in_code = True
             else:
                 code = code_clean
             logger.debug(f"Code to execute:\n{code}\n")
             result = self.runtime(code)
             # TODO: there might be other conditions to check for.
-            if len(result.keys()) == 0:
+            if len(result.keys()) == 0 and exit_in_code:
                 done = True
         else:
             result["force_stop_reason"] = failure_msg
