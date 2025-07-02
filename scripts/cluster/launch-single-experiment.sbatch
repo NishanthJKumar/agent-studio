@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=agent_experiment
-#SBATCH --output=experiment.log
-#SBATCH --error=experiment.err
+#SBATCH --output=experiment-nevergiveup-gpt-4o-2024-11-20.log
+#SBATCH --error=experiment-nevergiveup-gpt-4o-2024-11-20.err
 #SBATCH --time=10:00:00  # Adjust the time as needed
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/os/1d6765b3-b744-4aa4-8287-d14e6d3cddac.json"
-MODEL_NAME="gpt-4o-2024-08-06"
+PARTICULAR_PATH="eval_online_benchmarks/tasks/"
+MODEL_NAME="gpt-4o-2024-11-20"
 
 # Generate random port numbers
 generate_random_port() {
@@ -25,9 +25,6 @@ VNC_PORT=$(generate_random_port)
 API_WEB_SOCKET=$(generate_random_port)
 API_SOCKET=$(generate_random_port)
 SERVER_SOCKET=$(generate_random_port)
-
-# Modify the config file
-CONFIG_FILE="/home/$USER/agent-studio/agent_studio/config/config.py"
 
 echo "Starting server on node $(hostname)..."
 echo "VNC PORT: $VNC_PORT"
@@ -63,7 +60,7 @@ for ((i=1; i<=RETRIES; i++)); do
     --bind /home/$USER/agent-studio/:/home/ubuntu/agent_studio/ \
     agent-studio-client.sif /bin/bash -c "
       cd /home/ubuntu/agent_studio
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --remote
+      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --prompting_approach never_giveup_check_output --vnc_port $VNC_PORT --remote
     "
 
   if [ $? -eq 0 ]; then
