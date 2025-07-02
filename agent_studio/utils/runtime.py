@@ -11,7 +11,7 @@ os.environ["ANSI_COLORS_DISABLED"] = "1"
 
 
 class PythonRuntime:
-    def __init__(self, python_timeout=20):
+    def __init__(self, python_timeout=40):
         self.python_timeout = python_timeout
         self.km = KernelManager(kernel_name="python3")
         self.km.start_kernel()
@@ -44,7 +44,10 @@ class PythonRuntime:
                 elif msg["msg_type"] in ["display_data", "execute_result"]:
                     result["output"] = content["data"]
         except Empty as e:
-            result["error"] = f"Jupyter timeout: {e}"
+            result["error"] = (
+                f"Jupyter timeout: took longer than {self.python_timeout} "
+                f"to execute action. Terminating: {e}"
+            )
 
         return result
 
