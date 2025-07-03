@@ -144,7 +144,7 @@ class BaseAgent:
                 code = code_clean
             logger.debug(f"Code to execute:\n{code}\n")
             if len(code) > 0:
-                self.runtime(code)
+                result = self.runtime(code)
             else:
                 result = {}
             # TODO: there might be other conditions to check for.
