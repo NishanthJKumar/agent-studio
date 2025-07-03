@@ -66,6 +66,7 @@ class OpenAIProvider(BaseModel):
         cache_ret = self._load_from_cache(model_name, self._hash_input(messages))
         if cache_ret is not None:
             logger.info("Found response in cache.")
+            logger.info(f"Returning response:\n{cache_ret}")
             return cache_ret, {}  # TODO: for now we don't have any info to return
         # Else, generate a new response.
         model_message = self._format_messages(raw_messages=messages)

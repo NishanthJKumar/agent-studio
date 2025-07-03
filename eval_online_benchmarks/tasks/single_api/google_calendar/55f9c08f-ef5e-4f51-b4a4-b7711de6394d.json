@@ -1,6 +1,6 @@
 {
   "task_id": "55f9c08f-ef5e-4f51-b4a4-b7711de6394d",
-  "instruction": "In Google Calendar, reschedule the 'Team Sync' event originally on 2024-05-10 12:00 AM to 2024-05-12 at 2:00 PM. You should also change the event description to match this change. The calendar id is '${AS_GCALENDAR_ID}'.",
+  "instruction": "In Google Calendar, reschedule the 'Team Sync' event originally on 2024-05-10 12:00 AM to 2024-05-12 at 2:00 PM. You should also change the event description to 'Team Sync on 2024-05-12' to match this change. The calendar id is '${AS_GCALENDAR_ID}'.",
   "visual": false,
   "max_steps": 10,
   "eval_procedure": [
