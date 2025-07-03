@@ -10,7 +10,7 @@
       "params": {
         "message_info": {
           "subject": "AutoPlan1",
-          "body": "This is automated draft mail of plan 1"
+          "body": "This is automatically sent message of plan 1"
         },
         "exists": true
       }
@@ -21,7 +21,7 @@
       "params": {
         "message_info": {
           "subject": "AutoPlan2",
-          "body": "This is automated draft mail of plan 2"
+          "body": "This is automatically sent message of plan 2"
         },
         "exists": true
       }
