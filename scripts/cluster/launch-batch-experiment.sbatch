@@ -1,13 +1,69 @@
 #!/bin/bash
-#SBATCH --array=1-3
-#SBATCH --output=process_%A_%a.log
-#SBATCH --error=process_%A_%a.err
+#SBATCH --array=1-13  # Adjust the array size to match the number of tasks
 #SBATCH --time=10:00:00  # Adjust the time as needed
+#SBATCH --mem=500G
+#SBATCH --account=siro
+#SBATCH --qos=siro_high
+#SBATCH --ntasks-per-node 1
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/os/1d6765b3-b744-4aa4-8287-d14e6d3cddac.json"
-MODEL_NAME="gpt-4o-2024-08-06"
+
+# Set PARTICULAR_PATH and JOB_NAME based on the SLURM_ARRAY_TASK_ID
+if [ "$SLURM_ARRAY_TASK_ID" -eq 1 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/single_api"
+  JOB_NAME="single_api"
+elif [ "$SLURM_ARRAY_TASK_ID" -eq 2 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/docs"
+  JOB_NAME="single-gui-docs"
+elif [ "$SLURM_ARRAY_TASK_ID" -eq 3 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/gimp"
+  JOB_NAME="single-gui-gimp"
+elif [ "$SLURM_ARRAY_TASK_ID" -eq 4 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/os"
+  JOB_NAME="single-gui-os"
+elif [ "$SLURM_ARRAY_TASK_ID" -eq 5 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/sheets"
+  JOB_NAME="single-gui-sheets"
+elif [ "$SLURM_ARRAY_TASK_ID" -eq 6 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/slides"
+  JOB_NAME="single-gui-slides"
+elif [ "$SLURM_ARRAY_TASK_ID" -eq 7 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/vscode"
+  JOB_NAME="single-gui-vscode"
+elif [ "$SLURM_ARRAY_TASK_ID" -eq 8 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/compositional/split0"
+  JOB_NAME="compositional-split0"
+elif [ "$SLURM_ARRAY_TASK_ID" -eq 9 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/compositional/split1"
+  JOB_NAME="compositional-split1"
+elif [ "$SLURM_ARRAY_TASK_ID" -eq 10 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/compositional/split2"
+  JOB_NAME="compositional-split2"
+elif [ "$SLURM_ARRAY_TASK_ID" -eq 11 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/compositional/split3"
+  JOB_NAME="compositional-split3"
+elif [ "$SLURM_ARRAY_TASK_ID" -eq 12 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/compositional/split4"
+  JOB_NAME="compositional-split4"
+elif [ "$SLURM_ARRAY_TASK_ID" -eq 13 ]; then
+  PARTICULAR_PATH="eval_online_benchmarks/tasks/compositional/split5"
+  JOB_NAME="compositional-split5"
+else
+  echo "Invalid SLURM_ARRAY_TASK_ID: $SLURM_ARRAY_TASK_ID"
+  exit 1
+fi
+
+# Set output and error file paths using JOB_NAME
+OUTPUT_FILE="never-giveup-or-repeat-${JOB_NAME}-gpt-4o-2024-11-20.log"
+ERROR_FILE="process_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}_${JOB_NAME}.err"
+
+# Redirect stdout and stderr
+exec 1>$OUTPUT_FILE
+exec 2>$ERROR_FILE
+
+
+MODEL_NAME="gpt-4o-2024-11-20"
 
 # Generate random port numbers
 generate_random_port() {
@@ -63,7 +119,7 @@ for ((i=1; i<=RETRIES; i++)); do
     --bind /home/$USER/agent-studio/:/home/ubuntu/agent_studio/ \
     agent-studio-client.sif /bin/bash -c "
       cd /home/ubuntu/agent_studio
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --remote
+      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --prompting_approach never_giveup_repeat_check_output --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --remote
     "
 
   if [ $? -eq 0 ]; then

@@ -3,6 +3,10 @@
 #SBATCH --output=experiment-nevergiveup-gpt-4o-2024-11-20.log
 #SBATCH --error=experiment-nevergiveup-gpt-4o-2024-11-20.err
 #SBATCH --time=10:00:00  # Adjust the time as needed
+#SBATCH --mem=500G
+#SBATCH --account=siro
+#SBATCH --qos=siro_high
+#SBATCH --ntasks-per-node 1
 
 # Define variables
 USER="njkmr"
