@@ -1,7 +1,5 @@
 #!/bin/bash
 #SBATCH --array=1-13  # Adjust the array size to match the number of tasks
-#SBATCH --output=never-giveup-or-repeat-%x-gpt-4o-2024-11-20.log
-#SBATCH --error=process_%A_%a_%x.err
 #SBATCH --time=10:00:00  # Adjust the time as needed
 #SBATCH --mem=500G
 #SBATCH --account=siro
@@ -55,6 +53,15 @@ else
   echo "Invalid SLURM_ARRAY_TASK_ID: $SLURM_ARRAY_TASK_ID"
   exit 1
 fi
+
+# Set output and error file paths using JOB_NAME
+OUTPUT_FILE="never-giveup-or-repeat-${JOB_NAME}-gpt-4o-2024-11-20.log"
+ERROR_FILE="process_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}_${JOB_NAME}.err"
+
+# Redirect stdout and stderr
+exec 1>$OUTPUT_FILE
+exec 2>$ERROR_FILE
+
 
 MODEL_NAME="gpt-4o-2024-11-20"
 
