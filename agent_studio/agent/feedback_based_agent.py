@@ -217,11 +217,14 @@ class FeedbackBasedAgent(BaseAgent):
         done = False
         if not failure_msg:
             code_clean = step_info.action
+            exit_in_code = False
             if code_clean.endswith("exit()"):
                 code = code_clean[: -len("exit()")].strip()
+                exit_in_code = True
             else:
                 code = code_clean
             logger.debug(f"Code to execute:\n{code}\n")
+            # import ipdb; ipdb.set_trace()
             result = self.runtime(code)
             step_info.result = copy.deepcopy(result)
             step_info.timestamp = time.time()
@@ -238,7 +241,7 @@ class FeedbackBasedAgent(BaseAgent):
                 if len(result.keys()) == 0 and "No feedback." in response:
                     done = True
             else:
-                if len(result.keys()) == 0:
+                if len(result.keys()) == 0 and exit_in_code:
                     done = True
         else:
             result["force_stop_reason"] = failure_msg
