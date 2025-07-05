@@ -47,6 +47,13 @@
         ],
         "wait_for": "code"
       }
+    },
+    {
+      "evaluator": "system",
+      "function": "sleep",
+      "params": {
+        "seconds": 5
+      }
     }
   ],
   "cleanup_procedure": [

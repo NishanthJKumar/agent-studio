@@ -224,7 +224,9 @@ class FeedbackBasedAgent(BaseAgent):
             else:
                 code = code_clean
             logger.debug(f"Code to execute:\n{code}\n")
-            # import ipdb; ipdb.set_trace()
+            import ipdb
+
+            ipdb.set_trace()
             result = self.runtime(code)
             step_info.result = copy.deepcopy(result)
             step_info.timestamp = time.time()
