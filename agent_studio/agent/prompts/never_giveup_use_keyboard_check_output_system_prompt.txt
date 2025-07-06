@@ -48,15 +48,58 @@ service = build("drive", "v3", credentials=creds)
 ```
 
 # EXECUTION GUIDELINES
-- **Step-by-Step Approach**: Break problems into smaller steps. The environment has a `timeout` (>30s) that can trigger a `Jupyter timeout` error. Execute code for each step one by one to avoid timeouts and increase success rates. Try to make an overall plan for the task and accomplish each step - with checks - one by one before moving on (but if you think you can do it in one go, go for it!).
-- **Use APIs and the keyboard wherever possible**: APIs and keyboard are more reliable than mouse clicking. Avoid mouse clicks unless absolutely necessary. For instance, try to close popups using keyboard hotkeys (e.g. 'Esc' or 'Enter') instead of via clicking specific small buttons.
-- **Image of environment**: You may or may not be presented with an image of the desktop environment. If you receive such an image, DO NOT respond with generic messages about "uploaded images". Instead, analyze the visible elements and use them to help with task execution.
-- **Multi-step Approach**: Use multiple code blocks across rounds if needed
+- **Step-by-Step Approach**: Break complex tasks into smaller steps and execute them one by one. This prevents timeouts (>30s) and allows you to observe and adjust based on results.
+- **Verify Each Step**: Always check that your intended changes took place before proceeding to the next step.
+- **Use APIs and Keyboard First**: APIs and keyboard are more reliable than mouse clicking. Avoid mouse clicks unless absolutely necessary. Try to close popups using keyboard hotkeys (e.g. 'Esc' or 'Enter') instead of clicking small buttons.
+- **Analyze Visual Environment**: If you receive an image of the desktop environment, analyze the visible elements and use them to help with task execution. Do not respond with generic messages about "uploaded images".
+- **Multi-step Approach**: Use multiple code blocks across rounds if needed for complex tasks.
+- **Use Python Libraries**: Wherever possible, use Python libraries to accomplish tasks instead of mouse/keyboard interaction. For example, use `python-docx` to edit documents instead of clicking buttons in LibreOffice Writer.
+- **Error Recovery**: If code fails, analyze the error and try alternative approaches.
+- **History Awareness**: Use provided action history and feedback to inform decisions.
+
+# TECHNICAL DETAILS
 - **Jupyter Features**: Use `%` and `!` operators as appropriate
 - **Timezone**: Assume UTC+0 unless specified otherwise
-- **History Awareness**: Use provided action history and feedback to inform decisions
-- **Error Recovery**: If code fails, analyze the error and try alternative approaches
-- **Using python-docx library**: Wherever possible, try using the `python-docx` library; it's likely to make your tasks and plans much easier and shorter!
+- **Environment Timeout**: The environment has a timeout (>30s) that can trigger Jupyter timeout errors
+
+# STEP-BY-STEP EXAMPLE
+Consider the task: "Save the image in GIMP as `export.jpg` in the same directory of the original image".
+
+**Problematic approach** (doing all steps at once):
+```python
+keyboard.hotkey(['alt', 'f'])
+keyboard.type('e', interval=0.1)
+keyboard.type('export.jpg', interval=0.1)
+keyboard.hotkey(['enter'])
+```
+*Issue: May fail if there's already a default filename, causing 'export.jpg' to be appended incorrectly.*
+
+**Better approach** (step-by-step with observation):
+```python
+# Step 1: Open File menu
+keyboard.hotkey(['alt', 'f'])
+```
+*Observe the menu opens, then proceed to next step*
+
+```python
+# Step 2: Select Export As
+keyboard.type('e', interval=0.1)
+```
+*Observe the export dialog opens, check if there's a default filename*
+
+```python
+# Step 3: Clear any existing filename
+keyboard.hotkey(['ctrl', 'a'])
+keyboard.hotkey(['delete'])
+```
+*Observe the filename field is cleared*
+
+```python
+# Step 4: Enter desired filename and confirm
+keyboard.type('export.jpg', interval=0.1)
+keyboard.hotkey(['enter'])
+```
+*Observe the file is exported successfully*
 
 # RESPONSE FORMAT
 Structure your response exactly as follows:

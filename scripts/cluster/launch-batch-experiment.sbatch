@@ -55,8 +55,8 @@ else
 fi
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="never-giveup-or-repeat-${JOB_NAME}-gpt-4o-2024-11-20.log"
-ERROR_FILE="process_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}_${JOB_NAME}.err"
+OUTPUT_FILE="never-giveup-or-repeat-keyboard-fewshot-${JOB_NAME}-gpt-4o-2024-11-20.log"
+ERROR_FILE="never-giveup-or-repeat-keyboard-fewshot-${JOB_NAME}-gpt-4o-2024-11-20.err"
 
 # Redirect stdout and stderr
 exec 1>$OUTPUT_FILE
@@ -119,7 +119,7 @@ for ((i=1; i<=RETRIES; i++)); do
     --bind /home/$USER/agent-studio/:/home/ubuntu/agent_studio/ \
     agent-studio-client.sif /bin/bash -c "
       cd /home/ubuntu/agent_studio
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --prompting_approach never_giveup_repeat_check_output --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --remote
+      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --prompting_approach never_giveup_use_keyboard_check_output --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --remote
     "
 
   if [ $? -eq 0 ]; then

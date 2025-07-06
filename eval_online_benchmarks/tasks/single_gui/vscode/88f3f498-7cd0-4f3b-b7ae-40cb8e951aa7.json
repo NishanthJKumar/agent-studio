@@ -1,6 +1,6 @@
 {
   "task_id": "88f3f498-7cd0-4f3b-b7ae-40cb8e951aa7",
-  "instruction": "Uninstall all VSCode extentions from Microsoft.",
+  "instruction": "Uninstall all VSCode extensions.",
   "visual": true,
   "max_steps": 30,
   "eval_procedure": [
