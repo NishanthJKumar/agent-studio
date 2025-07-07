@@ -1,6 +1,8 @@
 import copy
 import datetime
 import logging
+import readline  # noqa: F401
+import sys
 import time
 from pathlib import Path
 
@@ -45,16 +47,17 @@ class FeedbackBasedAgent(BaseAgent):
             f"agent_studio/agent/prompts/{prompt_approach}_system_prompt.txt", "r"
         ) as file:
             self._system_prompt = file.read()
-        with open(
-            (
-                f"agent_studio/agent/prompts/{feedback_prompt_approach}_"
-                "feedback_prompt.txt"
-            ),
-            "r",
-        ) as file:
-            self._feedback_prompt = file.read()
+        self._feedback_prompt = None
         self.feedback_history: MessageList = []
         if feedback_model != "human":
+            with open(
+                (
+                    f"agent_studio/agent/prompts/{feedback_prompt_approach}_"
+                    "feedback_prompt.txt"
+                ),
+                "r",
+            ) as file:
+                self._feedback_prompt = file.read()
             feedback_model_manager = ModelManager()
             self.feedback_model = feedback_model_manager.get_model(feedback_model)
         else:
@@ -164,6 +167,21 @@ class FeedbackBasedAgent(BaseAgent):
             self.trajectory.pop(-1)
         # Extract the action from the response.
         action = extract_from_response(response).strip()
+        if action == "":
+            logger.info("Output response didn't contain action; trying again!")
+            new_message = Message(
+                role="user",
+                content=f"ERROR! You just output '''{response}'''. However, this "
+                "did not contain a valid ```python``` code block. Please "
+                "try again and ensure your response contains a valid "
+                "```python``` codeblock.",
+            )
+            error_recovery_prompt = prompt[:-1] + [new_message] + [prompt[-1]]
+            response, info = self.model.generate_response(
+                messages=error_recovery_prompt, model=model_name
+            )
+            self.total_tokens += info.get("total_tokens", 0)
+            action = extract_from_response(response).strip()
         # Logging model outputs.
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"output_{timestamp}.txt"
@@ -199,11 +217,16 @@ class FeedbackBasedAgent(BaseAgent):
         done = False
         if not failure_msg:
             code_clean = step_info.action
+            exit_in_code = False
             if code_clean.endswith("exit()"):
                 code = code_clean[: -len("exit()")].strip()
+                exit_in_code = True
             else:
                 code = code_clean
             logger.debug(f"Code to execute:\n{code}\n")
+            import ipdb
+
+            ipdb.set_trace()
             result = self.runtime(code)
             step_info.result = copy.deepcopy(result)
             step_info.timestamp = time.time()
@@ -220,7 +243,7 @@ class FeedbackBasedAgent(BaseAgent):
                 if len(result.keys()) == 0 and "No feedback." in response:
                     done = True
             else:
-                if len(result.keys()) == 0:
+                if len(result.keys()) == 0 and exit_in_code:
                     done = True
         else:
             result["force_stop_reason"] = failure_msg
@@ -231,9 +254,17 @@ class FeedbackBasedAgent(BaseAgent):
         logger.info(f"Output: {result}")
         return result, done
 
-    def _query_feedback_model(self, feedback_prompt: str) -> str:
+    def _query_feedback_model(self, feedback_prompt: MessageList) -> str:
         if self.feedback_model is None:
-            logger.info(feedback_prompt)
+            for message in feedback_prompt[:-1]:
+                print(
+                    f"Message.\n role: {message.role}\n content:{message.content}\n\n"
+                )
+            print(
+                f"Message.\n role: {feedback_prompt[-1].role}\n content:"
+                f"{feedback_prompt[-1].content}"
+            )
+            sys.stdin.flush()
             response = input("Feedback: ")
         else:
             logger.info(f"Feedback Prompt: {feedback_prompt}")

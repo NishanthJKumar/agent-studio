@@ -71,6 +71,13 @@
       "params": {
         "name": "code"
       }
+    },
+    {
+      "evaluator": "system",
+      "function": "sleep",
+      "params": {
+        "seconds": 5
+      }
     }
   ],
   "max_time": 60
