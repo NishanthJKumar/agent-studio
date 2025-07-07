@@ -55,8 +55,8 @@ else
 fi
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="never-giveup-or-repeat-with-subprocess-keyboard-fewshot-${JOB_NAME}-gpt-4o-2024-11-20.log"
-ERROR_FILE="never-giveup-or-repeat-with-subprocess-keyboard-fewshot-${JOB_NAME}-gpt-4o-2024-11-20.err"
+OUTPUT_FILE="never-giveup-single-action-${JOB_NAME}-gpt-4o-2024-11-20.log"
+ERROR_FILE="never-giveup-single-action-${JOB_NAME}-gpt-4o-2024-11-20.err"
 
 # Redirect stdout and stderr
 exec 1>$OUTPUT_FILE

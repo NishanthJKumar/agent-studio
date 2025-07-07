@@ -142,7 +142,19 @@ class BaseAgent:
                 exit_in_code = True
             else:
                 code = code_clean
-            logger.debug(f"Code to execute:\n{code}\n")
+            # Check for "keyboard." or "mouse." in the code
+            if "keyboard." in code or "mouse." in code:
+                truncated_code = ""
+                # Split the code into lines
+                code_lines = code.splitlines()
+                # Find the first line containing "keyboard." or "mouse."
+                for line in code_lines:
+                    truncated_code += line + "\n"
+                    if "keyboard." in line or "mouse." in line:
+                        break
+                code = truncated_code
+                logger.info(f"Truncating code from:\n{code_clean}\n")
+            logger.info(f"Code to execute:\n{code}\n")
             if len(code) > 0:
                 result = self.runtime(code)
             else:
