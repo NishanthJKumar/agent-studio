@@ -28,6 +28,7 @@ class FeedbackBasedAgent(BaseAgent):
         runtime_server_addr: str,
         runtime_server_port: int,
         results_dir: Path,
+        restrict_to_one_step: bool,
         prompt_approach: str = "naive",
         feedback_model: str = "gpt-4o-2024-08-06",
         feedback_prompt_approach: str = "direct",
@@ -42,6 +43,7 @@ class FeedbackBasedAgent(BaseAgent):
             runtime_server_port=runtime_server_port,
             results_dir=results_dir,
             prompt_approach=prompt_approach,
+            restrict_to_one_step=restrict_to_one_step,
         )
         with open(
             f"agent_studio/agent/prompts/{prompt_approach}_system_prompt.txt", "r"

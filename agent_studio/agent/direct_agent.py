@@ -16,6 +16,7 @@ class DirectAgent(BaseAgent):
         runtime_server_addr: str,
         runtime_server_port: int,
         results_dir: Path,
+        restrict_to_one_step: bool,
         prompt_approach: str = "naive",
     ) -> None:
         """Initialize everything the same way as the parent class, but also
@@ -26,6 +27,7 @@ class DirectAgent(BaseAgent):
             runtime_server_addr=runtime_server_addr,
             runtime_server_port=runtime_server_port,
             results_dir=results_dir,
+            restrict_to_one_step=restrict_to_one_step,
             prompt_approach=prompt_approach,
         )
         with open(

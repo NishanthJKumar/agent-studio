@@ -35,6 +35,7 @@ class BaseAgent:
         runtime_server_addr: str,
         runtime_server_port: int,
         results_dir: Path,
+        restrict_to_one_step: bool,
         prompt_approach: str = "naive",
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
@@ -46,6 +47,7 @@ class BaseAgent:
         self.runtime: PythonRuntime | RemotePythonRuntime
         self.runtime_init_code: str = RUNTIME_INIT_CODE.strip()
         self.results_dir: Path = results_dir
+        self.restrict_to_one_step = restrict_to_one_step
 
         if self.remote:
             self.runtime = RemotePythonRuntime(
@@ -102,7 +104,7 @@ class BaseAgent:
             action = extract_from_response(response).strip()
 
         unexecuted_code = ""
-        if self.task_config.restrict_to_one_step:
+        if self.restrict_to_one_step:
             # Truncate action if it contains keyboard or mouse commands.
             if "keyboard." in action or "mouse." in action:
                 truncated_code = ""
