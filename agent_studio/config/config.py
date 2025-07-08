@@ -22,6 +22,7 @@ class Config(metaclass=ThreadSafeSingleton):
     monitor_idx: int = 1  # 1 for the first monitor, 2 for the second monitor
     video_fps: int = 5
     need_human_confirmation: bool = False
+    restrict_to_one_step: bool = True
 
     # LM config
     seed: int = 42
