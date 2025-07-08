@@ -28,6 +28,7 @@ class FeedbackBasedAgent(BaseAgent):
         runtime_server_addr: str,
         runtime_server_port: int,
         results_dir: Path,
+        restrict_to_one_step: bool,
         prompt_approach: str = "naive",
         feedback_model: str = "gpt-4o-2024-08-06",
         feedback_prompt_approach: str = "direct",
@@ -42,6 +43,7 @@ class FeedbackBasedAgent(BaseAgent):
             runtime_server_port=runtime_server_port,
             results_dir=results_dir,
             prompt_approach=prompt_approach,
+            restrict_to_one_step=restrict_to_one_step,
         )
         with open(
             f"agent_studio/agent/prompts/{prompt_approach}_system_prompt.txt", "r"
@@ -182,6 +184,23 @@ class FeedbackBasedAgent(BaseAgent):
             )
             self.total_tokens += info.get("total_tokens", 0)
             action = extract_from_response(response).strip()
+
+        unexecuted_code = ""
+        if self.task_config.restrict_to_one_step:
+            # Truncate action if it contains keyboard or mouse commands.
+            if "keyboard." in action or "mouse." in action:
+                truncated_code = ""
+                # Split the code into lines
+                code_lines = action.splitlines()
+                # Find the first line containing "keyboard." or "mouse."
+                for line in code_lines:
+                    truncated_code += line + "\n"
+                    if "keyboard." in line or "mouse." in line:
+                        break
+                logger.info(f"Truncating code from: {action}\n to: {truncated_code}")
+                unexecuted_code = action[len(truncated_code) :]
+                action = truncated_code
+
         # Logging model outputs.
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"output_{timestamp}.txt"
@@ -203,6 +222,7 @@ class FeedbackBasedAgent(BaseAgent):
             response=response,
             action=action,
             info=info,
+            unexecuted_code=unexecuted_code,
             result={},
             timestamp=0.0,
         )
@@ -224,9 +244,9 @@ class FeedbackBasedAgent(BaseAgent):
             else:
                 code = code_clean
             logger.debug(f"Code to execute:\n{code}\n")
-            import ipdb
+            # import ipdb
 
-            ipdb.set_trace()
+            # ipdb.set_trace()
             result = self.runtime(code)
             step_info.result = copy.deepcopy(result)
             step_info.timestamp = time.time()
@@ -305,10 +325,18 @@ class FeedbackBasedAgent(BaseAgent):
                 messages.append(
                     Message(
                         role="assistant",
-                        content=f"Step number: {i}.\nAction:\n\
-                        ```python\n{step.action}\n```\n\n"
-                        f"Error(s) from execution:\n{step.result}"
-                        f"Feedback:\n{past_feedback.content}",
+                        content=f"##Step number: {i}.\n"
+                        f"##Agent Thoughts: {step.response}\n"
+                        "##Action Executed: "
+                        f"```python\n{step.action}\n```\n\n"
+                        f"##Unexecuted Code: {step.unexecuted_code}\n"
+                        f"##Execution Output:\n{step.result}",
+                    )
+                )
+                messages.append(
+                    Message(
+                        role="user",
+                        content=f"Feedback:\n{past_feedback.content}",
                     )
                 )
         else:
@@ -317,9 +345,12 @@ class FeedbackBasedAgent(BaseAgent):
                 messages.append(
                     Message(
                         role="assistant",
-                        content=f"Step number: {i}.\nAction:\n\
-                        ```python\n{step.action}\n```\n\n"
-                        f"Error(s) from execution:\n{step.result}",
+                        content=f"##Step number: {i}.\n"
+                        f"##Agent Thoughts: {step.response}\n"
+                        "##Action Executed: "
+                        f"```python\n{step.action}\n```\n\n"
+                        f"##Unexecuted Code: {step.unexecuted_code}\n"
+                        f"##Execution Output:\n{step.result}",
                     )
                 )
         # Finally, add in the observation.

@@ -3,6 +3,7 @@ from pathlib import Path
 from agent_studio.agent.base_agent import BaseAgent
 from agent_studio.utils.types import Message, MessageList
 
+
 class DirectAgent(BaseAgent):
     """Zero-shot agents."""
 
@@ -15,6 +16,7 @@ class DirectAgent(BaseAgent):
         runtime_server_addr: str,
         runtime_server_port: int,
         results_dir: Path,
+        restrict_to_one_step: bool,
         prompt_approach: str = "naive",
     ) -> None:
         """Initialize everything the same way as the parent class, but also
@@ -25,6 +27,7 @@ class DirectAgent(BaseAgent):
             runtime_server_addr=runtime_server_addr,
             runtime_server_port=runtime_server_port,
             results_dir=results_dir,
+            restrict_to_one_step=restrict_to_one_step,
             prompt_approach=prompt_approach,
         )
         with open(
@@ -43,9 +46,12 @@ class DirectAgent(BaseAgent):
             messages.append(
                 Message(
                     role="assistant",
-                    content=f"Step number: {i}.\nAction:\n\
-                    ```python\n{step.action}\n```\n\n"
-                    f"Error(s) from execution:\n{step.result}",
+                    content=f"##Step number: {i}.\n"
+                    f"##Agent Thoughts: {step.response}\n"
+                    "##Action Executed: "
+                    f"```python\n{step.action}\n```\n\n"
+                    f"##Unexecuted Code: {step.unexecuted_code}\n"
+                    f"##Execution Output:\n{step.result}",
                 )
             )
 

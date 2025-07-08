@@ -281,7 +281,7 @@ class TaskThread(QThread):
                     failure_msg = "Failed to generate action."
                 # If the action is the same as the previous two actions.
                 elif (
-                    len(action_memory) >= 3
+                    len(action_memory) >= 10
                     and action_memory[-1] == action_memory[-2] == action_memory[-3]
                 ):
                     failure_msg = "Repeated action."
@@ -1061,6 +1061,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 feedback_model=args.feedback_model,
                 prompt_approach=args.prompting_approach,
                 feedback_prompt_approach=args.feedback_prompting_approach,
+                restrict_to_one_step=config.restrict_to_one_step,
             )
         else:
             agent = setup_agent(
@@ -1070,6 +1071,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 runtime_server_addr=config.env_server_addr,
                 runtime_server_port=config.env_server_port,
                 results_dir=results_dir / timestamp,
+                restrict_to_one_step=config.restrict_to_one_step,
                 prompt_approach=args.prompting_approach,
             )
 

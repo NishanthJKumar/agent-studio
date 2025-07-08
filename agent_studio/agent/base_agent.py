@@ -35,6 +35,7 @@ class BaseAgent:
         runtime_server_addr: str,
         runtime_server_port: int,
         results_dir: Path,
+        restrict_to_one_step: bool,
         prompt_approach: str = "naive",
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
@@ -46,6 +47,7 @@ class BaseAgent:
         self.runtime: PythonRuntime | RemotePythonRuntime
         self.runtime_init_code: str = RUNTIME_INIT_CODE.strip()
         self.results_dir: Path = results_dir
+        self.restrict_to_one_step = restrict_to_one_step
 
         if self.remote:
             self.runtime = RemotePythonRuntime(
@@ -101,6 +103,22 @@ class BaseAgent:
             self.total_tokens += info.get("total_tokens", 0)
             action = extract_from_response(response).strip()
 
+        unexecuted_code = ""
+        if self.restrict_to_one_step:
+            # Truncate action if it contains keyboard or mouse commands.
+            if "keyboard." in action or "mouse." in action:
+                truncated_code = ""
+                # Split the code into lines
+                code_lines = action.splitlines()
+                # Find the first line containing "keyboard." or "mouse."
+                for line in code_lines:
+                    truncated_code += line + "\n"
+                    if "keyboard." in line or "mouse." in line:
+                        break
+                logger.info(f"Truncating code from: {action}\n to: {truncated_code}")
+                unexecuted_code = action[len(truncated_code) :]
+                action = truncated_code
+
         # Logging model outputs.
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"output_{timestamp}.txt"
@@ -121,6 +139,7 @@ class BaseAgent:
             prompt=prompt,
             response=response,
             action=action,
+            unexecuted_code=unexecuted_code,
             info=info,
             result={},
             timestamp=0.0,
@@ -142,7 +161,7 @@ class BaseAgent:
                 exit_in_code = True
             else:
                 code = code_clean
-            logger.debug(f"Code to execute:\n{code}\n")
+            logger.info(f"Code to execute:\n{code}\n")
             if len(code) > 0:
                 result = self.runtime(code)
             else:
