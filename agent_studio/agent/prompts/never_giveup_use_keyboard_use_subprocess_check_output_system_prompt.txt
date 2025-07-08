@@ -58,50 +58,21 @@ service = build("drive", "v3", credentials=creds)
 - **Error Recovery**: If code fails, analyze the error and try alternative approaches.
 - **History Awareness**: Use provided action history and feedback to inform decisions.
 - **Opening Programs**: to open any program you might need (e.g. libreoffice) use subprocess.Popen() directly in your output code.
+- **Check the actions that got executed**: You can check the actions that got executed by looking at the `##Action Executed` field in the history; you can also see any unexecuted code in the `##Unexecuted code` field. Use this
+carefully to understand what to execute next.
 
 # TECHNICAL DETAILS
 - **Jupyter Features**: Use `%` and `!` operators as appropriate
 - **Timezone**: Assume UTC+0 unless specified otherwise
 - **Environment Timeout**: The environment has a timeout (>30s) that can trigger Jupyter timeout errors
 
-# STEP-BY-STEP EXAMPLE
-Consider the task: "Save the image in GIMP as `export.jpg` in the same directory of the original image".
-
-**Problematic approach** (doing all steps at once):
-```python
-keyboard.hotkey(['alt', 'f'])
-keyboard.type('e', interval=0.1)
-keyboard.type('export.jpg', interval=0.1)
-keyboard.hotkey(['enter'])
-```
-*Issue: May fail if there's already a default filename, causing 'export.jpg' to be appended incorrectly.*
-
-**Better approach** (step-by-step with observation):
-```python
-# Step 1: Open File menu
-keyboard.hotkey(['alt', 'f'])
-```
-*Observe the menu opens, then proceed to next step*
-
-```python
-# Step 2: Select Export As
-keyboard.type('e', interval=0.1)
-```
-*Observe the export dialog opens, check if there's a default filename*
-
-```python
-# Step 3: Clear any existing filename
-keyboard.hotkey(['ctrl', 'a'])
-keyboard.hotkey(['delete'])
-```
-*Observe the filename field is cleared*
-
-```python
-# Step 4: Enter desired filename and confirm
-keyboard.type('export.jpg', interval=0.1)
-keyboard.hotkey(['enter'])
-```
-*Observe the file is exported successfully*
+# HISTORY FORMAT
+You will be provided a history of past messages. The first will be this message, and then after that the task instruction. Next, you will receive one message per previous action you took.
+These messages will each contain a `##Step Number` to contextualize it in the trajectory, `##Agent Thoughts` showcasing your full output at that step, `##Action Executed` showcasing the actual action that
+was parsed and executed from this output, `##Unexcuted code` showing any code you output that was not executed at that step (since each step can only execute one keyboard or mouse
+command at a time), and `##Execution Output` showcasing the result (if any) of running this action in the environment.
+Finally, you will receive a message including an image of the current state of the screen.
+**Pay careful attention to the `##Agent Thoughts`, `##Action Executed`, `##Unexcuted code`, and current image fields to understand what you did in the past, and whether the desired outcome was successfully achieved or not.**
 
 # RESPONSE FORMAT
 Structure your response exactly as follows:

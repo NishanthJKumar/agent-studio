@@ -3,6 +3,7 @@ from pathlib import Path
 from agent_studio.agent.base_agent import BaseAgent
 from agent_studio.utils.types import Message, MessageList
 
+
 class DirectAgent(BaseAgent):
     """Zero-shot agents."""
 
@@ -43,9 +44,12 @@ class DirectAgent(BaseAgent):
             messages.append(
                 Message(
                     role="assistant",
-                    content=f"Step number: {i}.\nAction:\n\
-                    ```python\n{step.action}\n```\n\n"
-                    f"Error(s) from execution:\n{step.result}",
+                    content=f"##Step number: {i}.\n"
+                    f"##Agent Thoughts: {step.response}\n"
+                    "##Action Executed: "
+                    f"```python\n{step.action}\n```\n\n"
+                    f"##Unexecuted Code: {step.unexecuted_code}\n"
+                    f"##Execution Output:\n{step.result}",
                 )
             )
 

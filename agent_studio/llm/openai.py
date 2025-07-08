@@ -70,6 +70,13 @@ class OpenAIProvider(BaseModel):
             return cache_ret, {}  # TODO: for now we don't have any info to return
         # Else, generate a new response.
         model_message = self._format_messages(raw_messages=messages)
+        # # Viz
+        # for mm in model_message:
+        #     for mmc in mm['content']:
+        #         if 'image' not in mmc['type']:
+        #             print(mmc)
+        # import ipdb; ipdb.set_trace()
+        # #
         logger.info(f"Creating chat completion with model {model_name}.")
 
         @backoff.on_exception(

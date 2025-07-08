@@ -101,6 +101,21 @@ class BaseAgent:
             self.total_tokens += info.get("total_tokens", 0)
             action = extract_from_response(response).strip()
 
+        unexecuted_code = ""
+        # Truncate action if it contains keyboard or mouse commands.
+        if "keyboard." in action or "mouse." in action:
+            truncated_code = ""
+            # Split the code into lines
+            code_lines = action.splitlines()
+            # Find the first line containing "keyboard." or "mouse."
+            for line in code_lines:
+                truncated_code += line + "\n"
+                if "keyboard." in line or "mouse." in line:
+                    break
+            logger.info(f"Truncating code from: {action}\n to: {truncated_code}")
+            unexecuted_code = action[len(truncated_code) :]
+            action = truncated_code
+
         # Logging model outputs.
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"output_{timestamp}.txt"
@@ -121,6 +136,7 @@ class BaseAgent:
             prompt=prompt,
             response=response,
             action=action,
+            unexecuted_code=unexecuted_code,
             info=info,
             result={},
             timestamp=0.0,
@@ -142,18 +158,6 @@ class BaseAgent:
                 exit_in_code = True
             else:
                 code = code_clean
-            # Check for "keyboard." or "mouse." in the code
-            if "keyboard." in code or "mouse." in code:
-                truncated_code = ""
-                # Split the code into lines
-                code_lines = code.splitlines()
-                # Find the first line containing "keyboard." or "mouse."
-                for line in code_lines:
-                    truncated_code += line + "\n"
-                    if "keyboard." in line or "mouse." in line:
-                        break
-                code = truncated_code
-                logger.info(f"Truncating code from:\n{code_clean}\n")
             logger.info(f"Code to execute:\n{code}\n")
             if len(code) > 0:
                 result = self.runtime(code)

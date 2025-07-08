@@ -23,6 +23,7 @@ class StepInfo:
     prompt: MessageList | None
     response: str | None
     action: str
+    unexecuted_code: str | None
     info: dict[str, Any]
     result: dict[str, Any]
     timestamp: float
