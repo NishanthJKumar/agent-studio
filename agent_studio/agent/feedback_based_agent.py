@@ -184,19 +184,20 @@ class FeedbackBasedAgent(BaseAgent):
             action = extract_from_response(response).strip()
 
         unexecuted_code = ""
-        # Truncate action if it contains keyboard or mouse commands.
-        if "keyboard." in action or "mouse." in action:
-            truncated_code = ""
-            # Split the code into lines
-            code_lines = action.splitlines()
-            # Find the first line containing "keyboard." or "mouse."
-            for line in code_lines:
-                truncated_code += line + "\n"
-                if "keyboard." in line or "mouse." in line:
-                    break
-            logger.info(f"Truncating code from: {action}\n to: {truncated_code}")
-            unexecuted_code = action[len(truncated_code) :]
-            action = truncated_code
+        if self.task_config.restrict_to_one_step:
+            # Truncate action if it contains keyboard or mouse commands.
+            if "keyboard." in action or "mouse." in action:
+                truncated_code = ""
+                # Split the code into lines
+                code_lines = action.splitlines()
+                # Find the first line containing "keyboard." or "mouse."
+                for line in code_lines:
+                    truncated_code += line + "\n"
+                    if "keyboard." in line or "mouse." in line:
+                        break
+                logger.info(f"Truncating code from: {action}\n to: {truncated_code}")
+                unexecuted_code = action[len(truncated_code) :]
+                action = truncated_code
 
         # Logging model outputs.
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
