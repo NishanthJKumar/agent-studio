@@ -106,31 +106,53 @@ class StructuredPlanningAgent(BaseAgent):
         response, info = self.model.generate_response(messages=prompt, model=model_name)
         assert response is not None, "Failed to generate response."
         self.total_tokens += info.get("total_tokens", 0)
-        json_output = structured_json_extract_from_response(response)
-        # TODO: make the below parsing safer + less brittle via requerying.
-        action = extract_from_response(json_output["action"]).strip()
-        new_high_level_plan = json_output["high_level_plan"]
-        if new_high_level_plan == "No change." and len(self.trajectory) > 0:
-            new_high_level_plan = self.trajectory[-1].current_high_level_plan
-        curr_state_analysis = json_output["state_analysis"]
-        prev_goal_achieved = json_output["previous_goal_achieved"]
-        next_action_result = json_output["intended_action_result"]
 
-        # if action == "":
-        #     logger.info("Output response didn't contain action; trying again!")
-        #     new_message = Message(
-        #         role="user",
-        #         content=f"ERROR! You just output '''{response}'''. However, this "
-        #         "did not contain a valid ```python``` code block. Please "
-        #         "try again and ensure your response contains a valid "
-        #         "```python``` codeblock.",
-        #     )
-        #     error_recovery_prompt = prompt[:-1] + [new_message] + [prompt[-1]]
-        #     response, info = self.model.generate_response(
-        #         messages=error_recovery_prompt, model=model_name
-        #     )
-        #     self.total_tokens += info.get("total_tokens", 0)
-        #     action = extract_from_response(response).strip()
+        # Reprompting loop for correct formatting.
+        action = None
+        new_high_level_plan = None
+        curr_state_analysis = None
+        prev_goal_achieved = None
+        next_action_result = None
+        for _ in range(3):
+            try:
+                json_output = structured_json_extract_from_response(response)
+                action = extract_from_response(json_output["action"]).strip()
+                if action == "":
+                    raise KeyError("No action with ```python``` codeblock found.")
+                new_high_level_plan = json_output["high_level_plan"]
+                if new_high_level_plan == "No change." and len(self.trajectory) > 0:
+                    new_high_level_plan = self.trajectory[-1].current_high_level_plan
+                curr_state_analysis = json_output["state_analysis"]
+                prev_goal_achieved = json_output["previous_goal_achieved"]
+                next_action_result = json_output["intended_action_result"]
+            except KeyError as e:
+                logger.info("Output response badly formatted!")
+                new_message = Message(
+                    role="user",
+                    content=f"ERROR! You just output '''{response}'''. However, this "
+                    "was badly formatted. In particular, it lead to the "
+                    "following error "
+                    f"{e}. Please try again and ensure your response contains "
+                    "valid JSON with all the fields requested above.",
+                )
+                error_recovery_prompt = prompt + [new_message]
+                response, info = self.model.generate_response(
+                    messages=error_recovery_prompt, model=model_name
+                )
+                self.total_tokens += info.get("total_tokens", 0)
+
+            if (
+                len(action) > 0
+                and new_high_level_plan is not None
+                and curr_state_analysis is not None
+                and prev_goal_achieved is not None
+            ):
+                break
+
+        assert action is not None
+        assert new_high_level_plan is not None
+        assert curr_state_analysis is not None
+        assert prev_goal_achieved is not None
 
         if self.restrict_to_one_step:
             # Truncate action if it contains keyboard or mouse commands.
