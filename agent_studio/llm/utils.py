@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 import re
 from pathlib import Path
 
@@ -24,6 +25,16 @@ def extract_from_response(response: str, backtick="```") -> str:
         extracted_string = ""
 
     return extracted_string
+
+
+def structured_json_extract_from_response(response: str) -> dict[str, str]:
+    pattern = r"```json\n(.*?)\n```"
+    match = re.search(pattern, response, re.DOTALL)
+    if match:
+        extracted_string = match.group(1)
+    else:
+        extracted_string = ""
+    return json.loads(extracted_string)
 
 
 def openai_encode_image(image: Path | Image.Image | np.ndarray) -> str:
