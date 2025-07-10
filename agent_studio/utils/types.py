@@ -32,6 +32,26 @@ class StepInfo:
 TrajectoryInfo = list[StepInfo]
 
 
+@dataclass
+class StructuredStepInfo:
+    """A version of the StepInfo that is more structured and conducive
+    to hierarchical planning."""
+
+    obs: np.ndarray | None
+    prev_expected_result_achieved: bool | None
+    prompt: MessageList | None
+    current_high_level_plan: str | None
+    action: str | None
+    current_scene_description: str | None
+    next_expected_result: str | None
+    result: dict[str, Any] | None
+    info: dict[str, Any]
+    timestamp: float
+
+
+StructuredTrajectoryInfo = list[StructuredStepInfo]
+
+
 class Procedure(BaseModel):
     evaluator: str
     function: str
@@ -64,6 +84,19 @@ class SavedStepInfo(BaseModel):
     timestamp: float
 
 
+class SavedStructuredStepInfo(BaseModel):
+    obs: str | None
+    prev_expected_result_achieved: bool | None
+    prompt: list[SavedMessage] | None
+    current_high_level_plan: str | None
+    action: str | None
+    current_scene_description: str | None
+    next_expected_result: str | None
+    result: dict[str, Any] | None
+    info: dict[str, Any]
+    timestamp: float
+
+
 class VideoMeta(BaseModel):
     fps: int
     frame_count: int
@@ -80,8 +113,11 @@ class TaskResult(BaseModel):
     token_count: int
     time_cost: float
     video: Optional[VideoMeta]
-    trajectory: list[SavedStepInfo]
+    trajectory: list[Union[SavedStepInfo, SavedStructuredStepInfo]]
     error_in_eval: bool
+
+    # Add model config to handle discriminated unions
+    model_config = {"smart_union": True}
 
 
 class Action(BaseModel):
