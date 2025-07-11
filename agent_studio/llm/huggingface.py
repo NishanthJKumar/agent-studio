@@ -9,6 +9,7 @@ from transformers import (
     AutoModelForCausalLM,
     AutoProcessor,
     AutoTokenizer,
+    Gemma3nForConditionalGeneration,
     PaliGemmaForConditionalGeneration,
 )
 
@@ -67,6 +68,13 @@ class HuggingFaceProvider(BaseModel):
                     .to("cuda")
                     .eval()
                 )
+                self.processor = AutoProcessor.from_pretrained(self.model_name)
+            elif "gemma" in self.model_name:
+                self.model = Gemma3nForConditionalGeneration.from_pretrained(
+                    self.model_name,
+                    device_map="auto",
+                    torch_dtype=torch.bfloat16,
+                ).eval()
                 self.processor = AutoProcessor.from_pretrained(self.model_name)
             else:
                 self.tokenizer = AutoTokenizer.from_pretrained(
@@ -185,6 +193,22 @@ class HuggingFaceProvider(BaseModel):
             response = self.processor.decode(output[0], skip_special_tokens=True)[
                 len(query) :
             ]
+
+        elif "gemma" in self.model_name:
+            inputs = self.processor.apply_chat_template(
+                model_message,
+                add_generation_prompt=True,
+                tokenize=True,
+                return_dict=True,
+                return_tensors="pt",
+            ).to(self.model.device)
+            input_len = inputs["input_ids"].shape[-1]
+            with torch.inference_mode():
+                generation = self.model.generate(
+                    **inputs, max_new_tokens=10000, do_sample=False
+                )
+                generation = generation[0][input_len:]
+                response = self.processor.decode(generation, skip_special_tokens=True)
 
         elif "Qwen" in self.model_name or "SeeClick" in self.model_name:
             query = self.tokenizer.from_list_format(model_message)

@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=agent_experiment
-#SBATCH --output=experiment-nevergiveup-gpt-4o-2024-11-20.log
-#SBATCH --error=experiment-nevergiveup-gpt-4o-2024-11-20.err
+#SBATCH --output=test-gemma.log
+#SBATCH --error=test-gemma.err
 #SBATCH --time=10:00:00  # Adjust the time as needed
 #SBATCH --mem=500G
 #SBATCH --account=siro
@@ -10,8 +10,8 @@
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/"
-MODEL_NAME="gpt-4o-2024-11-20"
+PARTICULAR_PATH="eval_online_benchmarks/tasks/single_api/os/0d5f7fef-3e79-4f86-87a8-d3435de04d9e.json"
+MODEL_NAME="google/gemma-3n-e4b-it"
 
 # Generate random port numbers
 generate_random_port() {
