@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 RUNTIME_INIT_CODE = """
+import subprocess
+import time
 from agent_studio.envs.desktop_env import Keyboard, Mouse
 
 

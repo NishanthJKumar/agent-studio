@@ -14,12 +14,10 @@ from pathlib import Path
 import numpy as np
 
 from agent_studio.agent.base_agent import BaseAgent
-from agent_studio.llm import ModelManager
 from agent_studio.llm.utils import (
     extract_from_response,
     structured_json_extract_from_response,
 )
-from agent_studio.utils.runtime import PythonRuntime, RemotePythonRuntime
 from agent_studio.utils.types import (
     Message,
     MessageList,
@@ -28,15 +26,6 @@ from agent_studio.utils.types import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-RUNTIME_INIT_CODE = """
-from agent_studio.envs.desktop_env import Keyboard, Mouse
-
-
-keyboard = Keyboard()
-mouse = Mouse()
-"""
 
 
 class StructuredPlanningAgent(BaseAgent):
@@ -55,30 +44,19 @@ class StructuredPlanningAgent(BaseAgent):
         prompt_approach: str = "naive",
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
-        model_manager = ModelManager()
-        self.model = model_manager.get_model(model)
-        self.remote = remote
-        self.runtime_server_addr = runtime_server_addr
-        self.runtime_server_port = runtime_server_port
-        self.runtime: PythonRuntime | RemotePythonRuntime
-        self.runtime_init_code: str = RUNTIME_INIT_CODE.strip()
-        self.results_dir: Path = results_dir
-        self.restrict_to_one_step = restrict_to_one_step
+        super().__init__(
+            model=model,
+            remote=remote,
+            runtime_server_addr=runtime_server_addr,
+            runtime_server_port=runtime_server_port,
+            results_dir=results_dir,
+            restrict_to_one_step=restrict_to_one_step,
+            prompt_approach=prompt_approach,
+        )
 
-        if self.remote:
-            self.runtime = RemotePythonRuntime(
-                env_server_addr=self.runtime_server_addr,
-                env_server_port=self.runtime_server_port,
-            )
-        else:
-            self.runtime = PythonRuntime()
-
-        self.task_config: TaskConfig
-        self.instruction: str
+        # Override the following variables
         self.trajectory: list[StructuredStepInfo]
-        self.obs: np.ndarray | None = None
         self.step_info: StructuredStepInfo | None
-        self.total_tokens: int
         with open(
             f"agent_studio/agent/prompts/{prompt_approach}_system_prompt.txt", "r"
         ) as file:
@@ -125,7 +103,7 @@ class StructuredPlanningAgent(BaseAgent):
                 curr_state_analysis = json_output["state_analysis"]
                 prev_goal_achieved = json_output["previous_goal_achieved"]
                 next_action_result = json_output["intended_action_result"]
-            except KeyError as e:
+            except (KeyError, TypeError) as e:
                 logger.info("Output response badly formatted!")
                 new_message = Message(
                     role="user",
@@ -133,7 +111,9 @@ class StructuredPlanningAgent(BaseAgent):
                     "was badly formatted. In particular, it lead to the "
                     "following error "
                     f"{e}. Please try again and ensure your response contains "
-                    "valid JSON with all the fields requested above.",
+                    "valid JSON with all the fields requested above. Also "
+                    "ensure that the action field contains exactly a single string "
+                    "that has a valid ```python``` codeblock within it.",
                 )
                 error_recovery_prompt = prompt + [new_message]
                 response, info = self.model.generate_response(
