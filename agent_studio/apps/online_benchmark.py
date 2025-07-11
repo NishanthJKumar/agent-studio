@@ -1178,9 +1178,9 @@ def eval(args, interface: NonGUI | None = None) -> None:
                     # If the action is empty.
                     elif action == "":
                         failure_msg = "Failed to generate action."
-                    # If the action is the same as the previous two actions.
+                    # If the action is the same as the previous nine actions.
                     elif (
-                        len(action_memory) >= 3
+                        len(action_memory) >= 10
                         and action_memory[-1] == action_memory[-2] == action_memory[-3]
                     ):
                         failure_msg = "Repeated action."
