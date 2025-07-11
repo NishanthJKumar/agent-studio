@@ -65,6 +65,7 @@ MODEL_PROVIDER_MAPPING = {
     "claude-3-5-sonnet-20240620": "claude",
     "claude-3-5-sonnet-20241022": "claude",
     "claude-3-5-sonnet@20240620": "vertexai-anthropic",
+    "google/gemma-3n-e4b-it": "remote",
     "dummy": "dummy",
 }
 

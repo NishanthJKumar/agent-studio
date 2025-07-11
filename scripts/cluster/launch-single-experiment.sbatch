@@ -34,6 +34,19 @@ echo "Starting server on node $(hostname)..."
 echo "VNC PORT: $VNC_PORT"
 echo "ENV_SERVER_PORT: $ENV_SERVER_PORT"
 
+# Step 0: Launch the huggingface server depending on the model to be used.
+if [[ "$MODEL_NAME" == *"gemma"* ]]; then
+  # Activate the conda environment
+  source /home/$USER/miniconda3/etc/profile.d/conda.sh
+  conda activate agent-studio
+  # Launch the huggingface model server in the background
+  python scripts/huggingface_model_server.py &
+  HUGGINGFACE_SERVER_PID=$!
+  echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
+  # Wait for the server to initialize
+  sleep 2
+fi
+
 # Step 1: Launch the server
 apptainer exec --no-home --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot \
   --env VNC_PORT=$VNC_PORT \
