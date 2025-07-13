@@ -85,7 +85,7 @@ Your output format should be always a JSON object with the following fields:
 {
     "state_analysis": "Brief analysis of the current screen state and what has been done so far for the current high-level plan. Output which part of the plan you're currently at and what subgoal you're working towards achieving",
     "high_level_plan": "Provide a python list where each element is a natural language description of a subgoal to be accomplished towards completing the task. If you wish to continue following the most-recent timestep's High-Level Plan, then simply output 'No change.'. If there is no high-level plan (i.e., this is the first timestep) or you wish to make a change, then output a new plan.",
-    "previous_goal_achieved": "Output a bool (True or False) corresponding to whether the intended effect of the previous action was accomplished or not; if this is the first timestep, then output True",
+    "previous_goal_achieved": "Output a bool (true or false) corresponding to whether the intended effect of the previous action was accomplished or not; if this is the first timestep, then output True",
     "reasoning": "Explain your reasoning for the suggested next steps",
     "action": "a ```python ``` codeblock that performs one mouse action, one keyboard action, or includes some arbitrary python code to execute. If you believe the user request has been accomplished (i.e., all subgoals are complete), then simply output ```python\n exit()\n```. Otherwise, please output code that will accomplish the next subgoal in the high-level plan.",
     "intended_action_result": "describe in natural language what you expect the current action to accomplish"

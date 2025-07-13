@@ -103,7 +103,7 @@ class StructuredPlanningAgent(BaseAgent):
                 curr_state_analysis = json_output["state_analysis"]
                 prev_goal_achieved = json_output["previous_goal_achieved"]
                 next_action_result = json_output["intended_action_result"]
-            except (KeyError, TypeError) as e:
+            except Exception as e:
                 logger.info("Output response badly formatted!")
                 new_message = Message(
                     role="user",
