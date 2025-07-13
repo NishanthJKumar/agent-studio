@@ -66,9 +66,38 @@ async def ready() -> JSONResponse:
     else:
         return JSONResponse(content={"status": "loading"}, status_code=503)
 
+logger.info("Loaded model!")
 
 class GenerateRequest(BaseModel):
     messages: str
+
+def convert_message_to_gemma_format(
+        raw_messages: MessageList,
+    ) -> list[dict[str, Any]]:
+        """
+        Composes the messages to be sent to the model.
+        """
+        model_message: list[dict[str, Any]] = []
+        past_role = None
+        for msg in raw_messages:
+            if isinstance(msg.content, np.ndarray):
+                content = {"type": "image", "image": Image.fromarray(msg.content).convert("RGB")}
+            elif isinstance(msg.content, Path):
+                content = {"type": "image", "image": Image.open(msg.content).convert("RGB")}
+            elif isinstance(msg.content, str):
+                content = {"type": "text", "text": msg.content}
+            current_role = msg.role
+            if past_role != current_role:
+                model_message.append(
+                    {
+                        "role": current_role,
+                        "content": [content],
+                    }
+                )
+                past_role = current_role
+            else:
+                model_message[-1]["content"].append(content)
+        return model_message
 
 
 def convert_message_to_gemma_format(
