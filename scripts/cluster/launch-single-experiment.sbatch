@@ -2,6 +2,8 @@
 #SBATCH --job-name=agent_experiment
 #SBATCH --output=test-gemma.log
 #SBATCH --error=test-gemma.err
+#SBATCH --cpus-per-task=50
+#SBATCH --gres=gpu:1
 #SBATCH --time=10:00:00  # Adjust the time as needed
 #SBATCH --mem=500G
 #SBATCH --account=siro
@@ -36,15 +38,16 @@ echo "ENV_SERVER_PORT: $ENV_SERVER_PORT"
 
 # Step 0: Launch the huggingface server depending on the model to be used.
 if [[ "$MODEL_NAME" == *"gemma"* ]]; then
+  echo "LAUNCHING PRIVATE MODEL SERVER"
   # Activate the conda environment
   source /home/$USER/miniconda3/etc/profile.d/conda.sh
   conda activate agent-studio
   # Launch the huggingface model server in the background
-  python scripts/huggingface_model_server.py &
+  python scripts/huggingface_model_server.py 2>&1 | tee hugging_server_output.log &
   HUGGINGFACE_SERVER_PID=$!
   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
   # Wait for the server to initialize
-  sleep 2
+  sleep 85
 fi
 
 # Step 1: Launch the server
