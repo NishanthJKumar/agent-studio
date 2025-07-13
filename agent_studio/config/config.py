@@ -23,7 +23,7 @@ class Config(metaclass=ThreadSafeSingleton):
     video_fps: int = 5
     need_human_confirmation: bool = False
     restrict_to_one_step: bool = True
-    model_server: str = "0.0.0.0:8000"
+    model_server: str = "http://0.0.0.0:64000"
 
     # LM config
     seed: int = 42
