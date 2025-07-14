@@ -34,7 +34,7 @@ class RemoteProvider(BaseModel):
             backoff.constant,
             ConnectionError,
             max_tries=config.max_retries,
-            interval=10,
+            interval=20,
         )
         def _generate_response_with_retry() -> tuple[str, dict[str, int]]:
             body = {
