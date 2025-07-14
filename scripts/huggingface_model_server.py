@@ -12,6 +12,8 @@ from typing import Any
 import numpy as np
 from pathlib import Path
 from PIL import Image
+import time
+from transformers import StoppingCriteria, StoppingCriteriaList
 
 
 logger = logging.getLogger(__name__)
@@ -57,6 +59,19 @@ def convert_message_to_gemma_format(
                 model_message[-1]["content"].append(content)
         return model_message
 
+class TimingStoppingCriteria(StoppingCriteria):
+    def __init__(self):
+        self.token_times = []
+        self.last_time = None
+        self.start_time = time.time()
+        
+    def __call__(self, input_ids, scores, **kwargs):
+        current_time = time.time()
+        if self.last_time is not None:
+            self.token_times.append(current_time - self.last_time)
+        self.last_time = current_time
+        return False
+
 @app.post("/generate")
 async def generate(request: GenerateRequest) -> JSONResponse:
     messages_decoded = str2bytes(request.messages)
@@ -72,14 +87,35 @@ async def generate(request: GenerateRequest) -> JSONResponse:
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
     input_len = inputs["input_ids"].shape[-1]
     logger.info("Starting model inference!")
+    timing_criteria = TimingStoppingCriteria()
+    stopping_criteria = StoppingCriteriaList([timing_criteria])
+    total_start_time = time.time()
     with torch.inference_mode():
-        generation = model.generate(**inputs, max_new_tokens=10000, do_sample=False)
+        generation = model.generate(
+            **inputs, 
+            max_new_tokens=10000, 
+            do_sample=False,
+            stopping_criteria=stopping_criteria
+        )
         generation = generation[0][input_len:]
+    total_time = time.time() - total_start_time
+    
+    # Log timing information
+    if timing_criteria.token_times:
+        avg_token_time = sum(timing_criteria.token_times) / len(timing_criteria.token_times)
+        tokens_per_second = 1 / avg_token_time if avg_token_time > 0 else 0
+        logger.info(f"Generated {len(timing_criteria.token_times)} tokens in {total_time:.2f}s")
+        # logger.info(f"Average per-token time: {avg_token_time:.4f}s ({tokens_per_second:.2f} tokens/sec)")
+    
     logger.info("Model inference complete!")
     decoded = processor.decode(generation, skip_special_tokens=True)
     return JSONResponse(content={
         "message": bytes2str(decoded),
-        "info": bytes2str({})
+        "info": bytes2str({"timing": {
+            "total_time": total_time,
+            "token_count": len(timing_criteria.token_times),
+            "tokens_per_second": tokens_per_second if 'tokens_per_second' in locals() else 0
+        }})
     })
 
 
