@@ -66,7 +66,6 @@ async def ready() -> JSONResponse:
     else:
         return JSONResponse(content={"status": "loading"}, status_code=503)
 
-logger.info("Loaded model!")
 
 class GenerateRequest(BaseModel):
     messages: str
