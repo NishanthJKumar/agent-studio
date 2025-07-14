@@ -27,7 +27,7 @@ class Config(metaclass=ThreadSafeSingleton):
 
     # LM config
     seed: int = 42
-    max_retries: int = 3
+    max_retries: int = 10
     temperature: float = 0.0
     top_k: int = 1
     max_tokens: int = 4096

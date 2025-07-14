@@ -57,8 +57,8 @@ else
 fi
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="never-giveup-single-action-${JOB_NAME}-gpt-4o-2024-11-20.log"
-ERROR_FILE="never-giveup-single-action-${JOB_NAME}-gpt-4o-2024-11-20.err"
+OUTPUT_FILE="gemma-nevergiveup-${JOB_NAME}-gpt-4o-2024-11-20.log"
+ERROR_FILE="gemma-nevergiveup-${JOB_NAME}-gpt-4o-2024-11-20.err"
 
 # Redirect stdout and stderr
 exec 1>$OUTPUT_FILE
@@ -92,7 +92,7 @@ if [[ "$MODEL_NAME" == *"gemma"* ]]; then
   source /home/$USER/miniconda3/etc/profile.d/conda.sh
   conda activate agent-studio
   # Launch the huggingface model server in the background
-  python scripts/huggingface_model_server.py --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
+  python scripts/huggingface_model_server.py --port $HF_SERVER_PORT 2>&1 &
   HUGGINGFACE_SERVER_PID=$!
   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
   # Wait for the server to initialize
