@@ -65,6 +65,12 @@ ERROR_FILE="gemma-structuredplanning-${JOB_NAME}-gpt-4o-2024-11-20.err"
 exec 1>$OUTPUT_FILE
 exec 2>$ERROR_FILE
 
+<<<<<<< HEAD:scripts/cluster/a100/launch-batch-experiment-a100.sbatch
+=======
+
+MODEL_NAME="google/gemma-3n-e4b-it"
+
+>>>>>>> eded6e0 (command line arg for model server launching):scripts/cluster/launch-batch-experiment.sbatch
 # Generate random port numbers
 generate_random_port() {
   while :; do
@@ -84,12 +90,17 @@ SERVER_SOCKET=$(generate_random_port)
 HF_SERVER_PORT=$(generate_random_port)
 
 # Step 0: Launch the huggingface server depending on the model to be used.
+<<<<<<< HEAD:scripts/cluster/a100/launch-batch-experiment-a100.sbatch
 if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
+=======
+if [[ "$MODEL_NAME" == *"gemma"* ]]; then
+>>>>>>> eded6e0 (command line arg for model server launching):scripts/cluster/launch-batch-experiment.sbatch
   echo "LAUNCHING PRIVATE MODEL SERVER"
   # Activate the conda environment
   source /home/$USER/miniconda3/etc/profile.d/conda.sh
   conda activate agent-studio
   # Launch the huggingface model server in the background
+<<<<<<< HEAD:scripts/cluster/a100/launch-batch-experiment-a100.sbatch
   python scripts/huggingface_model_server.py --model $MODEL_NAME --port $HF_SERVER_PORT 2>&1 &
   HUGGINGFACE_SERVER_PID=$!
   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
@@ -115,6 +126,13 @@ if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
     echo "Server did not become ready in time. Exiting."
     exit 1
   fi
+=======
+  python scripts/huggingface_model_server.py --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
+  HUGGINGFACE_SERVER_PID=$!
+  echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
+  # Wait for the server to initialize
+  sleep 65
+>>>>>>> eded6e0 (command line arg for model server launching):scripts/cluster/launch-batch-experiment.sbatch
 fi
 
 echo "Starting server on node $(hostname)..."
