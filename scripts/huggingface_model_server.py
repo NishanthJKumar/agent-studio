@@ -1,6 +1,4 @@
 import argparse
-import accelerate
-from accelerate import Accelerator
 import fastapi
 import torch
 from fastapi.responses import JSONResponse
@@ -18,21 +16,15 @@ from PIL import Image
 
 logger = logging.getLogger(__name__)
 
-
 app = fastapi.FastAPI()
 
-# Initialize accelerator
-accelerator = Accelerator()
-# Load the model with accelerator
+# Load the model and processor once
 model_id = "google/gemma-3n-e4b-it"
 model = Gemma3nForConditionalGeneration.from_pretrained(
-    model_id, torch_dtype=torch.bfloat16
+    model_id, device_map="auto", torch_dtype=torch.bfloat16
 ).eval()
 processor = AutoProcessor.from_pretrained(model_id)
-# Move model to appropriate devices
-model = accelerator.prepare(model)
 
-logger.info("Loaded model!")
 
 class GenerateRequest(BaseModel):
     messages: str
@@ -65,7 +57,6 @@ def convert_message_to_gemma_format(
                 model_message[-1]["content"].append(content)
         return model_message
 
-
 @app.post("/generate")
 async def generate(request: GenerateRequest) -> JSONResponse:
     messages_decoded = str2bytes(request.messages)
@@ -78,12 +69,12 @@ async def generate(request: GenerateRequest) -> JSONResponse:
         return_dict=True,
         return_tensors="pt",
     )
-    # Prepare inputs with accelerator
-    inputs = {k: accelerator.prepare(v) for k, v in inputs.items()}
+    inputs = {k: v.to(model.device) for k, v in inputs.items()}
     input_len = inputs["input_ids"].shape[-1]
+    logger.info("Starting model inference!")
     with torch.inference_mode():
         generation = model.generate(**inputs, max_new_tokens=10000, do_sample=False)
-        generation = accelerator.gather(generation)[0][input_len:]
+        generation = generation[0][input_len:]
     logger.info("Model inference complete!")
     decoded = processor.decode(generation, skip_special_tokens=True)
     return JSONResponse(content={
@@ -106,5 +97,5 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     import uvicorn
-    logger.info(f"Running HuggingFace model at {args.host}:{args.port}")
+
     uvicorn.run(app, host=args.host, port=args.port)
