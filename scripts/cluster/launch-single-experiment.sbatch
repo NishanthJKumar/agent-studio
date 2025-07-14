@@ -47,7 +47,7 @@ if [[ "$MODEL_NAME" == *"gemma"* ]]; then
   HUGGINGFACE_SERVER_PID=$!
   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
   # Wait for the server to initialize
-  sleep 85
+  sleep 65
 fi
 
 # Step 1: Launch the server
