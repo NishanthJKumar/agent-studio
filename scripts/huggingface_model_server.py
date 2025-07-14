@@ -168,7 +168,6 @@ class TimingStoppingCriteria(StoppingCriteria):
         self.token_times = []
         self.last_time = None
         self.start_time = time.time()
-
     def __call__(self, input_ids, scores, **kwargs):
         current_time = time.time()
         if self.last_time is not None:
