@@ -18,6 +18,7 @@ class DirectAgent(BaseAgent):
         results_dir: Path,
         restrict_to_one_step: bool,
         prompt_approach: str = "naive",
+        model_server: str = None,
     ) -> None:
         """Initialize everything the same way as the parent class, but also
         initialize a feedback model and buffer."""
