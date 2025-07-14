@@ -33,6 +33,7 @@ class FeedbackBasedAgent(BaseAgent):
         feedback_model: str = "gpt-4o-2024-08-06",
         feedback_prompt_approach: str = "direct",
         max_critique_attempts: int = 3,
+        model_server: str = None,
     ) -> None:
         """Initialize everything the same way as the parent class, but also
         initialize a feedback model and buffer."""
