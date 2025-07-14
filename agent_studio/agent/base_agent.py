@@ -37,10 +37,11 @@ class BaseAgent:
         results_dir: Path,
         restrict_to_one_step: bool,
         prompt_approach: str = "naive",
+        model_server: str = None,
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
         model_manager = ModelManager()
-        self.model = model_manager.get_model(model)
+        self.model = model_manager.get_model(model, model_server=model_server)
         self.remote = remote
         self.runtime_server_addr = runtime_server_addr
         self.runtime_server_port = runtime_server_port
