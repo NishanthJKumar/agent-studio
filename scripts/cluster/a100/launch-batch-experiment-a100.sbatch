@@ -57,8 +57,8 @@ else
 fi
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="structured-planning-${JOB_NAME}-gpt-4o-2024-11-20.log"
-ERROR_FILE="structured-planning-${JOB_NAME}-gpt-4o-2024-11-20.err"
+OUTPUT_FILE="gemma-nevergiveup-${JOB_NAME}-gpt-4o-2024-11-20.log"
+ERROR_FILE="gemma-nevergiveup-${JOB_NAME}-gpt-4o-2024-11-20.err"
 
 # Redirect stdout and stderr
 exec 1>$OUTPUT_FILE
