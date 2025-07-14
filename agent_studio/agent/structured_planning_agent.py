@@ -122,7 +122,8 @@ class StructuredPlanningAgent(BaseAgent):
                 self.total_tokens += info.get("total_tokens", 0)
 
             if (
-                len(action) > 0
+                action is not None
+                and len(action) > 0
                 and new_high_level_plan is not None
                 and curr_state_analysis is not None
                 and prev_goal_achieved is not None
