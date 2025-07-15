@@ -117,3 +117,5 @@ Task instruction: Help me change the 2 in "H2O" to a subscript and save it.
     "intended_action_result": "Close the 'Tip of the Day' popup to allow interaction with the document."
 }
 ```
+
+NOTE: Notice how there are `\n` characters in the output code block: please ensure that your output code is formatted correctly with `\n` text characters instead of you automatically inserting newlines.

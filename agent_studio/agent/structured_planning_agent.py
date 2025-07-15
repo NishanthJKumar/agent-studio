@@ -116,7 +116,9 @@ class StructuredPlanningAgent(BaseAgent):
                     "ensure your response contains "
                     "valid JSON with all the fields requested above. Also "
                     "ensure that the action field contains exactly a single string "
-                    "that has a valid ```python``` codeblock within it.",
+                    "that has a valid ```python``` codeblock within it. "
+                    "Finally, ensure that this codeblock has `\n` characters "
+                    "and not direct newline characters that you insert.",
                 )
                 error_recovery_prompt = prompt + [new_message]
                 response, info = self.model.generate_response(
