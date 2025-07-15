@@ -95,8 +95,9 @@ if [[ "$MODEL_NAME" == *"gemma"* ]]; then
   python scripts/huggingface_model_server.py --port $HF_SERVER_PORT 2>&1 &
   HUGGINGFACE_SERVER_PID=$!
   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
-  # Wait for the server to initialize
-  sleep 95
+  # Wait for the server to initialize.
+  # TODO: find a smarter way of doing this!
+  sleep 200
 fi
 
 echo "Starting server on node $(hostname)..."
