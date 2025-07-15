@@ -42,6 +42,7 @@ class StructuredPlanningAgent(BaseAgent):
         results_dir: Path,
         restrict_to_one_step: bool,
         prompt_approach: str = "naive",
+        model_server: str = None,
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
         super().__init__(
@@ -52,6 +53,7 @@ class StructuredPlanningAgent(BaseAgent):
             results_dir=results_dir,
             restrict_to_one_step=restrict_to_one_step,
             prompt_approach=prompt_approach,
+            model_server=model_server,
         )
 
         # Override the following variables
