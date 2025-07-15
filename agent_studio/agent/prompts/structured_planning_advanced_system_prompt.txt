@@ -87,9 +87,33 @@ Your output format should be always a JSON object with the following fields:
     "high_level_plan": "Provide a python list where each element is a natural language description of a subgoal to be accomplished towards completing the task. If you wish to continue following the most-recent timestep's High-Level Plan, then simply output 'No change.'. If there is no high-level plan (i.e., this is the first timestep) or you wish to make a change, then output a new plan.",
     "previous_goal_achieved": "Output a bool (true or false) corresponding to whether the intended effect of the previous action was accomplished or not; if this is the first timestep, then output True",
     "reasoning": "Explain your reasoning for the suggested next steps",
-    "action": "a ```python ``` codeblock that performs one mouse action, one keyboard action, or includes some arbitrary python code to execute. If you believe the user request has been accomplished (i.e., all subgoals are complete), then simply output ```python\n exit()\n```. Otherwise, please output code that will accomplish the next subgoal in the high-level plan.",
+    "action": "a ```python ``` codeblock that performs one mouse action, one keyboard action, or includes some arbitrary python code to execute. If you believe the user request has been accomplished (i.e., all subgoals are complete), then simply output ```python\n exit()\n```. Otherwise, please output code that will make progress towards accomplishing the next subgoal in the high-level plan.",
     "intended_action_result": "describe in natural language what you expect the current action to accomplish"
 }
 ```
 
 Make sure that the "action" field contains a string that has a ```python ``` codeblock within it!
+
+# EXAMPLE
+Please consider the below input-output example and use it to inform the structure of your output response.
+
+## Input
+Task instruction: Help me change the 2 in "H2O" to a subscript and save it.
+
+## Valid Output
+```json
+{
+    "state_analysis": "LibreOffice Writer is open with a document containing 'H2O'. A 'Tip of the Day' popup is currently displayed, blocking interaction with the document.",
+    "high_level_plan": [
+        "Close the 'Tip of the Day' popup.",
+        "Locate the 'H2O' text in the document.",
+        "Select the '2' in 'H2O'.",
+        "Apply the subscript formatting to the selected '2'.",
+        "Save the document."
+    ],
+    "previous_goal_achieved": true,
+    "reasoning": "The popup needs to be closed to interact with the document. Closing it will allow us to proceed with editing the text.",
+    "action": "```python\nkeyboard.hotkey(['enter'])\n```",
+    "intended_action_result": "Close the 'Tip of the Day' popup to allow interaction with the document."
+}
+```
