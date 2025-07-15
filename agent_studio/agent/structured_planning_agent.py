@@ -112,7 +112,8 @@ class StructuredPlanningAgent(BaseAgent):
                     content=f"ERROR! You just output '''{response}'''. However, this "
                     "was badly formatted. In particular, it lead to the "
                     "following error "
-                    f"{e}. Please try again and ensure your response contains "
+                    f"{e}. Please try again and fix this error; "
+                    "ensure your response contains "
                     "valid JSON with all the fields requested above. Also "
                     "ensure that the action field contains exactly a single string "
                     "that has a valid ```python``` codeblock within it.",
