@@ -5,6 +5,8 @@
 #SBATCH --account=siro
 #SBATCH --qos=siro_high
 #SBATCH --ntasks-per-node 1
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=50
 
 # Define variables
 USER="njkmr"
@@ -55,15 +57,15 @@ else
 fi
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="never-giveup-single-action-${JOB_NAME}-gpt-4o-2024-11-20.log"
-ERROR_FILE="never-giveup-single-action-${JOB_NAME}-gpt-4o-2024-11-20.err"
+OUTPUT_FILE="gemma-nevergiveup-${JOB_NAME}-gpt-4o-2024-11-20.log"
+ERROR_FILE="gemma-nevergiveup-${JOB_NAME}-gpt-4o-2024-11-20.err"
 
 # Redirect stdout and stderr
 exec 1>$OUTPUT_FILE
 exec 2>$ERROR_FILE
 
 
-MODEL_NAME="gpt-4o-2024-11-20"
+MODEL_NAME="google/gemma-3n-e4b-it"
 
 # Generate random port numbers
 generate_random_port() {
@@ -81,9 +83,21 @@ VNC_PORT=$(generate_random_port)
 API_WEB_SOCKET=$(generate_random_port)
 API_SOCKET=$(generate_random_port)
 SERVER_SOCKET=$(generate_random_port)
+HF_SERVER_PORT=$(generate_random_port)
 
-# Modify the config file
-CONFIG_FILE="/home/$USER/agent-studio/agent_studio/config/config.py"
+# Step 0: Launch the huggingface server depending on the model to be used.
+if [[ "$MODEL_NAME" == *"gemma"* ]]; then
+  echo "LAUNCHING PRIVATE MODEL SERVER"
+  # Activate the conda environment
+  source /home/$USER/miniconda3/etc/profile.d/conda.sh
+  conda activate agent-studio
+  # Launch the huggingface model server in the background
+  python scripts/huggingface_model_server.py --port $HF_SERVER_PORT 2>&1 &
+  HUGGINGFACE_SERVER_PID=$!
+  echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
+  # Wait for the server to initialize
+  sleep 95
+fi
 
 echo "Starting server on node $(hostname)..."
 echo "VNC PORT: $VNC_PORT"
@@ -119,7 +133,7 @@ for ((i=1; i<=RETRIES; i++)); do
     --bind /home/$USER/agent-studio/:/home/ubuntu/agent_studio/ \
     agent-studio-client.sif /bin/bash -c "
       cd /home/ubuntu/agent_studio
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --prompting_approach never_giveup_use_keyboard_use_subprocess_check_output --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --remote
+      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --prompting_approach never_giveup_use_keyboard_use_subprocess_check_output --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
     "
 
   if [ $? -eq 0 ]; then

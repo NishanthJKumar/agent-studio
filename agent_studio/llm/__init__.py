@@ -65,6 +65,7 @@ MODEL_PROVIDER_MAPPING = {
     "claude-3-5-sonnet-20240620": "claude",
     "claude-3-5-sonnet-20241022": "claude",
     "claude-3-5-sonnet@20240620": "vertexai-anthropic",
+    "google/gemma-3n-e4b-it": "remote",
     "dummy": "dummy",
 }
 
@@ -78,12 +79,13 @@ class ModelManager(metaclass=ThreadSafeSingleton):
     def __init__(self):
         self.models = register_models()
 
-    def get_model(self, model_name: str) -> BaseModel:
+    def get_model(self, model_name: str, model_server: str = None) -> BaseModel:
         """
         Get a new model instance based on the model name.
 
         Args:
             model_name: The name of the model to get.
+            model_server: Optional model server address for RemoteProvider.
 
         Returns:
             The model instance.
@@ -102,7 +104,10 @@ class ModelManager(metaclass=ThreadSafeSingleton):
             raise ValueError(f"Model provider '{provider_name}' is not registered")
         else:
             logger.info(f"Setting up model provider: {provider_name}")
-            model = self.models[provider_name]()
+            if provider_name == "remote" and model_server is not None:
+                model = self.models[provider_name](model_server=model_server)
+            else:
+                model = self.models[provider_name]()
 
         return model
 

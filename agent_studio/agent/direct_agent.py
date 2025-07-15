@@ -18,6 +18,7 @@ class DirectAgent(BaseAgent):
         results_dir: Path,
         restrict_to_one_step: bool,
         prompt_approach: str = "naive",
+        model_server: str = None,
     ) -> None:
         """Initialize everything the same way as the parent class, but also
         initialize a feedback model and buffer."""
@@ -29,6 +30,7 @@ class DirectAgent(BaseAgent):
             results_dir=results_dir,
             restrict_to_one_step=restrict_to_one_step,
             prompt_approach=prompt_approach,
+            model_server=model_server,
         )
         with open(
             f"agent_studio/agent/prompts/{prompt_approach}_system_prompt.txt", "r"

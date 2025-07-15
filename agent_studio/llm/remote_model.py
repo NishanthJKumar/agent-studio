@@ -15,9 +15,10 @@ logger = logging.getLogger(__name__)
 class RemoteProvider(BaseModel):
     name = "remote"
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, model_server: str | None = None, **kwargs) -> None:
         super().__init__()
-        self.model_server: str | None = getattr(config, "model_server", None)
+        assert model_server is not None
+        self.model_server = model_server
         assert self.model_server, "Model server is not set"
 
     def generate_response(
@@ -33,7 +34,7 @@ class RemoteProvider(BaseModel):
             backoff.constant,
             ConnectionError,
             max_tries=config.max_retries,
-            interval=10,
+            interval=20,
         )
         def _generate_response_with_retry() -> tuple[str, dict[str, int]]:
             body = {

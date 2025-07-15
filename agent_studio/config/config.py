@@ -23,10 +23,11 @@ class Config(metaclass=ThreadSafeSingleton):
     video_fps: int = 5
     need_human_confirmation: bool = False
     restrict_to_one_step: bool = True
+    model_server: str = "http://0.0.0.0:64000"
 
     # LM config
     seed: int = 42
-    max_retries: int = 3
+    max_retries: int = 10
     temperature: float = 0.0
     top_k: int = 1
     max_tokens: int = 4096

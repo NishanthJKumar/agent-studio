@@ -435,6 +435,7 @@ class GUI(QMainWindow):
                 feedback_model=args.feedback_model,
                 prompt_approach=args.prompting_approach,
                 feedback_prompt_approach=args.feedback_prompting_approach,
+                model_server=args.model_server,
             )
         else:
             self.agent = setup_agent(
@@ -444,6 +445,7 @@ class GUI(QMainWindow):
                 runtime_server_addr=config.env_server_addr,
                 runtime_server_port=config.env_server_port,
                 prompt_approach=args.prompting_approach,
+                model_server=args.model_server,
             )
 
         # self.task_thread: None | TaskThread = None
@@ -1062,6 +1064,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 prompt_approach=args.prompting_approach,
                 feedback_prompt_approach=args.feedback_prompting_approach,
                 restrict_to_one_step=config.restrict_to_one_step,
+                model_server=args.model_server,
             )
         else:
             agent = setup_agent(
@@ -1073,6 +1076,7 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 results_dir=results_dir / timestamp,
                 restrict_to_one_step=config.restrict_to_one_step,
                 prompt_approach=args.prompting_approach,
+                model_server=args.model_server,
             )
 
         # Setup tasks
@@ -1362,6 +1366,9 @@ def main():
     parser.add_argument("--vnc_port", type=int, default=5900, help="VNC port")
     parser.add_argument(
         "--vnc_password", type=str, default="123456", help="VNC password"
+    )
+    parser.add_argument(
+        "--model_server", type=str, help="Model server address for RemoteProvider"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
