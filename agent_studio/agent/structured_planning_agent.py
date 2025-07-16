@@ -106,7 +106,7 @@ class StructuredPlanningAgent(BaseAgent):
                 prev_goal_achieved = json_output["previous_goal_achieved"]
                 next_action_result = json_output["intended_action_result"]
             except Exception as e:
-                logger.info("Output response badly formatted!")
+                logger.info(f"Output response badly formatted! Error: {e}")
                 new_message = Message(
                     role="user",
                     content=f"ERROR! You just output '''{response}'''. However, this "
