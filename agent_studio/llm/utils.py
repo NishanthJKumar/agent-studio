@@ -28,13 +28,43 @@ def extract_from_response(response: str, backtick="```") -> str:
 
 
 def structured_json_extract_from_response(response: str) -> dict[str, str]:
-    pattern = r"```json\n(.*?)\n```"
-    match = re.search(pattern, response, re.DOTALL)
-    if match:
-        extracted_string = match.group(1)
-    else:
-        extracted_string = ""
-    return json.loads(extracted_string)
+    # Look for JSON block with proper start and end markers
+    start_marker = "```json\n"
+
+    if start_marker in response:
+        start_idx = response.find(start_marker) + len(start_marker)
+        content = response[start_idx:]
+        brace_count = 0
+        json_end_idx = 0
+
+        for i, char in enumerate(content):
+            if char == "{":
+                brace_count += 1
+            elif char == "}":
+                brace_count -= 1
+                if brace_count == 0:
+                    json_end_idx = i + 1
+                    break
+
+        if json_end_idx > 0:
+            extracted_string = content[:json_end_idx]
+            # Fix nested code blocks by escaping newlines within them
+            nested_code_pattern = r"```[a-zA-Z]*\n(.*?)\n```"
+
+            def escape_newlines(match):
+                code_content = match.group(1)
+                escaped_content = code_content.replace("\n", "\\n")
+                return f"```{escaped_content}```"
+
+            fixed_string = re.sub(
+                nested_code_pattern, escape_newlines, extracted_string, flags=re.DOTALL
+            )
+            try:
+                return json.loads(fixed_string)
+            except json.JSONDecodeError:
+                return {}
+
+    return {}
 
 
 def openai_encode_image(image: Path | Image.Image | np.ndarray) -> str:

@@ -113,9 +113,9 @@ Task instruction: Help me change the 2 in "H2O" to a subscript and save it.
     ],
     "previous_goal_achieved": true,
     "reasoning": "The popup needs to be closed to interact with the document. Closing it will allow us to proceed with editing the text.",
-    "action": "```python\nkeyboard.hotkey(['enter'])\n```",
+    "action": "```python\\nkeyboard.hotkey(['enter'])\\n```",
     "intended_action_result": "Close the 'Tip of the Day' popup to allow interaction with the document."
 }
 ```
 
-NOTE: Notice how there are `\n` characters in the output code block: please ensure that your output code is formatted correctly with `\n` text characters instead of you automatically inserting newlines.
+NOTE: Notice how there are `\\n` characters in the output code block: please ensure that your output code is formatted correctly with `\\n` text characters instead of you automatically inserting newlines.
