@@ -52,12 +52,22 @@ def structured_json_extract_from_response(response: str) -> dict[str, str]:
             nested_code_pattern = r"```[a-zA-Z]*\n(.*?)\n```"
 
             def escape_newlines(match):
+                lang = (
+                    match.group(0).split("```")[1].split("\n")[0]
+                )  # Extract language identifier
                 code_content = match.group(1)
                 escaped_content = code_content.replace("\n", "\\n")
-                return f"```{escaped_content}```"
+                return f"```{lang}\\n{escaped_content}```"
 
             fixed_string = re.sub(
                 nested_code_pattern, escape_newlines, extracted_string, flags=re.DOTALL
+            )
+            # Replace Python booleans with JSON booleans
+            fixed_string = fixed_string.replace(" True", " true").replace(
+                " False", " false"
+            )
+            fixed_string = fixed_string.replace(":True", ":true").replace(
+                ":False", ":false"
             )
             try:
                 return json.loads(fixed_string)
