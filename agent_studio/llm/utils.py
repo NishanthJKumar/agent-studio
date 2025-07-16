@@ -57,6 +57,7 @@ def structured_json_extract_from_response(response: str) -> dict[str, str]:
                 )  # Extract language identifier
                 code_content = match.group(1)
                 escaped_content = code_content.replace("\n", "\\n")
+                escaped_content = escaped_content.replace('"', '\\"')
                 return f"```{lang}\\n{escaped_content}```"
 
             fixed_string = re.sub(
@@ -73,7 +74,6 @@ def structured_json_extract_from_response(response: str) -> dict[str, str]:
                 return json.loads(fixed_string)
             except json.JSONDecodeError:
                 return {}
-
     return {}
 
 
