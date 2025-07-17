@@ -70,6 +70,7 @@ def structured_json_extract_from_response(response: str) -> dict[str, str]:
             fixed_string = fixed_string.replace(":True", ":true").replace(
                 ":False", ":false"
             )
+            fixed_string = fixed_string.replace("\n", "")
             try:
                 return json.loads(fixed_string)
             except json.JSONDecodeError:
