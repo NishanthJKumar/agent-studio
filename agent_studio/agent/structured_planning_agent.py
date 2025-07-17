@@ -93,7 +93,7 @@ class StructuredPlanningAgent(BaseAgent):
         curr_state_analysis = None
         prev_goal_achieved = None
         next_action_result = None
-        for _ in range(3):
+        for _ in range(5):
             try:
                 json_output = structured_json_extract_from_response(response)
                 action = extract_from_response(json_output["action"]).strip()
