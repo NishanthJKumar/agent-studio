@@ -37,14 +37,18 @@ def structured_json_extract_from_response(response: str) -> dict[str, str]:
         brace_count = 0
         json_end_idx = 0
 
+        final_close_brace_idx = 0
         for i, char in enumerate(content):
             if char == "{":
                 brace_count += 1
             elif char == "}":
+                final_close_brace_idx = i + 1
                 brace_count -= 1
                 if brace_count == 0:
                     json_end_idx = i + 1
                     break
+        if brace_count > 0:
+            json_end_idx = final_close_brace_idx
 
         if json_end_idx > 0:
             extracted_string = content[:json_end_idx]
