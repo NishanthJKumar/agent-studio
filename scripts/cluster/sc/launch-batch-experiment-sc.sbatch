@@ -1,16 +1,15 @@
 #!/bin/bash
-#SBATCH --array=1-13
 #SBATCH --time=10:00:00
 #SBATCH --mem=500G
-#SBATCH --account=siro
-#SBATCH --qos=siro_high
+#SBATCH --account=comem
+#SBATCH --qos=h100_comem_high
 #SBATCH --ntasks-per-node 1
-#SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=50
+#SBATCH --gres=gpu:1
 
 # Define variables
 USER="njkmr"
-MODEL_NAME="google/gemma-3n-e4b-it"
+MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 
 # Set PARTICULAR_PATH and JOB_NAME based on the SLURM_ARRAY_TASK_ID
 if [ "$SLURM_ARRAY_TASK_ID" -eq 1 ]; then
@@ -58,8 +57,8 @@ else
 fi
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="gemma-structuredplanning-${JOB_NAME}-gpt-4o-2024-11-20.log"
-ERROR_FILE="gemma-structuredplanning-${JOB_NAME}-gpt-4o-2024-11-20.err"
+OUTPUT_FILE="qwen-nevergiveup-${JOB_NAME}-gpt-4o-2024-11-20.log"
+ERROR_FILE="qwen-nevergiveup-${JOB_NAME}-gpt-4o-2024-11-20.err"
 
 # Redirect stdout and stderr
 exec 1>$OUTPUT_FILE
@@ -82,6 +81,10 @@ API_WEB_SOCKET=$(generate_random_port)
 API_SOCKET=$(generate_random_port)
 SERVER_SOCKET=$(generate_random_port)
 HF_SERVER_PORT=$(generate_random_port)
+
+echo "Starting server on node $(hostname)..."
+echo "VNC PORT: $VNC_PORT"
+echo "ENV_SERVER_PORT: $ENV_SERVER_PORT"
 
 # Step 0: Launch the huggingface server depending on the model to be used.
 if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
@@ -117,25 +120,19 @@ if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
   fi
 fi
 
-echo "Starting server on node $(hostname)..."
-echo "VNC PORT: $VNC_PORT"
-echo "ENV_SERVER_PORT: $ENV_SERVER_PORT"
-
 # Step 1: Launch the server
-apptainer exec --no-home --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot \
-  --env VNC_PORT=$VNC_PORT \
-  --env SERVER_SOCKET=$SERVER_SOCKET\
-  --env API_WEB_SOCKET=$API_WEB_SOCKET\
-  --env API_SOCKET=$API_SOCKET\
-  --env ENV_SERVER_PORT=$ENV_SERVER_PORT\
-  --bind /home/$USER/agent-studio/scripts/agent_server.py:/home/ubuntu/agent_studio/scripts/agent_server.py:ro \
-  --bind /home/$USER/agent-studio/agent_studio/envs:/home/ubuntu/agent_studio/agent_studio/envs:ro \
-  --bind /home/$USER/agent-studio/agent_studio/utils:/home/ubuntu/agent_studio/agent_studio/utils:ro \
-  --bind /home/$USER/agent-studio/agent_studio/agent:/home/ubuntu/agent_studio/agent_studio/agent:ro \
-  --bind /home/$USER/agent-studio/agent_studio/config:/home/ubuntu/agent_studio/agent_studio/config \
-  --bind /home/$USER/agent-studio/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:ro \
-  --bind supervisor_logs/:/var/log \
-  agent-studio-server-dynamicportrouting1.sif /home/ubuntu/agent_studio/scripts/docker_startup.sh &
+enroot create -n agent-studio-server agent-studio-server.sqsh
+enroot start --env VNC_PASSWORD=123456 \
+    --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+    --env VNC_PORT=$VNC_PORT \
+    --env SERVER_SOCKET=$SERVER_SOCKET \
+    --env API_WEB_SOCKET=$API_WEB_SOCKET \
+    --env API_SOCKET=$API_SOCKET \
+    --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+    --mount /dev/shm:/dev/shm  \
+    --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio \
+    --mount ${PWD}/supervisor_logs/:/var/log \
+    --root --rw agent-studio-server &
 SERVER_PID=$!
 echo "Server launched with PID $SERVER_PID"
 
@@ -146,12 +143,19 @@ sleep 10  # Adjust the sleep duration as needed
 # Step 3: Launch the client with retry logic
 echo "Starting client..."
 RETRIES=5
+enroot create -n agent-studio-client agent-studio-client.sqsh
 for ((i=1; i<=RETRIES; i++)); do
-  apptainer exec --no-home --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot \
-    --bind /home/$USER/agent-studio/:/home/ubuntu/agent_studio/ \
-    agent-studio-client.sif /bin/bash -c "
+  enroot start --env VNC_PASSWORD=123456 \
+  --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+  --env VNC_PORT=$VNC_PORT \
+  --env SERVER_SOCKET=$SERVER_SOCKET \
+  --env API_WEB_SOCKET=$API_WEB_SOCKET \
+  --env API_SOCKET=$API_SOCKET \
+  --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+  --mount ${PWD}/:/home/ubuntu/agent_studio/ \
+  --root --rw agent-studio-client -c "
       cd /home/ubuntu/agent_studio
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --agent structured_planning --prompting_approach structured_planning_advanced --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
+      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --prompting_approach never_giveup_check_output --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
     "
 
   if [ $? -eq 0 ]; then
