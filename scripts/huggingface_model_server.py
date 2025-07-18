@@ -1,7 +1,5 @@
 import argparse
 import logging
-import os
-import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -9,9 +7,11 @@ from typing import Any
 import fastapi
 import numpy as np
 import torch
+from fastapi import Depends
 from fastapi.responses import JSONResponse
 from PIL import Image
 from pydantic import BaseModel
+from qwen_vl_utils import process_vision_info
 from transformers import (
     AutoProcessor,
     Gemma3nForConditionalGeneration,
@@ -22,8 +22,6 @@ from transformers import (
 
 from agent_studio.utils.communication import bytes2str, str2bytes
 from agent_studio.utils.types import MessageList
-from qwen_vl_utils import process_vision_info
-
 
 logger = logging.getLogger(__name__)
 
@@ -151,9 +149,15 @@ class TimingStoppingCriteria(StoppingCriteria):
         return False
 
 
+def get_model_name() -> str:
+    return model_name
+
+
 @app.post("/generate")
-async def generate(request: GenerateRequest) -> JSONResponse:
-    global model, processor, model_name
+async def generate(
+    request: GenerateRequest, model_name: str = Depends(get_model_name)
+) -> JSONResponse:
+    global model, processor
 
     messages_decoded = str2bytes(request.messages)
 
@@ -197,13 +201,6 @@ async def generate(request: GenerateRequest) -> JSONResponse:
 
     elif "Qwen" in model_name:
         # Process for Qwen model
-        if not qwen_utils_available:
-            return JSONResponse(
-                content={
-                    "error": "Qwen utilities not available. " "Cannot process request."
-                },
-                status_code=500,
-            )
         qwen_input_messages = convert_message_to_qwen_format(messages_decoded)
         # Prepare inputs for Qwen model
         text = processor.apply_chat_template(
@@ -248,9 +245,7 @@ async def generate(request: GenerateRequest) -> JSONResponse:
                     "timing": {
                         "total_time": total_time,
                         "token_count": (
-                            len(timing_criteria.token_times)
-                            if "gemma" in model
-                            else 0
+                            len(timing_criteria.token_times) if "gemma" in model else 0
                         ),
                         "tokens_per_second": (
                             tokens_per_second if "gemma" in model else 0
@@ -277,7 +272,6 @@ def parse_args():
 
 
 if __name__ == "__main__":
-    global model_name
     args = parse_args()
     import uvicorn
 
