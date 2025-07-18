@@ -13,7 +13,7 @@
 # Define variables
 USER="njkmr"
 PARTICULAR_PATH="eval_online_benchmarks/tasks/single_api/os/0d5f7fef-3e79-4f86-87a8-d3435de04d9e.json"
-MODEL_NAME="gpt-4o-2024-11-20"
+MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 
 # Generate random port numbers
 generate_random_port() {
@@ -37,19 +37,19 @@ echo "Starting server on node $(hostname)..."
 echo "VNC PORT: $VNC_PORT"
 echo "ENV_SERVER_PORT: $ENV_SERVER_PORT"
 
-# # Step 0: Launch the huggingface server depending on the model to be used.
-# if [[ "$MODEL_NAME" == *"gemma"* ]]; then
-#   echo "LAUNCHING PRIVATE MODEL SERVER"
-#   # Activate the conda environment
-#   source /home/$USER/miniconda3/etc/profile.d/conda.sh
-#   conda activate agent-studio
-#   # Launch the huggingface model server in the background
-#   python scripts/huggingface_model_server.py --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
-#   HUGGINGFACE_SERVER_PID=$!
-#   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
-#   # Wait for the server to initialize
-#   sleep 65
-# fi
+# Step 0: Launch the huggingface server depending on the model to be used.
+if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
+  echo "LAUNCHING PRIVATE MODEL SERVER"
+  # Activate the conda environment
+  source /home/$USER/miniconda3/etc/profile.d/conda.sh
+  conda activate agent-studio
+  # Launch the huggingface model server in the background
+  python scripts/huggingface_model_server.py --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
+  HUGGINGFACE_SERVER_PID=$!
+  echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
+  # Wait for the server to initialize
+  sleep 65
+fi
 
 # Step 1: Launch the server
 enroot create -n agent-studio-server agent-studio-server.sqsh
@@ -101,4 +101,3 @@ done
 echo "Killing server process with PID $SERVER_PID"
 kill $SERVER_PID
 echo "Experiment completed."
-
