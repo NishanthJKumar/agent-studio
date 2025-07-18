@@ -33,6 +33,7 @@ app = fastapi.FastAPI()
 model = None
 processor = None
 model_ready = False
+model_name = None
 
 
 def load_gemma_model(model_id="google/gemma-3n-e4b-it"):
@@ -152,11 +153,11 @@ class TimingStoppingCriteria(StoppingCriteria):
 
 @app.post("/generate")
 async def generate(request: GenerateRequest) -> JSONResponse:
-    global model, processor
+    global model, processor, model_name
 
     messages_decoded = str2bytes(request.messages)
 
-    if "gemma" in model:
+    if "gemma" in model_name:
         # Process for Gemma model
         gemma_input_messages = convert_message_to_gemma_format(messages_decoded)
         inputs = processor.apply_chat_template(
@@ -168,12 +169,10 @@ async def generate(request: GenerateRequest) -> JSONResponse:
         )
         inputs = {k: v.to(model.device) for k, v in inputs.items()}
         input_len = inputs["input_ids"].shape[-1]
-
         logger.info("Starting Gemma model inference!")
         timing_criteria = TimingStoppingCriteria()
         stopping_criteria = StoppingCriteriaList([timing_criteria])
         total_start_time = time.time()
-
         with torch.inference_mode():
             generation = model.generate(
                 **inputs,
@@ -182,9 +181,7 @@ async def generate(request: GenerateRequest) -> JSONResponse:
                 stopping_criteria=stopping_criteria,
             )
             generation = generation[0][input_len:]
-
         total_time = time.time() - total_start_time
-
         # Log timing information
         if timing_criteria.token_times:
             avg_token_time = sum(timing_criteria.token_times) / len(
@@ -195,11 +192,10 @@ async def generate(request: GenerateRequest) -> JSONResponse:
                 f"Generated {len(timing_criteria.token_times)} "
                 f"tokens in {total_time:.2f}s"
             )
-
         logger.info("Model inference complete!")
         decoded = processor.decode(generation, skip_special_tokens=True)
 
-    elif "Qwen" in model:
+    elif "Qwen" in model_name:
         # Process for Qwen model
         if not qwen_utils_available:
             return JSONResponse(
@@ -208,9 +204,7 @@ async def generate(request: GenerateRequest) -> JSONResponse:
                 },
                 status_code=500,
             )
-
         qwen_input_messages = convert_message_to_qwen_format(messages_decoded)
-
         # Prepare inputs for Qwen model
         text = processor.apply_chat_template(
             qwen_input_messages, tokenize=False, add_generation_prompt=True
@@ -224,10 +218,8 @@ async def generate(request: GenerateRequest) -> JSONResponse:
             return_tensors="pt",
         )
         inputs = inputs.to(model.device)
-
         logger.info("Starting Qwen model inference!")
         total_start_time = time.time()
-
         # Generate response
         with torch.inference_mode():
             generated_ids = model.generate(**inputs, max_new_tokens=1000)
@@ -235,10 +227,8 @@ async def generate(request: GenerateRequest) -> JSONResponse:
                 out_ids[len(in_ids) :]
                 for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
             ]
-
         total_time = time.time() - total_start_time
         logger.info("Model inference complete!")
-
         decoded = processor.batch_decode(
             generated_ids_trimmed,
             skip_special_tokens=True,
@@ -287,19 +277,20 @@ def parse_args():
 
 
 if __name__ == "__main__":
+    global model_name
     args = parse_args()
     import uvicorn
 
     # Load the selected model
-    model = args.model
+    model_name = args.model
 
-    if "gemma" in model:
-        load_gemma_model(model)
-    elif "Qwen" in model:
-        load_qwen_model(model)
+    if "gemma" in model_name:
+        load_gemma_model(model_name)
+    elif "Qwen" in model_name:
+        load_qwen_model(model_name)
     else:
         raise ValueError(
-            f"Unknown model type: {model}. "
+            f"Unknown model type: {model_name}. "
             "Currently only Gemma and Qwen models are supported."
         )
 
