@@ -225,7 +225,7 @@ async def generate(
                 for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
             ]
         total_time = time.time() - total_start_time
-        logger.info("Model inference complete!")
+        logger.info(f"Model inference complete {total_time}!")
         decoded = processor.batch_decode(
             generated_ids_trimmed,
             skip_special_tokens=True,
@@ -234,7 +234,7 @@ async def generate(
 
     else:
         return JSONResponse(
-            content={"error": f"Unknown model type: {model}"}, status_code=500
+            content={"error": f"Unknown model type: {model_name}"}, status_code=500
         )
 
     return JSONResponse(
@@ -245,10 +245,10 @@ async def generate(
                     "timing": {
                         "total_time": total_time,
                         "token_count": (
-                            len(timing_criteria.token_times) if "gemma" in model else 0
+                            len(timing_criteria.token_times) if "gemma" in model_name else 0
                         ),
                         "tokens_per_second": (
-                            tokens_per_second if "gemma" in model else 0
+                            tokens_per_second if "gemma" in model_name else 0
                         ),
                     }
                 }
