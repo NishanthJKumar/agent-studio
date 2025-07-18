@@ -255,9 +255,6 @@ class TaskThread(QThread):
                     action = step_info.action
                     action_memory.append(action)
                 except Exception as e:
-                    import ipdb
-
-                    ipdb.set_trace()
                     logger.error(f"Failed to generate action: {e}")
                     step_info = StepInfo()
                     action = ""
