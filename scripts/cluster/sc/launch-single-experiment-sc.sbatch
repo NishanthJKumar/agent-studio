@@ -47,8 +47,28 @@ if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
   python scripts/huggingface_model_server.py --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
   HUGGINGFACE_SERVER_PID=$!
   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
+
   # Wait for the server to initialize
-  sleep 65
+  MAX_ATTEMPTS=45
+  ATTEMPT=0
+  SERVER_READY=false
+
+  while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+    echo "Checking if the server is ready (attempt $((ATTEMPT+1))/$MAX_ATTEMPTS)..."
+    # Check the readiness endpoint
+    if curl -s http://127.0.0.1:$HF_SERVER_PORT/ready | grep -q '"status":"ready"'; then
+      echo "Server is ready!"
+      SERVER_READY=true
+      break
+    fi
+    ATTEMPT=$((ATTEMPT+1))
+    sleep 5  # Wait before retrying
+  done
+
+  if [ "$SERVER_READY" = false ]; then
+    echo "Server did not become ready in time. Exiting."
+    exit 1
+  fi
 fi
 
 # Step 1: Launch the server

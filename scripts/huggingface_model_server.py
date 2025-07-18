@@ -22,6 +22,8 @@ from transformers import (
 
 from agent_studio.utils.communication import bytes2str, str2bytes
 from agent_studio.utils.types import MessageList
+from qwen_vl_utils import process_vision_info
+
 
 logger = logging.getLogger(__name__)
 
@@ -30,44 +32,40 @@ app = fastapi.FastAPI()
 # Global variables for model and processor
 model = None
 processor = None
-model_type = None
-
-# Import qwen_vl_utils if available
-try:
-    # First check if it's in the same directory
-    if os.path.exists(os.path.join(os.path.dirname(__file__), "qwen_vl_utils.py")):
-        sys.path.append(os.path.dirname(__file__))
-        from qwen_vl_utils import process_vision_info
-    else:
-        # Try to import from the main package
-        from agent_studio.utils.qwen_vl_utils import process_vision_info
-    qwen_utils_available = True
-except ImportError:
-    logger.warning("qwen_vl_utils not found. Qwen model functionality may be limited.")
-    qwen_utils_available = False
-    process_vision_info = None
+model_ready = False
 
 
 def load_gemma_model(model_id="google/gemma-3n-e4b-it"):
     """Load the Gemma model and processor"""
-    global model, processor
+    global model, processor, model_ready
     logger.info(f"Loading Gemma model: {model_id}")
     model = Gemma3nForConditionalGeneration.from_pretrained(
         model_id, device_map="auto", torch_dtype=torch.bfloat16
     ).eval()
     processor = AutoProcessor.from_pretrained(model_id)
+    model_ready = True  # Set the readiness flag
     return model, processor
 
 
 def load_qwen_model(model_id="Qwen/Qwen2.5-VL-7B-Instruct"):
     """Load the Qwen model and processor"""
-    global model, processor
+    global model, processor, model_ready
     logger.info(f"Loading Qwen model: {model_id}")
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         model_id, torch_dtype="auto", device_map="auto"
     )
     processor = AutoProcessor.from_pretrained(model_id)
+    model_ready = True  # Set the readiness flag
     return model, processor
+
+
+@app.get("/ready")
+async def ready() -> JSONResponse:
+    """Endpoint to check if the model is ready"""
+    if model_ready:
+        return JSONResponse(content={"status": "ready"}, status_code=200)
+    else:
+        return JSONResponse(content={"status": "loading"}, status_code=503)
 
 
 class GenerateRequest(BaseModel):
@@ -154,11 +152,11 @@ class TimingStoppingCriteria(StoppingCriteria):
 
 @app.post("/generate")
 async def generate(request: GenerateRequest) -> JSONResponse:
-    global model, processor, model_type
+    global model, processor
 
     messages_decoded = str2bytes(request.messages)
 
-    if model_type == "gemma":
+    if "gemma" in model:
         # Process for Gemma model
         gemma_input_messages = convert_message_to_gemma_format(messages_decoded)
         inputs = processor.apply_chat_template(
@@ -201,7 +199,7 @@ async def generate(request: GenerateRequest) -> JSONResponse:
         logger.info("Model inference complete!")
         decoded = processor.decode(generation, skip_special_tokens=True)
 
-    elif model_type == "qwen":
+    elif "Qwen" in model:
         # Process for Qwen model
         if not qwen_utils_available:
             return JSONResponse(
@@ -249,7 +247,7 @@ async def generate(request: GenerateRequest) -> JSONResponse:
 
     else:
         return JSONResponse(
-            content={"error": f"Unknown model type: {model_type}"}, status_code=500
+            content={"error": f"Unknown model type: {model}"}, status_code=500
         )
 
     return JSONResponse(
@@ -261,11 +259,11 @@ async def generate(request: GenerateRequest) -> JSONResponse:
                         "total_time": total_time,
                         "token_count": (
                             len(timing_criteria.token_times)
-                            if model_type == "gemma"
+                            if "gemma" in model
                             else 0
                         ),
                         "tokens_per_second": (
-                            tokens_per_second if model_type == "gemma" else 0
+                            tokens_per_second if "gemma" in model else 0
                         ),
                     }
                 }
@@ -301,7 +299,7 @@ if __name__ == "__main__":
         load_qwen_model(model)
     else:
         raise ValueError(
-            f"Unknown model type: {model_type}. "
+            f"Unknown model type: {model}. "
             "Currently only Gemma and Qwen models are supported."
         )
 
