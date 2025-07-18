@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 import re
 from pathlib import Path
 
@@ -24,6 +25,61 @@ def extract_from_response(response: str, backtick="```") -> str:
         extracted_string = ""
 
     return extracted_string
+
+
+def structured_json_extract_from_response(response: str) -> dict[str, str]:
+    # Look for JSON block with proper start and end markers
+    start_marker = "```json\n"
+
+    if start_marker in response:
+        start_idx = response.find(start_marker) + len(start_marker)
+        content = response[start_idx:]
+        brace_count = 0
+        json_end_idx = 0
+
+        final_close_brace_idx = 0
+        for i, char in enumerate(content):
+            if char == "{":
+                brace_count += 1
+            elif char == "}":
+                final_close_brace_idx = i + 1
+                brace_count -= 1
+                if brace_count == 0:
+                    json_end_idx = i + 1
+                    break
+        if brace_count > 0:
+            json_end_idx = final_close_brace_idx
+
+        if json_end_idx > 0:
+            extracted_string = content[:json_end_idx]
+            # Fix nested code blocks by escaping newlines within them
+            nested_code_pattern = r"```[a-zA-Z]*\n(.*?)\n```"
+
+            def escape_newlines(match):
+                lang = (
+                    match.group(0).split("```")[1].split("\n")[0]
+                )  # Extract language identifier
+                code_content = match.group(1)
+                escaped_content = code_content.replace("\n", "\\n")
+                escaped_content = escaped_content.replace('"', '\\"')
+                return f"```{lang}\\n{escaped_content}```"
+
+            fixed_string = re.sub(
+                nested_code_pattern, escape_newlines, extracted_string, flags=re.DOTALL
+            )
+            # Replace Python booleans with JSON booleans
+            fixed_string = fixed_string.replace(" True", " true").replace(
+                " False", " false"
+            )
+            fixed_string = fixed_string.replace(":True", ":true").replace(
+                ":False", ":false"
+            )
+            fixed_string = fixed_string.replace("\n", "")
+            try:
+                return json.loads(fixed_string)
+            except json.JSONDecodeError:
+                return {}
+    return {}
 
 
 def openai_encode_image(image: Path | Image.Image | np.ndarray) -> str:

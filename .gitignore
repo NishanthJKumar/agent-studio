@@ -194,3 +194,4 @@ data/*
 web/*
 
 *.sif
+*.out

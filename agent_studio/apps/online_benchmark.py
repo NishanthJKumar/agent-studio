@@ -85,7 +85,7 @@ from agent_studio.utils.json_utils import (
     read_task_jsons,
     read_unfinished_tasks,
 )
-from agent_studio.utils.types import TaskConfig, VideoMeta
+from agent_studio.utils.types import StepInfo, TaskConfig, VideoMeta
 
 config = Config()
 
@@ -248,11 +248,16 @@ class TaskThread(QThread):
                 self.signals.status_bar_signal.emit(
                     "color: blue;", "Generating Action..."
                 )
-                step_info = self.agent.generate_action(
-                    obs=obs, model_name=self.args.model
-                )
-                action = step_info.action
-                action_memory.append(action)
+                try:
+                    step_info = self.agent.generate_action(
+                        obs=obs, model_name=self.args.model
+                    )
+                    action = step_info.action
+                    action_memory.append(action)
+                except Exception as e:
+                    logger.error(f"Failed to generate action: {e}")
+                    step_info = StepInfo()
+                    action = ""
 
                 failure_msg: None | str = None
                 if config.need_human_confirmation:
@@ -281,7 +286,7 @@ class TaskThread(QThread):
                     failure_msg = "Failed to generate action."
                 # If the action is the same as the previous two actions.
                 elif (
-                    len(action_memory) >= 10
+                    len(action_memory) >= 20
                     and action_memory[-1] == action_memory[-2] == action_memory[-3]
                 ):
                     failure_msg = "Repeated action."
@@ -1154,9 +1159,25 @@ def eval(args, interface: NonGUI | None = None) -> None:
                         obs = interface.get_screenshot()
                     else:
                         obs = None
-                    step_info = agent.generate_action(obs=obs, model_name=args.model)
-                    action = step_info.action
-                    action_memory.append(action)
+                    try:
+                        step_info = agent.generate_action(
+                            obs=obs, model_name=args.model
+                        )
+                        action = step_info.action
+                        action_memory.append(action)
+                    except Exception as e:
+                        logger.error(f"Failed to generate action: {e}")
+                        step_info = StepInfo(
+                            obs=obs,
+                            action="",
+                            prompt=[],
+                            response="",
+                            unexecuted_code="",
+                            info={},
+                            result={},
+                            timestamp=0.0,
+                        )
+                        action = ""
 
                     failure_msg: None | str = None
                     if config.need_human_confirmation and (
@@ -1178,9 +1199,9 @@ def eval(args, interface: NonGUI | None = None) -> None:
                     # If the action is empty.
                     elif action == "":
                         failure_msg = "Failed to generate action."
-                    # If the action is the same as the previous two actions.
+                    # If the action is the same as the previous nine actions.
                     elif (
-                        len(action_memory) >= 3
+                        len(action_memory) >= 20
                         and action_memory[-1] == action_memory[-2] == action_memory[-3]
                     ):
                         failure_msg = "Repeated action."

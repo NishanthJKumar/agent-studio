@@ -11,7 +11,15 @@ import numpy as np
 from PIL import Image
 
 from agent_studio.llm.utils import decode_image
-from agent_studio.utils.types import TaskConfig, TaskResult, TrajectoryInfo, VideoMeta
+from agent_studio.utils.types import (
+    StructuredStepInfo,
+    StructuredTrajectoryInfo,
+    TaskConfig,
+    TaskResult,
+    TrajectoryInfo,
+    Union,
+    VideoMeta,
+)
 
 
 def read_jsonl(file_path: str, start_idx: int = 0, end_idx: int | None = None) -> list:
@@ -170,7 +178,7 @@ def format_json(data: dict, indent=4, sort_keys=False):
 
 def export_trajectory(
     task_config: TaskConfig,
-    trajectory: TrajectoryInfo,
+    trajectory: Union[TrajectoryInfo, StructuredTrajectoryInfo],
     path: Path,
     score: float,
     feedback: str,
@@ -180,17 +188,47 @@ def export_trajectory(
     error_in_eval: bool = False,
 ) -> None:
     """Exports the trajectory data to a .jsonl file."""
+    # Convert trajectory to the right format based on its type
+    if trajectory and isinstance(trajectory[0], StructuredStepInfo):
+        # Handle StructuredTrajectoryInfo
+        processed_trajectory = []
+        for step in trajectory:
+            if isinstance(step.current_high_level_plan, list):
+                # Convert list to string if needed
+                current_plan = "\n".join(step.current_high_level_plan)
+            else:
+                current_plan = step.current_high_level_plan
+
+            processed_trajectory.append(
+                {
+                    "obs": step.obs,
+                    "prev_expected_result_achieved": step.prev_expected_result_achieved,
+                    "prompt": step.prompt,
+                    "current_high_level_plan": current_plan,
+                    "action": step.action,
+                    "current_scene_description": step.current_scene_description,
+                    "next_expected_result": step.next_expected_result,
+                    "result": step.result,
+                    "info": step.info,
+                    "timestamp": step.timestamp,
+                }
+            )
+    else:
+        # Handle regular TrajectoryInfo
+        processed_trajectory = trajectory
+
     result_dict = {
         "video": video_meta,
         "task_id": task_config.task_id,
         "instruction": task_config.instruction,
-        "trajectory": trajectory,
+        "trajectory": processed_trajectory,
         "token_count": token_count,
         "score": score,
         "feedback": feedback,
         "time_cost": time_cost,
         "error_in_eval": error_in_eval,
     }
+
     parse_and_save_objects(obj=result_dict, folder_path=path)
     # model check
     result = TaskResult.model_validate(result_dict)

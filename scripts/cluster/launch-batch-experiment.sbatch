@@ -57,8 +57,8 @@ else
 fi
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="gemma-nevergiveup-${JOB_NAME}-gpt-4o-2024-11-20.log"
-ERROR_FILE="gemma-nevergiveup-${JOB_NAME}-gpt-4o-2024-11-20.err"
+OUTPUT_FILE="gemma-structuredplanning-${JOB_NAME}-gpt-4o-2024-11-20.log"
+ERROR_FILE="gemma-structuredplanning-${JOB_NAME}-gpt-4o-2024-11-20.err"
 
 # Redirect stdout and stderr
 exec 1>$OUTPUT_FILE
@@ -95,8 +95,9 @@ if [[ "$MODEL_NAME" == *"gemma"* ]]; then
   python scripts/huggingface_model_server.py --port $HF_SERVER_PORT 2>&1 &
   HUGGINGFACE_SERVER_PID=$!
   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
-  # Wait for the server to initialize
-  sleep 95
+  # Wait for the server to initialize.
+  # TODO: find a smarter way of doing this!
+  sleep 200
 fi
 
 echo "Starting server on node $(hostname)..."
@@ -133,7 +134,7 @@ for ((i=1; i<=RETRIES; i++)); do
     --bind /home/$USER/agent-studio/:/home/ubuntu/agent_studio/ \
     agent-studio-client.sif /bin/bash -c "
       cd /home/ubuntu/agent_studio
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --prompting_approach never_giveup_use_keyboard_use_subprocess_check_output --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
+      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --agent structured_planning --prompting_approach structured_planning_advanced --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
     "
 
   if [ $? -eq 0 ]; then
