@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH --array=1-13
 #SBATCH --time=10:00:00
 #SBATCH --mem=500G
 #SBATCH --account=comem
