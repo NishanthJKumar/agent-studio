@@ -12,7 +12,7 @@
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/single_api/os/0d5f7fef-3e79-4f86-87a8-d3435de04d9e.json"
+PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/docs"
 MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 
 # Generate random port numbers
@@ -72,6 +72,7 @@ if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
 fi
 
 # Step 1: Launch the server
+enroot remove agent-studio-server
 enroot create -n agent-studio-server agent-studio-server.sqsh
 enroot start --env VNC_PASSWORD=123456 \
     --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
@@ -82,6 +83,7 @@ enroot start --env VNC_PASSWORD=123456 \
     --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
     --mount /dev/shm:/dev/shm  \
     --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio \
+    --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data \
     --mount ${PWD}/supervisor_logs/:/var/log \
     --root --rw agent-studio-server &
 SERVER_PID=$!
@@ -94,8 +96,9 @@ sleep 10  # Adjust the sleep duration as needed
 # Step 3: Launch the client with retry logic
 echo "Starting client..."
 RETRIES=5
-enroot create -n agent-studio-client agent-studio-client.sqsh
 for ((i=1; i<=RETRIES; i++)); do
+  enroot remove agent-studio-client
+  enroot create -n agent-studio-client agent-studio-client.sqsh
   enroot start --env VNC_PASSWORD=123456 \
   --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
   --env VNC_PORT=$VNC_PORT \
@@ -106,6 +109,8 @@ for ((i=1; i<=RETRIES; i++)); do
   --mount ${PWD}/:/home/ubuntu/agent_studio/ \
   --root --rw agent-studio-client -c "
       cd /home/ubuntu/agent_studio
+      mkdir -p data
+      cp -r eval_online_benchmarks/files/* data/
       as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --prompting_approach never_giveup_check_output --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
     "
 
