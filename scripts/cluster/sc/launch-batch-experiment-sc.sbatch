@@ -182,9 +182,10 @@ for ((i=1; i<=RETRIES; i++)); do
           as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --prompting_approach never_giveup_check_output --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
         "
 
-  if [ $? -eq 0 ]; then
-    echo "Client successfully connected and completed its task."
-    break
+    if [ $? -eq 0 ]; then
+      echo "Client successfully connected and completed its task."
+      break
+    fi
   fi
   echo "Client connection attempt $i failed, retrying..."
   sleep 5  # Wait before retrying
