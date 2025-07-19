@@ -121,23 +121,40 @@ if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
   fi
 fi
 
-# Step 1: Launch the server
-enroot remove agent-studio-server
-enroot create -n agent-studio-server agent-studio-server.sqsh
-enroot start --env VNC_PASSWORD=123456 \
-    --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
-    --env VNC_PORT=$VNC_PORT \
-    --env SERVER_SOCKET=$SERVER_SOCKET \
-    --env API_WEB_SOCKET=$API_WEB_SOCKET \
-    --env API_SOCKET=$API_SOCKET \
-    --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
-    --mount /dev/shm:/dev/shm  \
-    --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio \
-    --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data \
-    --mount ${PWD}/supervisor_logs/:/var/log \
-    --root --rw agent-studio-server &
-SERVER_PID=$!
-echo "Server launched with PID $SERVER_PID"
+# Step 1: Launch the server with retry logic
+echo "Starting server..."
+MAX_SERVER_RETRIES=5
+for ((i=1; i<=MAX_SERVER_RETRIES; i++)); do
+  echo "Server creation attempt $i of $MAX_SERVER_RETRIES"
+  enroot remove -f agent-studio-server || true
+  rm -rf /opt/sunk/tmp/enroot-data/user-*/agent-studio-server || true
+
+  if enroot create -n agent-studio-server agent-studio-server.sqsh; then
+    enroot start --env VNC_PASSWORD=123456 \
+        --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+        --env VNC_PORT=$VNC_PORT \
+        --env SERVER_SOCKET=$SERVER_SOCKET \
+        --env API_WEB_SOCKET=$API_WEB_SOCKET \
+        --env API_SOCKET=$API_SOCKET \
+        --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+        --mount /dev/shm:/dev/shm  \
+        --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio \
+        --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data \
+        --mount ${PWD}/supervisor_logs/:/var/log \
+        --root --rw agent-studio-server &
+    SERVER_PID=$!
+    echo "Server launched with PID $SERVER_PID"
+    break
+  else
+    echo "Server creation failed, retrying..."
+    sleep 5
+  fi
+done
+
+if [ $i -gt $MAX_SERVER_RETRIES ]; then
+  echo "Failed to create server after $MAX_SERVER_RETRIES attempts. Exiting."
+  exit 1
+fi
 
 # Step 2: Wait for the server to be ready
 echo "Waiting for the server to be ready..."
@@ -147,22 +164,23 @@ sleep 10  # Adjust the sleep duration as needed
 echo "Starting client..."
 RETRIES=5
 for ((i=1; i<=RETRIES; i++)); do
-  enroot remove agent-studio-client
-  enroot create -n agent-studio-client agent-studio-client.sqsh
-  enroot start --env VNC_PASSWORD=123456 \
-  --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
-  --env VNC_PORT=$VNC_PORT \
-  --env SERVER_SOCKET=$SERVER_SOCKET \
-  --env API_WEB_SOCKET=$API_WEB_SOCKET \
-  --env API_SOCKET=$API_SOCKET \
-  --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
-  --mount ${PWD}/:/home/ubuntu/agent_studio/ \
-  --root --rw agent-studio-client -c "
-      cd /home/ubuntu/agent_studio
-      mkdir -p data
-      cp -r eval_online_benchmarks/files/* data/
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --prompting_approach never_giveup_check_output --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
-    "
+  enroot remove -f agent-studio-client || true
+  rm -rf /opt/sunk/tmp/enroot-data/user-*/agent-studio-client || true
+  if enroot create -n agent-studio-client agent-studio-client.sqsh; then
+    enroot start --env VNC_PASSWORD=123456 \
+      --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+      --env VNC_PORT=$VNC_PORT \
+      --env SERVER_SOCKET=$SERVER_SOCKET \
+      --env API_WEB_SOCKET=$API_WEB_SOCKET \
+      --env API_SOCKET=$API_SOCKET \
+      --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+      --mount ${PWD}/:/home/ubuntu/agent_studio/ \
+      --root --rw agent-studio-client -c "
+          cd /home/ubuntu/agent_studio
+          mkdir -p data
+          cp -r eval_online_benchmarks/files/* data/
+          as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --prompting_approach never_giveup_check_output --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
+        "
 
   if [ $? -eq 0 ]; then
     echo "Client successfully connected and completed its task."
