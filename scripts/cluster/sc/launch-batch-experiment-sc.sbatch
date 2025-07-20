@@ -124,9 +124,9 @@ generate_random_port() {
     debug_log "Trying port: $PORT (attempt $((attempts+1))/$max_attempts)"
 
     if ! netstat -tuln | grep -q ":$PORT "; then
-      debug_log "Port $PORT is available"
-      echo $PORT
-      return 0
+      # debug_log "Port $PORT is available"
+      # echo $PORT
+      return $PORT
     fi
 
     attempts=$((attempts+1))
@@ -139,20 +139,20 @@ generate_random_port() {
 # Generate and validate all required ports
 log "INFO" "Generating random ports for services"
 ENV_SERVER_PORT=$(generate_random_port) || handle_error "Failed to generate ENV_SERVER_PORT" 1
+log "INFO" "ENV_SERVER_PORT: $ENV_SERVER_PORT"
 VNC_PORT=$(generate_random_port) || handle_error "Failed to generate VNC_PORT" 1
+log "INFO" "VNC PORT: $VNC_PORT"
 API_WEB_SOCKET=$(generate_random_port) || handle_error "Failed to generate API_WEB_SOCKET" 1
+log "INFO" "API_WEB_SOCKET: $API_WEB_SOCKET"
 API_SOCKET=$(generate_random_port) || handle_error "Failed to generate API_SOCKET" 1
+log "INFO" "API_SOCKET: $API_SOCKET"
 SERVER_SOCKET=$(generate_random_port) || handle_error "Failed to generate SERVER_SOCKET" 1
+log "INFO" "SERVER_SOCKET: $SERVER_SOCKET"
 HF_SERVER_PORT=$(generate_random_port) || handle_error "Failed to generate HF_SERVER_PORT" 1
+log "INFO" "HF_SERVER_PORT: $HF_SERVER_PORT"
 
 # Log all port assignments
 log "INFO" "Starting server on node $(hostname)"
-log "INFO" "VNC PORT: $VNC_PORT"
-log "INFO" "ENV_SERVER_PORT: $ENV_SERVER_PORT"
-log "INFO" "API_WEB_SOCKET: $API_WEB_SOCKET"
-log "INFO" "API_SOCKET: $API_SOCKET"
-log "INFO" "SERVER_SOCKET: $SERVER_SOCKET"
-log "INFO" "HF_SERVER_PORT: $HF_SERVER_PORT"
 
 # Check system resources
 log "INFO" "System resources:"
@@ -163,31 +163,25 @@ log "INFO" "Disk space: $(df -h . | tail -1 | awk '{print $4}') available"
 # Step 0: Launch the huggingface server depending on the model to be used.
 if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
   log "INFO" "LAUNCHING PRIVATE MODEL SERVER for $MODEL_NAME"
-
   # Check if conda is available
   if [ ! -f "/home/$USER/miniconda3/etc/profile.d/conda.sh" ]; then
     handle_error "Conda initialization script not found at /home/$USER/miniconda3/etc/profile.d/conda.sh" 1
   fi
-
   # Activate the conda environment
   log "INFO" "Activating conda environment 'agent-studio'"
   source /home/$USER/miniconda3/etc/profile.d/conda.sh
   conda activate agent-studio
-
   # Check if activation was successful
   if [ $? -ne 0 ]; then
     handle_error "Failed to activate conda environment 'agent-studio'" 1
   fi
-
   # Check if the script exists
   if [ ! -f "scripts/huggingface_model_server.py" ]; then
     handle_error "Huggingface model server script not found at scripts/huggingface_model_server.py" 1
   fi
-
   # Launch the huggingface model server in the background
   log "INFO" "Launching huggingface model server on port $HF_SERVER_PORT"
   python scripts/huggingface_model_server.py --model $MODEL_NAME --port $HF_SERVER_PORT > hugging_server_output.log 2>&1 &  HUGGINGFACE_SERVER_PID=$!
-
   # Add these lines:
   sleep 2
   if ! ps -p $HUGGINGFACE_SERVER_PID > /dev/null; then
