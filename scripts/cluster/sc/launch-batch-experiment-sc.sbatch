@@ -186,8 +186,20 @@ if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
 
   # Launch the huggingface model server in the background
   log "INFO" "Launching huggingface model server on port $HF_SERVER_PORT"
-  python scripts/huggingface_model_server.py --model $MODEL_NAME --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
-  HUGGINGFACE_SERVER_PID=$!
+  python scripts/huggingface_model_server.py --model $MODEL_NAME --port $HF_SERVER_PORT > hugging_server_output.log 2>&1 &  HUGGINGFACE_SERVER_PID=$!
+
+  # Add these lines:
+  sleep 2
+  if ! ps -p $HUGGINGFACE_SERVER_PID > /dev/null; then
+    log "ERROR" "Huggingface server process died immediately after launch"
+    if [ -f hugging_server_output.log ]; then
+      log "ERROR" "Server output:"
+      cat hugging_server_output.log | while read line; do
+        log "ERROR" "  $line"
+      done
+    fi
+    handle_error "Huggingface server failed to start" 1
+  fi
 
   if [ $? -ne 0 ]; then
     handle_error "Failed to start huggingface model server" 1
