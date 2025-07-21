@@ -57,15 +57,15 @@ else
 fi
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="gemma-structuredplanning-${JOB_NAME}-gpt-4o-2024-11-20.log"
-ERROR_FILE="gemma-structuredplanning-${JOB_NAME}-gpt-4o-2024-11-20.err"
+OUTPUT_FILE="structuredplanning-withfailures-${JOB_NAME}-gpt-4o-2024-11-20.log"
+ERROR_FILE="structuredplanning-withfailures-${JOB_NAME}-gpt-4o-2024-11-20.err"
 
 # Redirect stdout and stderr
 exec 1>$OUTPUT_FILE
 exec 2>$ERROR_FILE
 
 
-MODEL_NAME="google/gemma-3n-e4b-it"
+MODEL_NAME="gpt-4o-2024-11-20"
 
 # Generate random port numbers
 generate_random_port() {
@@ -134,7 +134,7 @@ for ((i=1; i<=RETRIES; i++)); do
     --bind /home/$USER/agent-studio/:/home/ubuntu/agent_studio/ \
     agent-studio-client.sif /bin/bash -c "
       cd /home/ubuntu/agent_studio
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --agent structured_planning --prompting_approach structured_planning_advanced --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
+      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --agent structured_planning --prompting_approach structured_planning_advanced_failure_examples --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --remote
     "
 
   if [ $? -eq 0 ]; then
