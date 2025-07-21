@@ -78,8 +78,8 @@ class StructuredPlanningAgent(BaseAgent):
         self.runtime(self.runtime_init_code)
         if "oracle" in self.prompt_approach:
             try:
-                oracle_prompt_str = "agent_studio/agent/prompts/gt-planning-prompts/"
-                f"{task_config.task_id}.txt"
+                oracle_prompt_str = "agent_studio/agent/prompts/" + \
+                    f"gt-planning-prompts/{task_config.task_id}.txt"
                 with open(oracle_prompt_str) as file:
                     self._system_prompt += "\n" + file.read()
                 logger.info(
