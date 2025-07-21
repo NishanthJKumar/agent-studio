@@ -138,7 +138,6 @@ enroot start --env VNC_PASSWORD=123456 \
     --mount /dev/shm:/dev/shm  \
     --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio \
     --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data \
-    --mount ${PWD}/supervisor_logs/:/var/log \
     --root --rw $SERVER_CONTAINER &
 SERVER_PID=$!
 echo "Server launched with PID $SERVER_PID"
