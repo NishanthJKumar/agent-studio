@@ -72,8 +72,10 @@ if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
 fi
 
 # Step 1: Launch the server
-enroot remove agent-studio-server
-enroot create -n agent-studio-server agent-studio-server.sqsh
+SERVER_CONTAINER="agent-studio-server-${SLURM_JOB_ID}-${SLURM_ARRAY_TASK_ID}"
+CLIENT_CONTAINER="agent-studio-client-${SLURM_JOB_ID}-${SLURM_ARRAY_TASK_ID}"
+enroot remove -f $SERVER_CONTAINER 2>/dev/null || true
+enroot create -n $SERVER_CONTAINER agent-studio-server.sqsh
 enroot start --env VNC_PASSWORD=123456 \
     --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
     --env VNC_PORT=$VNC_PORT \
@@ -85,7 +87,7 @@ enroot start --env VNC_PASSWORD=123456 \
     --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio \
     --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data \
     --mount ${PWD}/supervisor_logs/:/var/log \
-    --root --rw agent-studio-server &
+    --root --rw $SERVER_CONTAINER &
 SERVER_PID=$!
 echo "Server launched with PID $SERVER_PID"
 
@@ -97,8 +99,8 @@ sleep 10  # Adjust the sleep duration as needed
 echo "Starting client..."
 RETRIES=5
 for ((i=1; i<=RETRIES; i++)); do
-  enroot remove agent-studio-client
-  enroot create -n agent-studio-client agent-studio-client.sqsh
+  enroot remove -f $CLIENT_CONTAINER 2>/dev/null || true
+  enroot create -n $CLIENT_CONTAINER agent-studio-client.sqsh
   enroot start --env VNC_PASSWORD=123456 \
   --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
   --env VNC_PORT=$VNC_PORT \
@@ -107,7 +109,7 @@ for ((i=1; i<=RETRIES; i++)); do
   --env API_SOCKET=$API_SOCKET \
   --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
   --mount ${PWD}/:/home/ubuntu/agent_studio/ \
-  --root --rw agent-studio-client -c "
+  --root --rw $CLIENT_CONTAINER -c "
       cd /home/ubuntu/agent_studio
       mkdir -p data
       cp -r eval_online_benchmarks/files/* data/
@@ -121,6 +123,11 @@ for ((i=1; i<=RETRIES; i++)); do
   echo "Client connection attempt $i failed, retrying..."
   sleep 5  # Wait before retrying
 done
+
+# Clean up containers
+echo "Cleaning up containers..."
+enroot remove -f $SERVER_CONTAINER 2>/dev/null || true
+enroot remove -f $CLIENT_CONTAINER 2>/dev/null || true
 
 # Step 4: Clean up
 echo "Killing server process with PID $SERVER_PID"

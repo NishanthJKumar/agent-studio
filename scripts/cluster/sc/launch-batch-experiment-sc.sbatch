@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --array=9
+#SBATCH --array=2-3
 #SBATCH --time=10:00:00
 #SBATCH --mem=500G
 #SBATCH --account=comem
@@ -10,6 +10,7 @@
 
 # Define variables
 USER="njkmr"
+# MODEL_NAME="gemini-1.5-flash"
 MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 
 # Set PARTICULAR_PATH and JOB_NAME based on the SLURM_ARRAY_TASK_ID
@@ -138,7 +139,7 @@ enroot start --env VNC_PASSWORD=123456 \
     --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio \
     --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data \
     --mount ${PWD}/supervisor_logs/:/var/log \
-    --root --rw agent-studio-server &
+    --root --rw $SERVER_CONTAINER &
 SERVER_PID=$!
 echo "Server launched with PID $SERVER_PID"
 
@@ -160,7 +161,7 @@ for ((i=1; i<=RETRIES; i++)); do
   --env API_SOCKET=$API_SOCKET \
   --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
   --mount ${PWD}/:/home/ubuntu/agent_studio/ \
-  --root --rw agent-studio-client -c "
+  --root --rw $CLIENT_CONTAINER -c "
       cd /home/ubuntu/agent_studio
       mkdir -p data
       cp -r eval_online_benchmarks/files/* data/
