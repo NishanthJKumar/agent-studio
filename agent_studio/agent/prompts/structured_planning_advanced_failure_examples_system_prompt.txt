@@ -120,3 +120,38 @@ Task instruction: Help me change the 2 in "H2O" to a subscript and save it.
 ```
 
 NOTE: Notice how there are `\\n` characters in the output code block: please ensure that your output code is formatted correctly with `\\n` text characters instead of you automatically inserting newlines.
+
+
+## HINTS AND PAST FAILURES.
+Here are some past failures and their corresponding analysis. Use these to inform your response to the current task.
+- For the task "Please help me set the current user's line length to 50 characters in VS Code.", you made the following high-level plan:
+        1. "Open Visual Studio Code.",
+        2. "Navigate to the settings file.",
+        3. "Set the line length to 50 characters by modifying the 'editor.rulers' setting."
+    However, you failed to accomplish 3 because you were unable to find the 'editor.rulers' setting. Attempt a different high-level plan instead.
+- For the task "In the first slide, insert the title "Happy Family" and make the font style "Times New Roman".", you tried to execute the following high-level plan:
+        1. "Close the 'Tip of the Day' popup.",
+        2. "Select the title placeholder on the first slide.",
+        3. "Insert the title 'Happy Family' into the placeholder.",
+        4. "Change the font style of the title to 'Times New Roman'."
+    However, you tried to use the mouse to perform (2) and struggled. Try doing something different like using the keyboard, or using a python library.
+- For the task "I've prepared some grammar tests and placed them in the '/home/ubuntu/agent_studio/docs/grammar_tests' folder. I've already provided the multiple-choice answers for Test 1 in '/home/ubuntu/agent_studio/docs/grammar_tests/Answer.docx'. Could you please follow the same format to write out the answers for the remaining two tests in the doc file? This way, I can distribute them to the students as a reference. You only need to finish the Part 1 of the test 2 and test 3.", you made the following plan.
+        1. "Open the Answer.docx file located in '/home/ubuntu/agent_studio/docs/grammar_tests/'.",
+        2. "Review the format of the answers provided for Test 1.",
+        3. "Open the test files for Test 2 and Test 3 to extract Part 1 questions.",
+        4. "Write answers for Part 1 of Test 2 and Test 3 in the same format as Test 1 in the Answer.docx file.",
+        5. "Save the updated Answer.docx file."
+    However, you struggled with (3) because you didn't know what the filenames are. You also struggled with (2), (3) because you needed to scroll through the documents a lot. Try a different strategy like leveraging the terminal to directly read and write files more.
+- For the task "I am currently working on my algorithm practice using the document "/home/ubuntu/agent_studio/docs/bubbleSort/Bubble_Sort_tutorial.docx". Please assist me in completing the 'bubbleSort' function within the 'bubbleSort.py' file (you need to unzip it from "/home/ubuntu/agent_studio/docs/bubbleSort/bubbleSort.zip") and save the output as "/home/ubuntu/agent_studio/docs/bubbleSort/res.txt". You should sort the array in ascending order.". You made the following plan:
+        1. "Unzip the file '/home/ubuntu/agent_studio/docs/bubbleSort/bubbleSort.zip' to extract 'bubbleSort.py'.",
+        2. "Open 'bubbleSort.py' and complete the 'bubbleSort' function to sort an array in ascending order.",
+        3. "Run the updated 'bubbleSort.py' script to generate the sorted output.",
+        4. "Save the sorted output to '/home/ubuntu/agent_studio/docs/bubbleSort/res.txt'."
+    This was correct, but when you saved the file in (4), you added a bunch of extra text. Only include the output with no extra text: follow the task specification exactly!
+- For the task "Open /home/ubuntu/agent_studio/sheets/Customers_New_7digit_Id.xlsx, pad all the numbers in the 'Old ID' column with zeros in front, and fill them up to seven digits in the 'New 7 Digit ID' column."
+        1. "Open the file '/home/ubuntu/agent_studio/sheets/Customers_New_7digit_Id.xlsx' using a Python library like pandas.",
+        2. "Read the data from the Excel file.",
+        3. "Modify the 'Old ID' column by padding the numbers with zeros to make them 7 digits long.",
+        4. "Create a new column 'New 7 Digit ID' with the modified values.",
+        5. "Save the updated Excel file back to the same location."
+    You completed (1) successfully, but then struggled with 3 and 4 due to struggling thru keyboard shortcuts. Instead, tryr to complete the task fully suing just the library from (1) instead of making an over-complicated plan as you did.
