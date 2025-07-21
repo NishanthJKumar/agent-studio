@@ -120,8 +120,13 @@ if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
 fi
 
 # Step 1: Launch the server
-enroot remove agent-studio-server
-enroot create -n agent-studio-server agent-studio-server.sqsh
+# Use unique container names based on job ID and array task ID
+SERVER_CONTAINER="agent-studio-server-${SLURM_JOB_ID}-${SLURM_ARRAY_TASK_ID}"
+CLIENT_CONTAINER="agent-studio-client-${SLURM_JOB_ID}-${SLURM_ARRAY_TASK_ID}"
+
+# Remove containers if they exist (shouldn't fail if they don't)
+enroot remove -f $SERVER_CONTAINER 2>/dev/null || true
+enroot create -n $SERVER_CONTAINER agent-studio-server.sqsh
 enroot start --env VNC_PASSWORD=123456 \
     --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
     --env VNC_PORT=$VNC_PORT \
@@ -145,8 +150,8 @@ sleep 10  # Adjust the sleep duration as needed
 echo "Starting client..."
 RETRIES=5
 for ((i=1; i<=RETRIES; i++)); do
-  enroot remove agent-studio-client
-  enroot create -n agent-studio-client agent-studio-client.sqsh
+  enroot remove -f $CLIENT_CONTAINER 2>/dev/null || true
+  enroot create -n $CLIENT_CONTAINER agent-studio-client.sqsh
   enroot start --env VNC_PASSWORD=123456 \
   --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
   --env VNC_PORT=$VNC_PORT \
@@ -173,4 +178,16 @@ done
 # Step 4: Clean up
 echo "Killing server process with PID $SERVER_PID"
 kill $SERVER_PID
+
+# Clean up containers
+echo "Cleaning up containers..."
+enroot remove -f $SERVER_CONTAINER 2>/dev/null || true
+enroot remove -f $CLIENT_CONTAINER 2>/dev/null || true
+
+# Kill Huggingface server if it was started
+if [[ -n "$HUGGINGFACE_SERVER_PID" ]]; then
+  echo "Killing Huggingface server with PID $HUGGINGFACE_SERVER_PID"
+  kill $HUGGINGFACE_SERVER_PID 2>/dev/null || true
+fi
+
 echo "Experiment completed."
