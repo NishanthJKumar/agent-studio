@@ -12,7 +12,7 @@
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/docs"
+PARTICULAR_PATH="eval_online_benchmarks/tasks/compositional/split0"
 MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 
 # Generate random port numbers
