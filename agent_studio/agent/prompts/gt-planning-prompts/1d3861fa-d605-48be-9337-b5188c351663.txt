@@ -1,0 +1,4 @@
+# HINT
+Pay careful attention to the below hint for how to solve this task!
+
+'For this task, do not use VSCode interface. Instead, locate and edit the current user's settings.json file using bash commands and python libraries for file editing. Be sure to verify that your edit has been successful.'

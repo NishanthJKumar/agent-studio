@@ -1,0 +1,4 @@
+# HINT
+Pay careful attention to the below hint for how to solve this task!
+
+'Solve this task directly via bash command actions: locate the necessary file, and then delete it with bash. You can close the vscode dialog box by hitting 'enter' - do not tab multiple times to different buttons. Be sure to verify that the file has been deleted successfully'

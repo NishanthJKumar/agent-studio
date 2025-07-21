@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=agent_experiment
-#SBATCH --output=test-gemma.log
-#SBATCH --error=test-gemma.err
+#SBATCH --output=vscode-oracle-test.log
+#SBATCH --error=vscode-oracle-test.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=10:00:00  # Adjust the time as needed
@@ -12,8 +12,8 @@
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/single_api/os/0d5f7fef-3e79-4f86-87a8-d3435de04d9e.json"
-MODEL_NAME="google/gemma-3n-e4b-it"
+PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/vscode"
+MODEL_NAME="gpt-4o-2024-11-20"
 
 # Generate random port numbers
 generate_random_port() {
@@ -81,7 +81,7 @@ for ((i=1; i<=RETRIES; i++)); do
     --bind /home/$USER/agent-studio/:/home/ubuntu/agent_studio/ \
     agent-studio-client.sif /bin/bash -c "
       cd /home/ubuntu/agent_studio
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --prompting_approach never_giveup_check_output --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
+      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --agent structured_planning --prompting_approach oracle_structured_planning_advanced --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
     "
 
   if [ $? -eq 0 ]; then

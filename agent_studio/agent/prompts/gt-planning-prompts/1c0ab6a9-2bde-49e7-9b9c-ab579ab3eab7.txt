@@ -1,0 +1,4 @@
+# HINT
+Pay careful attention to the below hint for how to solve this task!
+
+'For this task, DO NOT TRY TO SOLVE IT USING FIND AND REPLACE IN VSCODE. Instead, first find the name of the current file using the 'save as' dialog box, then directly use bash commands or python libraries to edit the relevant relevant file and save it with the correct name.'

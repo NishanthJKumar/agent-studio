@@ -55,8 +55,8 @@ service = build("drive", "v3", credentials=creds)
 - **Opening Programs**: to open any program you might need (e.g. libreoffice) use subprocess.Popen() directly in your output code. Also ensure to wait a few seconds for the program to load.
     - Here are examples of opening particular programs:
     - Libreoffice Writer: ```python\nsubprocess.Popen(["libreoffice", "--writer"])\ntime.sleep(5)```
-    - File viewer to the `/home/ubuntu/agent_studio` directory: ```python\nsubprocess.Popen(["xdg-open", "/home/ubuntu/agent_studio"])\ntime.sleep(5)```
     - Terminal: ```python\nimport subprocess\nsubprocess.Popen(['x-terminal-emulator'])\n```
+    - File viewer to the `/home/ubuntu/agent_studio` directory: ```python\nsubprocess.Popen(["xdg-open", "/home/ubuntu/agent_studio"])\ntime.sleep(5)```
     - Google Chrome Web Browser to google.com (note - running chrome yields a large amount of errors/warnings; ignore the text output and focus on the GUI to see if it's open or not): ```python\nsubprocess.Popen(["google-chrome", "https://www.google.com"])\ntime.sleep(8)```
 - **History Awareness**: You have access to a structured summary of your past actions and their results. Use this to inform your next course of action. In particular, if you've noticed repeated failures from a particular plan or subgoal, then change your tact (i.e., try a new plan or change the way you're attempting to achieve the current subgoal accordingly).
 
@@ -120,8 +120,3 @@ Task instruction: Help me change the 2 in "H2O" to a subscript and save it.
 ```
 
 NOTE: Notice how there are `\n` characters in the output code block: please ensure that your output code is formatted correctly with `\n` text characters instead of you automatically inserting newlines.
-
-# HINT(s) AND PAST FAILURES
-You have attempted this task in the past a few times and failed at it. It's important on this attempt that you not repeat your past mistakes.
-- Try not to spend a lot of time attempting to close the initial dialog box: do it as quickly as possible and make sure you select the correct option.
-- Try not to spend a lot of time attempting to move VSCode out of restricted mode.

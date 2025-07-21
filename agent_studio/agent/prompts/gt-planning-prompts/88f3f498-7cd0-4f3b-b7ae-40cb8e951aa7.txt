@@ -1,0 +1,4 @@
+# HINT
+Pay careful attention to the below hint for how to solve this task!
+
+'For this task, use bash commands + the vscode api to directly list all extensions, then uninstall them directly!'

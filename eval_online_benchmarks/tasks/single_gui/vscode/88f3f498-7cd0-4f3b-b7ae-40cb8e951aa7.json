@@ -25,7 +25,7 @@
       "function": "extension_installed",
       "params": {
         "extension_id": "davidanson.vscode-markdownlint",
-        "exists": true
+        "exists": false
       }
     }
   ],

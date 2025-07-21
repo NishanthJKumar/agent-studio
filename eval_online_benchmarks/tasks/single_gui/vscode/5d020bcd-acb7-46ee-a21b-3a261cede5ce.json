@@ -1,6 +1,6 @@
 {
   "task_id": "5d020bcd-acb7-46ee-a21b-3a261cede5ce",
-  "instruction": "Please help me set the current user's line length to 50 characters in VS Code.",
+  "instruction": "Please help me set the current user's line length (word wrap) to 50 characters in VS Code.",
   "visual": true,
   "max_steps": 30,
   "eval_procedure": [

@@ -1,0 +1,4 @@
+# HINT
+Pay careful attention to the below hint for how to solve this task!
+
+'For this task, use the command palette to install extension from VSIX, hit enter, then proceed from there. Note that the command palette doesn't open visibly, so just hit the shortcut, type your search, and hit enter instead of monitoring the screen explicitly for the command palette bar to open.'

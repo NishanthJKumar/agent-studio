@@ -59,6 +59,7 @@ class StructuredPlanningAgent(BaseAgent):
         # Override the following variables
         self.trajectory: list[StructuredStepInfo]
         self.step_info: StructuredStepInfo | None
+        self.prompt_approach = prompt_approach
         with open(
             f"agent_studio/agent/prompts/{prompt_approach}_system_prompt.txt", "r"
         ) as file:
@@ -75,6 +76,20 @@ class StructuredPlanningAgent(BaseAgent):
 
         self.runtime.reset()
         self.runtime(self.runtime_init_code)
+        if "oracle" in self.prompt_approach:
+            try:
+                oracle_prompt_str = "agent_studio/agent/prompts/gt-planning-prompts/"
+                f"{task_config.task_id}.txt"
+                with open(oracle_prompt_str) as file:
+                    self._system_prompt += "\n" + file.read()
+                logger.info(
+                    f"Added ground-truth plan suggestion for {task_config.task_id}."
+                )
+            except FileNotFoundError:
+                logger.info(
+                    "Ground-truth planning prompt not found for task "
+                    f"{task_config.task_id}."
+                )
 
     def generate_action(
         self, obs: np.ndarray | None, model_name: str
