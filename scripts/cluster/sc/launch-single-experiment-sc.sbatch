@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=agent_experiment
-#SBATCH --output=test-qwen.log
-#SBATCH --error=test-qwen.err
+#SBATCH --output=test-qwen-single-gui.log
+#SBATCH --error=test-qwen-single-gui.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=10:00:00  # Adjust the time as needed
@@ -12,7 +12,7 @@
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/compositional/split0"
+PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui"
 MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 
 # Generate random port numbers
