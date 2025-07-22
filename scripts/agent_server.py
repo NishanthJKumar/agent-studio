@@ -272,7 +272,7 @@ async def reset_task(request: AgentStudioResetRequest) -> AgentStudioStatusRespo
         current_thread.start()
         return wait_for_state_shift(StateEnum.IN_PROGRESS)
     except Exception as e:
-        logger.error(f"Exception in reset_task: {e}")
+        logger.info(f"Exception in reset_task: {e}")
         # Clean up thread state on exception
         if current_thread is not None:
             current_thread = None
@@ -334,7 +334,7 @@ async def submit_eval(request: AgentStudioEvalRequest) -> AgentStudioStatusRespo
         current_thread.start()
         return wait_for_state_shift(StateEnum.IN_PROGRESS)
     except Exception as e:
-        logger.error(f"Exception in submit_eval: {e}")
+        logger.info(f"Exception in submit_eval: {e}")
         # Clean up thread state on exception
         if current_thread is not None:
             current_thread = None

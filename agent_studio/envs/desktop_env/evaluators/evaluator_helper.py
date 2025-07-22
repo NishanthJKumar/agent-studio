@@ -122,7 +122,7 @@ def evaluator_router(
                         evaluators[eval_type] = future.result(timeout=15)
                         logger.info(f"Successfully initialized {eval_type} evaluator")
                     except concurrent.futures.TimeoutError:
-                        logger.info(f"Eval function timed out.")
+                        logger.info("Eval function timed out.")
                         raise ValueError(
                             "The eval is hanging infinitely; check why this is the case"
                         )
