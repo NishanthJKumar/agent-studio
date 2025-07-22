@@ -1139,9 +1139,6 @@ def eval(args, interface: NonGUI | None = None) -> None:
                     logger.error(
                         f"Failed to reset task: {task_config.task_id}, reason: {e}"
                     )
-                    import ipdb
-
-                    ipdb.set_trace()
                     continue
 
                 instruction = task_config.instruction
