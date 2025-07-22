@@ -46,3 +46,17 @@ class TaskStatus(metaclass=ThreadSafeSingleton):
         if self.state_info.state == StateEnum.TERMINATE:
             sys.exit(0)
         return self.state_info
+
+    def wait_for_state_change_with_timeout(
+        self, cur_state: StateEnum, timeout: float = None
+    ) -> StateInfo | None:
+        """Return when the state is different from the current state,
+        or None if timeout occurs"""
+        with self.condition:
+            while cur_state == self.state_info.state:
+                if not self.condition.wait(timeout=timeout):
+                    # Timeout occurred
+                    return None
+        if self.state_info.state == StateEnum.TERMINATE:
+            sys.exit(0)
+        return self.state_info

@@ -1135,8 +1135,13 @@ def eval(args, interface: NonGUI | None = None) -> None:
                         else:
                             evaluators = evaluator_router(task_config)
                             evaluators.reset(task_config.reset_procedure)
-                except AssertionError:
-                    logger.error(f"Failed to reset task: {task_config.task_id}")
+                except Exception as e:
+                    logger.error(
+                        f"Failed to reset task: {task_config.task_id}, reason: {e}"
+                    )
+                    import ipdb
+
+                    ipdb.set_trace()
                     continue
 
                 instruction = task_config.instruction
@@ -1308,14 +1313,17 @@ def eval(args, interface: NonGUI | None = None) -> None:
                                 procedures=task_config.cleanup_procedure
                             ).model_dump(),
                         )
-                        response = AgentStudioStatusResponse(**response_raw.json())
-                        response = wait_finish(is_eval=False, response=response)
-                        print(">>> STATUS RESPONSE TEXT:", response_raw.text)
-                        print(">>> STATUS RESPONSE CODE:", response_raw.status_code)
-                        # assert (
-                        #     response.status == "finished"
-                        #     and response.content == "success"
-                        # ), f"Fail to reset task: {response.message}"
+                        try:
+                            response = AgentStudioStatusResponse(**response_raw.json())
+                            response = wait_finish(is_eval=False, response=response)
+                            print(">>> STATUS RESPONSE TEXT:", response_raw.text)
+                            print(">>> STATUS RESPONSE CODE:", response_raw.status_code)
+                            assert (
+                                response.status == "finished"
+                                and response.content == "success"
+                            ), f"Fail to reset task: {response.message}"
+                        except (AssertionError, requests.exceptions.JSONDecodeError):
+                            pass
                     else:
                         evaluators = evaluator_router(task_config)
                         evaluators.reset(task_config.cleanup_procedure)

@@ -1,6 +1,7 @@
 import logging
 import os
 import threading
+import time
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -125,29 +126,72 @@ async def get_env_vars() -> AgentStudioStatusResponse:
     return AgentStudioStatusResponse(status="success", message=env_vars)
 
 
-def wait_for_state_shift(last_state: StateEnum) -> AgentStudioStatusResponse:
-    cur_status = task_status.wait_for_state_change(last_state)
-    if cur_status.state == StateEnum.WAIT_FOR_INPUT:
-        assert isinstance(
-            cur_status.message, str
-        ), f"Invalid message: {cur_status.message}"
-        return AgentStudioStatusResponse(
-            status=cur_status.state.value,
-            content=cur_status.message,
-        )
-    elif cur_status.state == StateEnum.FINISHED:
-        global current_thread
-        if current_thread is None:
-            raise ValueError("Invalid current_thread")
-        current_thread.join()
+def wait_for_state_shift(
+    last_state: StateEnum, timeout_seconds: int = 300
+) -> AgentStudioStatusResponse:
+    start_time = time.time()
+    global current_thread
+    while time.time() - start_time < timeout_seconds:
+        try:
+            # Use a shorter timeout for each wait to allow periodic checking
+            cur_status = task_status.wait_for_state_change_with_timeout(
+                last_state, timeout=10.0
+            )
+            if cur_status is None:
+                # Timeout occurred, check if thread is still alive
+                if current_thread is not None and not current_thread.is_alive():
+                    logger.error(
+                        "Thread died without setting final state. Cleaning up."
+                    )
+                    current_thread = None
+                    task_status.set_task_state(
+                        StateInfo(
+                            StateEnum.FINISHED,
+                            message="Thread died unexpectedly",
+                            result="error",
+                        )
+                    )
+                    continue
+                # Thread is still alive, continue waiting
+                continue
+
+            if cur_status.state == StateEnum.WAIT_FOR_INPUT:
+                assert isinstance(
+                    cur_status.message, str
+                ), f"Invalid message: {cur_status.message}"
+                return AgentStudioStatusResponse(
+                    status=cur_status.state.value,
+                    content=cur_status.message,
+                )
+            elif cur_status.state == StateEnum.FINISHED:
+                if current_thread is not None:
+                    current_thread.join(timeout=30)  # Give thread 30 seconds to finish
+                    if current_thread.is_alive():
+                        logger.warning(
+                            "Thread did not finish within timeout, continuing anyway"
+                        )
+                    current_thread = None
+                return AgentStudioStatusResponse(
+                    status=cur_status.state.value,
+                    content=cur_status.result,
+                    message=cur_status.message,
+                )
+            else:
+                raise ValueError(f"Invalid state: {cur_status}")
+        except Exception as e:
+            logger.error(f"Error in wait_for_state_shift: {e}")
+            # Continue waiting unless we've exceeded the total timeout
+            continue
+
+    # Timeout exceeded
+    logger.error(f"wait_for_state_shift timed out after {timeout_seconds} seconds")
+    if current_thread is not None and current_thread.is_alive():
+        logger.warning("Forcibly cleaning up hanging thread")
         current_thread = None
-        return AgentStudioStatusResponse(
-            status=cur_status.state.value,
-            content=cur_status.result,
-            message=cur_status.message,
-        )
-    else:
-        raise ValueError(f"Invalid state: {cur_status}")
+    task_status.set_task_state(
+        StateInfo(StateEnum.FINISHED, message="Operation timed out", result="error")
+    )
+    return AgentStudioStatusResponse(status="error", content="Operation timed out")
 
 
 @app.post("/task/confirm")
@@ -189,9 +233,18 @@ async def reset_task(request: AgentStudioResetRequest) -> AgentStudioStatusRespo
         logger.info(
             f"Stopping current task: {cur_status.state}, on thread: {current_thread}"
         )
-        assert current_thread is not None, "Invalid current_thread"
-        task_status.set_task_state(StateInfo(StateEnum.TERMINATE))
-        current_thread.join()
+        if current_thread is not None:
+            task_status.set_task_state(StateInfo(StateEnum.TERMINATE))
+            current_thread.join(timeout=30)  # Add timeout to join
+            if current_thread.is_alive():
+                logger.warning(
+                    "Thread did not terminate within timeout, continuing anyway"
+                )
+        else:
+            logger.warning(
+                "Task state indicates in progress but no current thread "
+                "found. Resetting state."
+            )
         task_status.reset_state()
 
     logger.info(f"Reset task with procedures: {request.procedures}")
@@ -218,6 +271,13 @@ async def reset_task(request: AgentStudioResetRequest) -> AgentStudioStatusRespo
         current_thread.start()
         return wait_for_state_shift(StateEnum.IN_PROGRESS)
     except Exception as e:
+        logger.error(f"Exception in reset_task: {e}")
+        # Clean up thread state on exception
+        if current_thread is not None:
+            current_thread = None
+        task_status.set_task_state(
+            StateInfo(StateEnum.FINISHED, message=str(e), result="error")
+        )
         return AgentStudioStatusResponse(status="error", content=str(e))
 
 
@@ -273,6 +333,13 @@ async def submit_eval(request: AgentStudioEvalRequest) -> AgentStudioStatusRespo
         current_thread.start()
         return wait_for_state_shift(StateEnum.IN_PROGRESS)
     except Exception as e:
+        logger.error(f"Exception in submit_eval: {e}")
+        # Clean up thread state on exception
+        if current_thread is not None:
+            current_thread = None
+        task_status.set_task_state(
+            StateInfo(StateEnum.FINISHED, message=str(e), result="error")
+        )
         return AgentStudioStatusResponse(status="error", content=str(e))
 
 
