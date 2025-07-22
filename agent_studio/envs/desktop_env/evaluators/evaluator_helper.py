@@ -118,6 +118,7 @@ def evaluator_router(
             logger.info("inside eval!")
             logger.info(eval_type in evaluators)
             if eval_type not in evaluators:
+                logger.info("inside if statement!")
                 logger.info(f"making dict assignment {registered_evaluators[eval_type]()}")
                 evaluators[eval_type] = registered_evaluators[eval_type]()
             logger.info("Finished eval setup!")
