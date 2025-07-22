@@ -119,6 +119,7 @@ def evaluator_router(
             if eval_type not in evaluators:
                 logger.info(f"making dict assignment {registered_evaluators[eval_type]()}")
                 evaluators[eval_type] = registered_evaluators[eval_type]()
+            logger.info("Finished eval setup!")
         else:
             raise ValueError(
                 f"The eval_type '{eval_type}' is not registered. "
