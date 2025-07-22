@@ -98,6 +98,7 @@ def evaluator_router(
     task_config: TaskConfig,
 ) -> EvaluatorComb:
     """Router to get the evaluator class"""
+    import concurrent.futures
 
     registered_evaluators: dict[str, type[Evaluator]] = register_evaluators()
     evaluators: dict[str, Evaluator] = {}
@@ -118,9 +119,20 @@ def evaluator_router(
             logger.info("inside eval!")
             logger.info(eval_type in evaluators)
             if eval_type not in evaluators:
-                logger.info("inside if statement!")
                 logger.info(f"making dict assignment {registered_evaluators[eval_type]()}")
-                evaluators[eval_type] = registered_evaluators[eval_type]()
+                # Add timeout for evaluator initialization
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(registered_evaluators[eval_type])
+                    try:
+                        evaluators[eval_type] = future.result(timeout=30)  # 30 second timeout
+                        logger.info(f"Successfully initialized {eval_type} evaluator")
+                    except concurrent.futures.TimeoutError:
+                        logger.error(f"Timeout initializing {eval_type} evaluator")
+                        # Skip this evaluator and continue with others
+                        continue
+                    except Exception as e:
+                        logger.error(f"Error initializing {eval_type} evaluator: {e}")
+                        continue
             logger.info("Finished eval setup!")
         else:
             raise ValueError(
