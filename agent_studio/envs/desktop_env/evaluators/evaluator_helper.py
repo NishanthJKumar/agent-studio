@@ -110,29 +110,22 @@ def evaluator_router(
     if task_config.cleanup_procedure is not None:
         procedures += task_config.cleanup_procedure
 
-    logger.info("Looping thru procs!")
-
     for procedure in procedures:
         logger.info(procedure)
         eval_type: str = procedure.evaluator
         if eval_type in registered_evaluators:
-            logger.info("inside eval!")
-            logger.info(eval_type in evaluators)
             if eval_type not in evaluators:
-                logger.info(f"making dict assignment {registered_evaluators[eval_type]()}")
                 # Add timeout for evaluator initialization
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     future = executor.submit(registered_evaluators[eval_type])
                     try:
-                        evaluators[eval_type] = future.result(timeout=30)  # 30 second timeout
+                        evaluators[eval_type] = future.result(timeout=15)
                         logger.info(f"Successfully initialized {eval_type} evaluator")
                     except concurrent.futures.TimeoutError:
-                        logger.error(f"Timeout initializing {eval_type} evaluator")
-                        # Skip this evaluator and continue with others
-                        continue
-                    except Exception as e:
-                        logger.error(f"Error initializing {eval_type} evaluator: {e}")
-                        continue
+                        logger.info(f"Eval function timed out.")
+                        raise ValueError(
+                            "The eval is hanging infinitely; check why this is the case"
+                        )
             logger.info("Finished eval setup!")
         else:
             raise ValueError(

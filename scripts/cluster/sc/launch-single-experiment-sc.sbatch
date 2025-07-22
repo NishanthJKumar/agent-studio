@@ -12,7 +12,7 @@
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui"
+PARTICULAR_PATH="eval_online_benchmarks/tasks/single_api/google_docs/f188a494-3dad-44cf-a43c-5e6bfdbdda0d.json"
 # MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 MODEL_NAME="gpt-4o-2024-11-20"
 
