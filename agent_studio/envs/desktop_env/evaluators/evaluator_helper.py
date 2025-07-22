@@ -40,7 +40,9 @@ class EvaluatorComb:
 
 
 def register_evaluators(
-    base_path: str | Path = "/home/ubuntu/agent_studio/agent_studio/envs/desktop_env/evaluators",
+    base_path: (
+        str | Path
+    ) = "/home/ubuntu/agent_studio/agent_studio/envs/desktop_env/evaluators",
 ) -> dict[str, type[Evaluator]]:
     registered_classes = {}
     base_path = os.path.abspath(base_path)
@@ -59,7 +61,11 @@ def register_evaluators(
                     continue
 
                 # Construct the module name
-                module_name = os.path.relpath(file_path, base_path).replace(os.sep, ".").rstrip(".py")
+                module_name = (
+                    os.path.relpath(file_path, base_path)
+                    .replace(os.sep, ".")
+                    .rstrip(".py")
+                )
                 module_name = f"agent_studio.envs.desktop_env.evaluators.{module_name}"
 
                 # Check each class definition in the file
@@ -69,8 +75,13 @@ def register_evaluators(
                             if isinstance(base, ast.Name) and base.id == "Evaluator":
                                 try:
                                     module = importlib.import_module(module_name)
-                                    new_class: Type[Evaluator] | None = getattr(module, node.name, None)
-                                    if new_class is not None and new_class.name not in registered_classes:
+                                    new_class: Type[Evaluator] | None = getattr(
+                                        module, node.name, None
+                                    )
+                                    if (
+                                        new_class is not None
+                                        and new_class.name not in registered_classes
+                                    ):
                                         registered_classes[new_class.name] = new_class
                                     else:
                                         raise AttributeError
@@ -108,5 +119,7 @@ def evaluator_router(
                 f"The eval_type '{eval_type}' is not registered. "
                 f"This probably indicates a bug in the code."
             )
+
+    logger.info(f"Completed evaluation combing!")
 
     return EvaluatorComb(evaluators)

@@ -268,6 +268,7 @@ async def reset_task(request: AgentStudioResetRequest) -> AgentStudioStatusRespo
                 fake_task_config.reset_procedure,
             ),
         )
+        logger.info("Made new thread - waiting for it to state shift!")
         current_thread.start()
         return wait_for_state_shift(StateEnum.IN_PROGRESS)
     except Exception as e:
