@@ -116,6 +116,7 @@ def evaluator_router(
         eval_type: str = procedure.evaluator
         if eval_type in registered_evaluators:
             logger.info("inside eval!")
+            logger.info(eval_type in evaluators)
             if eval_type not in evaluators:
                 logger.info(f"making dict assignment {registered_evaluators[eval_type]()}")
                 evaluators[eval_type] = registered_evaluators[eval_type]()
