@@ -13,7 +13,8 @@
 # Define variables
 USER="njkmr"
 PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui"
-MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
+# MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
+MODEL_NAME="gpt-4o-2024-11-20"
 
 # Generate random port numbers
 generate_random_port() {
