@@ -109,7 +109,10 @@ def evaluator_router(
     if task_config.cleanup_procedure is not None:
         procedures += task_config.cleanup_procedure
 
+    logger.info("Looping thru procs!")
+
     for procedure in procedures:
+        logger.info(procedure)
         eval_type: str = procedure.evaluator
         if eval_type in registered_evaluators:
             if eval_type not in evaluators:
