@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --array=1-13  # Adjust the array size to match the number of tasks
-#SBATCH --time=10:00:00  # Adjust the time as needed
+#SBATCH --array=1-13
+#SBATCH --time=10:00:00
 #SBATCH --mem=500G
 #SBATCH --account=siro
 #SBATCH --qos=siro_high
@@ -10,6 +10,7 @@
 
 # Define variables
 USER="njkmr"
+MODEL_NAME="google/gemma-3n-e4b-it"
 
 # Set PARTICULAR_PATH and JOB_NAME based on the SLURM_ARRAY_TASK_ID
 if [ "$SLURM_ARRAY_TASK_ID" -eq 1 ]; then
@@ -57,15 +58,12 @@ else
 fi
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="structuredplanning-withfailures-${JOB_NAME}-gpt-4o-2024-11-20.log"
-ERROR_FILE="structuredplanning-withfailures-${JOB_NAME}-gpt-4o-2024-11-20.err"
+OUTPUT_FILE="gemma-structuredplanning-${JOB_NAME}-gpt-4o-2024-11-20.log"
+ERROR_FILE="gemma-structuredplanning-${JOB_NAME}-gpt-4o-2024-11-20.err"
 
 # Redirect stdout and stderr
 exec 1>$OUTPUT_FILE
 exec 2>$ERROR_FILE
-
-
-MODEL_NAME="gpt-4o-2024-11-20"
 
 # Generate random port numbers
 generate_random_port() {
@@ -86,18 +84,37 @@ SERVER_SOCKET=$(generate_random_port)
 HF_SERVER_PORT=$(generate_random_port)
 
 # Step 0: Launch the huggingface server depending on the model to be used.
-if [[ "$MODEL_NAME" == *"gemma"* ]]; then
+if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
   echo "LAUNCHING PRIVATE MODEL SERVER"
   # Activate the conda environment
   source /home/$USER/miniconda3/etc/profile.d/conda.sh
   conda activate agent-studio
   # Launch the huggingface model server in the background
-  python scripts/huggingface_model_server.py --port $HF_SERVER_PORT 2>&1 &
+  python scripts/huggingface_model_server.py --model $MODEL_NAME --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
   HUGGINGFACE_SERVER_PID=$!
   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
-  # Wait for the server to initialize.
-  # TODO: find a smarter way of doing this!
-  sleep 200
+
+  # Wait for the server to initialize
+  MAX_ATTEMPTS=45
+  ATTEMPT=0
+  SERVER_READY=false
+
+  while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+    echo "Checking if the server is ready (attempt $((ATTEMPT+1))/$MAX_ATTEMPTS)..."
+    # Check the readiness endpoint
+    if curl -s http://127.0.0.1:$HF_SERVER_PORT/ready | grep -q '"status":"ready"'; then
+      echo "Server is ready!"
+      SERVER_READY=true
+      break
+    fi
+    ATTEMPT=$((ATTEMPT+1))
+    sleep 5  # Wait before retrying
+  done
+
+  if [ "$SERVER_READY" = false ]; then
+    echo "Server did not become ready in time. Exiting."
+    exit 1
+  fi
 fi
 
 echo "Starting server on node $(hostname)..."
@@ -134,7 +151,7 @@ for ((i=1; i<=RETRIES; i++)); do
     --bind /home/$USER/agent-studio/:/home/ubuntu/agent_studio/ \
     agent-studio-client.sif /bin/bash -c "
       cd /home/ubuntu/agent_studio
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --agent structured_planning --prompting_approach structured_planning_advanced_failure_examples --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --remote
+      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --agent structured_planning --prompting_approach structured_planning_advanced --env_server_port $ENV_SERVER_PORT --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
     "
 
   if [ $? -eq 0 ]; then

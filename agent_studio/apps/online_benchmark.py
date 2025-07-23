@@ -1117,23 +1117,27 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 task_config = apply_env_vars(task_config, env_vars)
                 logger.debug(f"Task config after: {task_config}")
                 # Reset
-                if task_config.reset_procedure is not None:
-                    if args.remote:
-                        response_raw = requests.post(
-                            f"{REMOTE_SERVER_ADDR}/task/reset",
-                            json=AgentStudioResetRequest(
-                                procedures=task_config.reset_procedure
-                            ).model_dump(),
-                        )
-                        response = AgentStudioStatusResponse(**response_raw.json())
-                        response = wait_finish(is_eval=False, response=response)
-                        assert (
-                            response.status == "finished"
-                            and response.content == "success"
-                        ), f"Fail to reset task: {response.message}"
-                    else:
-                        evaluators = evaluator_router(task_config)
-                        evaluators.reset(task_config.reset_procedure)
+                try:
+                    if task_config.reset_procedure is not None:
+                        if args.remote:
+                            response_raw = requests.post(
+                                f"{REMOTE_SERVER_ADDR}/task/reset",
+                                json=AgentStudioResetRequest(
+                                    procedures=task_config.reset_procedure
+                                ).model_dump(),
+                            )
+                            response = AgentStudioStatusResponse(**response_raw.json())
+                            response = wait_finish(is_eval=False, response=response)
+                            assert (
+                                response.status == "finished"
+                                and response.content == "success"
+                            ), f"Fail to reset task: {response.message}"
+                        else:
+                            evaluators = evaluator_router(task_config)
+                            evaluators.reset(task_config.reset_procedure)
+                except AssertionError:
+                    logger.error(f"Failed to reset task: {task_config.task_id}")
+                    continue
 
                 instruction = task_config.instruction
                 logger.info(f"Task instruction: {instruction}")
