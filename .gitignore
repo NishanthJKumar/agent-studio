@@ -194,4 +194,5 @@ data/*
 web/*
 
 *.sif
+*.sqsh
 *.out

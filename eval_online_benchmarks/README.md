@@ -82,6 +82,18 @@ sbatch scripts/cluster/launch-single-experiment.sbatch
 You can set the config of what model, and what tasks you want to run, from within that `.sbatch` script.
 Similarly, you can also run the `launch-batch-experiments.sbatch` script to run multiple experiments in parallel.
 
+### Enroot
+1. Obtain the `agent-studio-server.sqsh` and `agent-studio-client.sqsh` files (ask if you don't have them).
+    1. To build from scratch, you need a machine with both docker and enroot installed, and sudo access. Run the following two commands in turn.
+    ```bash
+    ./dockerfiles/enroot-build.sh server
+    ```
+    ```bash
+    ./dockerfiles/enroot-build.sh client
+    ```
+1. Make sure that there is a directory under the main `agent-studio` directory called `supervisor_logs`, and that directory has `nginx` and `supervisor` sub-directories.
+1. 
+
 ## Task Description
 
 The tasks are located in `eval_online_benchmarks/tasks`, and the associated files are located in `eval_online_benchmarks/files`. The tasks are categorized into `single_api`, `single_gui`, and `compositional`.

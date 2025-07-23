@@ -1,19 +1,19 @@
 #!/bin/bash
 #SBATCH --job-name=agent_experiment
-#SBATCH --output=test-gemma.log
-#SBATCH --error=test-gemma.err
+#SBATCH --output=test-qwen-single-gui.log
+#SBATCH --error=test-qwen-single-gui.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=10:00:00  # Adjust the time as needed
 #SBATCH --mem=500G
-#SBATCH --account=siro
-#SBATCH --qos=siro_high
+#SBATCH --account=comem
+#SBATCH --qos=h100_comem_high
 #SBATCH --ntasks-per-node 1
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/single_api/os/0d5f7fef-3e79-4f86-87a8-d3435de04d9e.json"
-MODEL_NAME="google/gemma-3n-e4b-it"
+PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui"
+MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 
 # Generate random port numbers
 generate_random_port() {
@@ -38,34 +38,54 @@ echo "VNC PORT: $VNC_PORT"
 echo "ENV_SERVER_PORT: $ENV_SERVER_PORT"
 
 # Step 0: Launch the huggingface server depending on the model to be used.
-if [[ "$MODEL_NAME" == *"gemma"* ]]; then
+if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
   echo "LAUNCHING PRIVATE MODEL SERVER"
   # Activate the conda environment
   source /home/$USER/miniconda3/etc/profile.d/conda.sh
   conda activate agent-studio
   # Launch the huggingface model server in the background
-  python scripts/huggingface_model_server.py --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
+  python scripts/huggingface_model_server.py --model $MODEL_NAME --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
   HUGGINGFACE_SERVER_PID=$!
   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
+
   # Wait for the server to initialize
-  sleep 65
+  MAX_ATTEMPTS=45
+  ATTEMPT=0
+  SERVER_READY=false
+
+  while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+    echo "Checking if the server is ready (attempt $((ATTEMPT+1))/$MAX_ATTEMPTS)..."
+    # Check the readiness endpoint
+    if curl -s http://127.0.0.1:$HF_SERVER_PORT/ready | grep -q '"status":"ready"'; then
+      echo "Server is ready!"
+      SERVER_READY=true
+      break
+    fi
+    ATTEMPT=$((ATTEMPT+1))
+    sleep 5  # Wait before retrying
+  done
+
+  if [ "$SERVER_READY" = false ]; then
+    echo "Server did not become ready in time. Exiting."
+    exit 1
+  fi
 fi
 
 # Step 1: Launch the server
-apptainer exec --no-home --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot \
-  --env VNC_PORT=$VNC_PORT \
-  --env SERVER_SOCKET=$SERVER_SOCKET\
-  --env API_WEB_SOCKET=$API_WEB_SOCKET\
-  --env API_SOCKET=$API_SOCKET\
-  --env ENV_SERVER_PORT=$ENV_SERVER_PORT\
-  --bind /home/$USER/agent-studio/scripts/agent_server.py:/home/ubuntu/agent_studio/scripts/agent_server.py:ro \
-  --bind /home/$USER/agent-studio/agent_studio/envs:/home/ubuntu/agent_studio/agent_studio/envs:ro \
-  --bind /home/$USER/agent-studio/agent_studio/utils:/home/ubuntu/agent_studio/agent_studio/utils:ro \
-  --bind /home/$USER/agent-studio/agent_studio/agent:/home/ubuntu/agent_studio/agent_studio/agent:ro \
-  --bind /home/$USER/agent-studio/agent_studio/config:/home/ubuntu/agent_studio/agent_studio/config \
-  --bind /home/$USER/agent-studio/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:ro \
-  --bind supervisor_logs/:/var/log \
-  agent-studio-server-dynamicportrouting1.sif /home/ubuntu/agent_studio/scripts/docker_startup.sh &
+enroot remove agent-studio-server
+enroot create -n agent-studio-server agent-studio-server.sqsh
+enroot start --env VNC_PASSWORD=123456 \
+    --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+    --env VNC_PORT=$VNC_PORT \
+    --env SERVER_SOCKET=$SERVER_SOCKET \
+    --env API_WEB_SOCKET=$API_WEB_SOCKET \
+    --env API_SOCKET=$API_SOCKET \
+    --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+    --mount /dev/shm:/dev/shm  \
+    --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio \
+    --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data \
+    --mount ${PWD}/supervisor_logs/:/var/log \
+    --root --rw agent-studio-server &
 SERVER_PID=$!
 echo "Server launched with PID $SERVER_PID"
 
@@ -77,10 +97,20 @@ sleep 10  # Adjust the sleep duration as needed
 echo "Starting client..."
 RETRIES=5
 for ((i=1; i<=RETRIES; i++)); do
-  apptainer exec --no-home --bind /dev/shm:/dev/shm --writable-tmpfs --fakeroot \
-    --bind /home/$USER/agent-studio/:/home/ubuntu/agent_studio/ \
-    agent-studio-client.sif /bin/bash -c "
+  enroot remove agent-studio-client
+  enroot create -n agent-studio-client agent-studio-client.sqsh
+  enroot start --env VNC_PASSWORD=123456 \
+  --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+  --env VNC_PORT=$VNC_PORT \
+  --env SERVER_SOCKET=$SERVER_SOCKET \
+  --env API_WEB_SOCKET=$API_WEB_SOCKET \
+  --env API_SOCKET=$API_SOCKET \
+  --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+  --mount ${PWD}/:/home/ubuntu/agent_studio/ \
+  --root --rw agent-studio-client -c "
       cd /home/ubuntu/agent_studio
+      mkdir -p data
+      cp -r eval_online_benchmarks/files/* data/
       as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --prompting_approach never_giveup_check_output --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
     "
 
