@@ -73,11 +73,11 @@ You can browse `http://127.0.0.1:6080` to interact with the remote machine throu
         ```bash
         srun apptainer build agent-studio-server.sif docker-archive://agent-studio.tar
         ```
-1. Clone AgentStudio (specifically this `apptainer-container` branch of Nishanth's fork of the repo [here](https://github.com/NishanthJKumar/agent-studio/tree/apptainer-conversion)).
+1. Clone this fork of AgentStudio.
 1. Move the `agent-studio-server.sif` file under the home directory.
 1. Run this command to launch an experiment on the server:
 ```bash
-sbatch scripts/cluster/launch-single-experiment.sbatch
+sbatch scripts/cluster/a100/launch-single-experiment-a100.sbatch
 ```
 You can set the config of what model, and what tasks you want to run, from within that `.sbatch` script.
 Similarly, you can also run the `launch-batch-experiments.sbatch` script to run multiple experiments in parallel.
@@ -91,8 +91,14 @@ Similarly, you can also run the `launch-batch-experiments.sbatch` script to run 
     ```bash
     ./dockerfiles/enroot-build.sh client
     ```
+1. scp these resulting files onto the cluster (and make sure this cluster has enroot installed).
 1. Make sure that there is a directory under the main `agent-studio` directory called `supervisor_logs`, and that directory has `nginx` and `supervisor` sub-directories.
-1. 
+1. Run this command to launch an experiment on the server:
+```bash
+sbatch scripts/cluster/sc/launch-single-experiment-sc.sbatch
+```
+You can set the config of what model, and what tasks you want to run, from within that `.sbatch` script.
+Similarly, you can also run the `launch-batch-experiments-sc.sbatch` script to run multiple experiments in parallel.
 
 ## Task Description
 
