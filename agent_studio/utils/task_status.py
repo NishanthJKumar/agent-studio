@@ -1,11 +1,8 @@
-import logging
 import sys
 import threading
 from enum import Enum
 
 from agent_studio.utils.singleton import ThreadSafeSingleton
-
-logger = logging.getLogger(__name__)
 
 
 class StateEnum(Enum):
@@ -46,21 +43,6 @@ class TaskStatus(metaclass=ThreadSafeSingleton):
         with self.condition:
             while cur_state == self.state_info.state:
                 self.condition.wait()
-        if self.state_info.state == StateEnum.TERMINATE:
-            sys.exit(0)
-        return self.state_info
-
-    def wait_for_state_change_with_timeout(
-        self, cur_state: StateEnum, timeout: float = None
-    ) -> StateInfo | None:
-        """Return when the state is different from the current state,
-        or None if timeout occurs"""
-        with self.condition:
-            while cur_state == self.state_info.state:
-                if not self.condition.wait(timeout=timeout):
-                    # Timeout occurred
-                    return None
-                logger.error("waiting for condition to hit...")
         if self.state_info.state == StateEnum.TERMINATE:
             sys.exit(0)
         return self.state_info

@@ -40,9 +40,7 @@ class EvaluatorComb:
 
 
 def register_evaluators(
-    base_path: (
-        str | Path
-    ) = "/home/ubuntu/agent_studio/agent_studio/envs/desktop_env/evaluators",
+    base_path: str | Path = "/home/ubuntu/agent_studio/agent_studio/envs/desktop_env/evaluators",
 ) -> dict[str, type[Evaluator]]:
     registered_classes = {}
     base_path = os.path.abspath(base_path)
@@ -61,11 +59,7 @@ def register_evaluators(
                     continue
 
                 # Construct the module name
-                module_name = (
-                    os.path.relpath(file_path, base_path)
-                    .replace(os.sep, ".")
-                    .rstrip(".py")
-                )
+                module_name = os.path.relpath(file_path, base_path).replace(os.sep, ".").rstrip(".py")
                 module_name = f"agent_studio.envs.desktop_env.evaluators.{module_name}"
 
                 # Check each class definition in the file
@@ -75,13 +69,8 @@ def register_evaluators(
                             if isinstance(base, ast.Name) and base.id == "Evaluator":
                                 try:
                                     module = importlib.import_module(module_name)
-                                    new_class: Type[Evaluator] | None = getattr(
-                                        module, node.name, None
-                                    )
-                                    if (
-                                        new_class is not None
-                                        and new_class.name not in registered_classes
-                                    ):
+                                    new_class: Type[Evaluator] | None = getattr(module, node.name, None)
+                                    if new_class is not None and new_class.name not in registered_classes:
                                         registered_classes[new_class.name] = new_class
                                     else:
                                         raise AttributeError
@@ -98,7 +87,6 @@ def evaluator_router(
     task_config: TaskConfig,
 ) -> EvaluatorComb:
     """Router to get the evaluator class"""
-    import concurrent.futures
 
     registered_evaluators: dict[str, type[Evaluator]] = register_evaluators()
     evaluators: dict[str, Evaluator] = {}
@@ -111,28 +99,14 @@ def evaluator_router(
         procedures += task_config.cleanup_procedure
 
     for procedure in procedures:
-        logger.info(procedure)
         eval_type: str = procedure.evaluator
         if eval_type in registered_evaluators:
             if eval_type not in evaluators:
-                # Add timeout for evaluator initialization
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(registered_evaluators[eval_type])
-                    try:
-                        evaluators[eval_type] = future.result(timeout=15)
-                        logger.info(f"Successfully initialized {eval_type} evaluator")
-                    except concurrent.futures.TimeoutError:
-                        logger.info("Eval function timed out.")
-                        raise ValueError(
-                            "The eval is hanging infinitely; check why this is the case"
-                        )
-            logger.info("Finished eval setup!")
+                evaluators[eval_type] = registered_evaluators[eval_type]()
         else:
             raise ValueError(
                 f"The eval_type '{eval_type}' is not registered. "
                 f"This probably indicates a bug in the code."
             )
-
-    logger.info(f"Completed evaluation combing!")
 
     return EvaluatorComb(evaluators)

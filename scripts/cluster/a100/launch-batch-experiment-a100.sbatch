@@ -90,7 +90,7 @@ if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
   source /home/$USER/miniconda3/etc/profile.d/conda.sh
   conda activate agent-studio
   # Launch the huggingface model server in the background
-  python scripts/huggingface_model_server.py --model $MODEL_NAME --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
+  python scripts/huggingface_model_server.py --model $MODEL_NAME --port $HF_SERVER_PORT 2>&1 &
   HUGGINGFACE_SERVER_PID=$!
   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
 
