@@ -219,10 +219,14 @@ class StructuredPlanningAgent(BaseAgent):
     @property
     def action_prompt(self) -> MessageList:
         messages: MessageList = []
-        messages.append(Message(role="system", content=self._system_prompt))
+        messages.append(Message(role="system", content=self._system_prompt))        
         messages.append(
             Message(role="user", content=f"The task instruction: {self.instruction}")
         )
+        if len(self.prev_attempt_summaries) > 0:
+            messages.append(Message(role="user", content="To help you with this task, here are summaries of your previous attempts. Please use these to inform your planning and decision-making: try to improve on past failures and build on past successes!"))
+            for i, attempt_summary in enumerate(self.prev_attempt_summaries):
+                messages.append(Message(role="user", content=f"Attempt {i}: {attempt_summary}"))
 
         for i, step in enumerate(self.trajectory):
             high_level_plan_str = "\n".join(

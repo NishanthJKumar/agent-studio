@@ -40,6 +40,7 @@ class BaseAgent:
         restrict_to_one_step: bool,
         prompt_approach: str = "naive",
         model_server: str = None,
+        summarization_prompt_approach: str = "naive",
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
         model_manager = ModelManager()
@@ -66,6 +67,11 @@ class BaseAgent:
         self.obs: np.ndarray | None = None
         self.step_info: StepInfo | None
         self.total_tokens: int
+        with open(
+            f"agent_studio/agent/prompts/{summarization_prompt_approach}_summary_prompt.txt", "r"
+        ) as file:
+            self._summarization_prompt = file.read()
+        self.prev_attempt_summaries = []
 
     def reset(self, task_config: TaskConfig) -> None:
         """Reset the agent's state with a new task configuration."""
@@ -195,3 +201,42 @@ class BaseAgent:
         """Close the runtime if it is open."""
         if self.runtime is not None:
             self.runtime.close()
+
+    def construct_traj_summary(self, model_name: str, succeeded: bool, test_feedback: str) -> str:
+        """Construct a summary of the trajectory.
+        
+        Useful for REFLEXION-style learning and
+        exploration.
+        """
+        summarization_prompt = self.traj_summary_prompt(succeeded, test_feedback)
+        traj_summary, _ = self.model.generate_response(messages=summarization_prompt, model=model_name)
+        return traj_summary
+
+    def traj_summary_prompt(self, succeeded: bool, test_feedback: str) -> MessageList:
+        """Construct the trajectory summary prompt."""
+        messages: MessageList = []
+        messages.append(Message(role="system", content=self._summarization_prompt))
+        messages.append(
+            Message(role="user", content=f"The task instruction: {self.instruction}")
+        )
+
+        for i, step in enumerate(self.trajectory):
+            messages.append(
+                Message(
+                    role="assistant",
+                    content=f"##Step number: {i}.\n"
+                    f"##Executed Action: ```python\n{step.action}\n```\n"
+                    f"##Python Execution Result of Action:\n{step.result}"
+                ))
+            messages.append(
+                Message(
+                    role="user",
+                    content = step.obs
+                )
+            )
+
+        # Add in final message about outcome.
+        succeeded_str = "Succeeded." if succeeded else f"Failed. {test_feedback}"
+        messages.append(Message(role="user", content=f"##Outcome: {succeeded_str}\n"))
+
+        return messages
