@@ -144,9 +144,9 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
         # later generalize to multiple tasks.
         assert len(task_configs) == 1, "Only support one task for now."
         task_config = task_configs[0]
-        num_episodes = 3
 
-        for episode in range(num_episodes):
+        # Exploration loop.
+        for episode in range(args.exp_episodes):
             # Run a single episode of exploration.
             try:
                 # Get remote env_vars
@@ -433,6 +433,9 @@ def main():
     )
     parser.add_argument(
         "--model_server", type=str, help="Model server address for RemoteProvider"
+    )
+    parser.add_argument(
+        "--exp_episodes", type=int, default=3, help="Number of episodes for exploration"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
