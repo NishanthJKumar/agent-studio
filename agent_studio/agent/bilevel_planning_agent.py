@@ -64,8 +64,10 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         if self.task_config != self.prev_task_config:
             self.curr_high_level_plan_idx = 0
             self.high_level_plan_candidates = []
+            self.prev_task_config = copy.deepcopy(self.task_config)
         else:
-            self.curr_task_episode += 1
+            self.episode_idx += 1
+            logger.info(f"\n\nCurrent high-level plan: {self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]}\n\n")
 
 
     def generate_new_high_level_plan_candidates(self, obs: np.ndarray | None, model_name: str) -> None:
@@ -158,7 +160,6 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
                     truncated_code += line + "\n"
                     if "keyboard." in line or "mouse." in line:
                         break
-                logger.info(f"Truncating code from: {action}\n to: {truncated_code}")
                 action = truncated_code
 
         # Logging model outputs.

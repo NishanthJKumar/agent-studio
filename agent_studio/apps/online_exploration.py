@@ -94,7 +94,7 @@ config = Config()
 logger = logging.getLogger(__name__)
 REMOTE_SERVER_ADDR = f"http://{config.env_server_addr}:{config.env_server_port}"
 
-def reset_task(args, task_config: TaskConfig) -> None:
+def reset_task(args, task_config: TaskConfig) -> TaskConfig:
     # Get remote env_vars
     if args.remote:
         response_raw = requests.get(f"{REMOTE_SERVER_ADDR}/env_vars")
@@ -106,11 +106,11 @@ def reset_task(args, task_config: TaskConfig) -> None:
         assert isinstance(env_vars, dict), "Invalid env_vars"
     else:
         env_vars = config.env_vars
-    logger.debug(f"Env vars: {env_vars}")
-    logger.debug(f"Task config before: {task_config}")
+    # logger.info(f"Env vars: {env_vars}")
+    # logger.info(f"Task config before: {task_config}")
     env_vars["AS_ROOT"] = "/home/ubuntu/agent_studio"
     task_config = apply_env_vars(task_config, env_vars)
-    logger.debug(f"Task config after: {task_config}")
+    # logger.info(f"Task config after: {task_config}")
     # Reset
     try:
         if task_config.reset_procedure is not None:
@@ -133,6 +133,7 @@ def reset_task(args, task_config: TaskConfig) -> None:
     except AssertionError:
         logger.error(f"Failed to reset task: {task_config.task_id}")
         raise AssertionError
+    return task_config
 
 def run_exploration(args, interface: NonGUI | None = None) -> None:
     try:
@@ -190,7 +191,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
         for episode in range(args.exp_episodes):
             # Run a single episode of exploration.
             try:
-                reset_task(args, task_config)
+                task_config = reset_task(args, task_config)
                 instruction = task_config.instruction
                 logger.info(f"Task instruction: {instruction}")
 
@@ -327,7 +328,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                         error_in_eval = True
 
                 if score == 1.0:
-                    logger.info(f"[Result] (PASS): {feedback}")
+                    logger.info("[Result] (PASS)")
                 else:
                     logger.info(f"[Result] (FAIL): {feedback}")
                 episode_results.append(score == 1.0)
@@ -361,11 +362,12 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                     else:
                         evaluators = evaluator_router(task_config)
                         evaluators.reset(task_config.cleanup_procedure)
-                print(f"Final Results Successes: {episode_results}")
 
             # Make the agent aware of this attempt at solving the task.
             if args.use_reflexion:
                 agent.prev_attempt_summaries.append(agent.construct_traj_summary(args.model, score == 1.0, feedback))
+        
+        print(f"\n\nFinal Results Successes: {episode_results}\n\n")
             
     except KeyboardInterrupt:
         logger.info("Interrupted by user.")
