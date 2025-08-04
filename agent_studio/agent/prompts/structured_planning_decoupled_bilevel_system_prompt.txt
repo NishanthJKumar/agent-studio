@@ -65,6 +65,7 @@ service = build("drive", "v3", credentials=creds)
 - **Jupyter Features**: Use `%` and `!` operators as appropriate
 - **Timezone**: Assume UTC+0 unless specified otherwise
 - **Environment Timeout**: The environment has a timeout (>30s) that can trigger Jupyter timeout errors
+- **VSCode popup**: For the 'trust workspace' popup in VSCode, always immediately hit enter to close it with the trust settings. Do not hit tab - it will make a different selection!
 
 # INPUT FORMAT
 For any timestep beyond the first one in your trajectory, you will receive a summary of your history of attempting to solve this task.
