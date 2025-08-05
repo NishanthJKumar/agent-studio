@@ -24,7 +24,7 @@ class RemoteProvider(BaseModel):
     def generate_response(
         self, messages: list[dict[str, Any]], **kwargs
     ) -> tuple[str, dict[str, Any]]:
-        """Creates a chat completion using the Gemini API."""
+        """Creates a chat completion using the correct API req."""
 
         model_name = kwargs.get("model", None)
         if model_name is None:

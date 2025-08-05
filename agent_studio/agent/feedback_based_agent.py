@@ -34,6 +34,8 @@ class FeedbackBasedAgent(BaseAgent):
         feedback_prompt_approach: str = "direct",
         max_critique_attempts: int = 3,
         model_server: str = None,
+        summarization_prompt_approach: str = "naive",
+        extra_args: dict = {}
     ) -> None:
         """Initialize everything the same way as the parent class, but also
         initialize a feedback model and buffer."""

@@ -17,6 +17,7 @@ from transformers import (
     Gemma3nForConditionalGeneration,
     Qwen2_5_VLForConditionalGeneration,
     StoppingCriteria,
+    BitsAndBytesConfig,
     StoppingCriteriaList,
 )
 
@@ -46,14 +47,39 @@ def load_gemma_model(model_id="google/gemma-3n-e4b-it"):
     return model, processor
 
 
-def load_qwen_model(model_id="Qwen/Qwen2.5-VL-7B-Instruct"):
+def load_qwen_model(model_id="Qwen/Qwen2.5-VL-7B-Instruct", model_weights_path=None):
     """Load the Qwen model and processor"""
     global model, processor, model_ready
-    logger.info(f"Loading Qwen model: {model_id}")
-    model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-        model_id, torch_dtype="auto", device_map="auto"
-    )
-    processor = AutoProcessor.from_pretrained(model_id)
+    if model_weights_path is None:
+        logger.info(f"Loading Qwen model: {model_id}")
+        model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+            model_id, torch_dtype="auto", device_map="auto"
+        )
+        processor = AutoProcessor.from_pretrained(model_id)
+        model.eval()
+    else:
+        logger.info(f"Loading local Qwen model weights from: {model_weights_path}")
+        # 4-bit quantization config for efficient inference.
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_use_double_quant=True,
+        )
+        base_model_for_peft = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+            model_id,
+            quantization_config=bnb_config,
+            device_map="auto",
+            local_files_only=True,
+        )
+        finetuned_model = PeftModel.from_pretrained(
+            base_model_for_peft,
+            model_weights_path,
+            device_map="auto",
+            safe_serialization=True,
+        )
+        finetuned_model.eval()
+
     model_ready = True  # Set the readiness flag
     return model, processor
 
@@ -295,6 +321,9 @@ def parse_args():
     parser.add_argument(
         "--model", type=str, default="gemma-3n-e4b-it", help="Model id to use"
     )
+    parser.add_argument(
+        "--model_weights_path", type_str, default=None, help="Path to model weights for a finetuned model"
+    )
     return parser.parse_args()
 
 
@@ -308,7 +337,7 @@ if __name__ == "__main__":
     if "gemma" in model_name:
         load_gemma_model(model_name)
     elif "Qwen" in model_name:
-        load_qwen_model(model_name)
+        load_qwen_model(model_name, args.model_weights_path)
     else:
         raise ValueError(
             f"Unknown model type: {model_name}. "

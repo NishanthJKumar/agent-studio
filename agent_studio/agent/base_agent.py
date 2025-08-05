@@ -41,6 +41,7 @@ class BaseAgent:
         prompt_approach: str = "naive",
         model_server: str = None,
         summarization_prompt_approach: str = "naive",
+        extra_args: dict = {}
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
         model_manager = ModelManager()
