@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=agent_experiment
-#SBATCH --output=test-qwen-singleapi-docs.log
-#SBATCH --error=test-qwen-singleapi-docs.err
+#SBATCH --output=test-qwen-critic.log
+#SBATCH --error=test-qwen-critic.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=10:00:00  # Adjust the time as needed
@@ -14,6 +14,7 @@
 USER="njkmr"
 PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/vscode/0d38e311-29b5-4925-a480-14a6a82836c8.json"
 MODEL_NAME="gpt-4o-2024-11-20"
+CRITIC_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 
 # Generate random port numbers
 generate_random_port() {
@@ -38,13 +39,13 @@ echo "VNC PORT: $VNC_PORT"
 echo "ENV_SERVER_PORT: $ENV_SERVER_PORT"
 
 # Step 0: Launch the huggingface server depending on the model to be used.
-if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
+if [[ "$CRITIC_MODEL_NAME" == *"gemma"* || "$CRITIC_MODEL_NAME" == *"Qwen"* ]]; then
   echo "LAUNCHING PRIVATE MODEL SERVER"
   # Activate the conda environment
   source /home/$USER/miniconda3/etc/profile.d/conda.sh
   conda activate agent-studio
   # Launch the huggingface model server in the background
-  python scripts/huggingface_model_server.py --model $MODEL_NAME --port $HF_SERVER_PORT --model_weights_path system_message_finetuned 2>&1 | tee hugging_server_output.log &
+  python scripts/huggingface_model_server.py --model $CRITIC_MODEL_NAME --port $HF_SERVER_PORT --model_weights_path system-message-finetuned/checkpoint-200/ 2>&1 | tee hugging_server_output.log &
   HUGGINGFACE_SERVER_PID=$!
   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
 
