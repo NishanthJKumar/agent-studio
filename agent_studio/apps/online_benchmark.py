@@ -1247,7 +1247,6 @@ def eval(args, interface: NonGUI | None = None) -> None:
                     )
                     response = AgentStudioStatusResponse(**response_raw.json())
                     response = wait_finish(is_eval=True, response=response)
-                    import ipdb; ipdb.set_trace()
                     if not (
                         response.status == "finished"
                         and isinstance(response.message, dict)  # noqa: E501
