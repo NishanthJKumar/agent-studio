@@ -7,6 +7,7 @@ from typing import Any
 import fastapi
 import numpy as np
 import torch
+from peft import PeftConfig, PeftModel
 from fastapi import Depends
 from fastapi.responses import JSONResponse
 from PIL import Image
