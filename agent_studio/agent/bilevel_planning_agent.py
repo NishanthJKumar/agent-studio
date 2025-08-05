@@ -1,22 +1,23 @@
-"""An agent inspired by Hierarchical Planning approaches and the open-source
-SOTA Browser-Use (https://browser-use.com/).
-Overall, this is simply a more structured version of the direct prompting
-agent that uses data structures/classes to store different elements of the
-state and agent's plan instead of just doing everything implicitly within
-the prompt and the agent's response to the prompt"""
+"""An agent that plans in two stages: first generating high-level ''task plans''
+and then refining these into generate low-level actions."""
 
+from typing import Optional
 import copy
 import datetime
 import logging
 import time
 from pathlib import Path
+import json
+import os
+import cv2
 
 import numpy as np
 
-from agent_studio.agent.base_agent import BaseAgent
+from agent_studio.agent.structured_planning_agent import StructuredPlanningAgent
 from agent_studio.llm.utils import (
     extract_from_response,
     structured_json_extract_from_response,
+    parse_strategies
 )
 from agent_studio.utils.types import (
     Message,
@@ -28,10 +29,10 @@ from agent_studio.utils.types import (
 logger = logging.getLogger(__name__)
 
 
-class StructuredPlanningAgent(BaseAgent):
-    """Class for a structured (hierarchical) planning agent."""
+class BilevelPlanningAgent(StructuredPlanningAgent):
+    """A bilevel planning agent."""
 
-    name: str = "structured_planning"
+    name: str = "bilevel_planning"
 
     def __init__(
         self,
@@ -55,41 +56,57 @@ class StructuredPlanningAgent(BaseAgent):
             prompt_approach=prompt_approach,
             model_server=model_server,
         )
+        self.prev_task_config: Optional[TaskConfig] = None
+        self.episode_idx: int = 0
+        self.high_level_plan_candidates: list[str] = []
 
-        # Override the following variables
-        self.trajectory: list[StructuredStepInfo]
-        self.step_info: StructuredStepInfo | None
-        with open(
-            f"agent_studio/agent/prompts/{prompt_approach}_system_prompt.txt", "r"
-        ) as file:
-            self._system_prompt = file.read()
 
     def reset(self, task_config: TaskConfig) -> None:
         """Reset the agent's state with a new task configuration."""
-        self.task_config = task_config
-        self.instruction = task_config.instruction
-        self.trajectory = []
-        self.obs = None
-        self.step_info: StructuredStepInfo | None = None
-        self.total_tokens = 0
+        super().reset(task_config)
+        if self.task_config != self.prev_task_config:
+            self.curr_high_level_plan_idx = 0
+            self.high_level_plan_candidates = []
+            self.prev_task_config = copy.deepcopy(self.task_config)
+        else:
+            self.episode_idx += 1
+            logger.info(f"\n\nCurrent high-level plan: {self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]}\n\n")
 
-        self.runtime.reset()
-        self.runtime(self.runtime_init_code)
+
+    def generate_new_high_level_plan_candidates(self, obs: np.ndarray | None, model_name: str) -> None:
+        """Generate new high-level plan candidates."""
+        with open(
+            f"agent_studio/agent/prompts/diversity_hint_prompt.txt", "r"
+        ) as file:
+            diversity_prompt = file.read()
+        messages: MessageList = []
+        messages.append(Message(role="system", content=diversity_prompt))
+        messages.append(
+            Message(role="user", content=f"The task instruction: {self.task_config.instruction}")
+        )
+        if self.obs is not None:
+            messages.append(Message(role="user", content=obs))
+        hint_response, _ = self.model.generate_response(messages=messages, model=model_name)
+        self.high_level_plan_candidates = parse_strategies(hint_response)
+        assert len(self.high_level_plan_candidates) > 0, "No high-level plan candidates generated."
+        logger.info(f"Got new task: generated {len(self.high_level_plan_candidates)} high-level plan candidates.")
 
     def generate_action(
         self, obs: np.ndarray | None, model_name: str
     ) -> StructuredStepInfo:
         """Generate an action based on the observation."""
+        if len(self.high_level_plan_candidates) == 0:
+            self.generate_new_high_level_plan_candidates(obs, model_name)
         self.obs = obs
         prompt = self.action_prompt
         assert prompt is not None, "Invalid prompt"
         response, info = self.model.generate_response(messages=prompt, model=model_name)
         assert response is not None, "Failed to generate response."
         self.total_tokens += info.get("total_tokens", 0)
+        curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]
 
         # Reprompting loop for correct formatting.
         action = None
-        new_high_level_plan = None
         curr_state_analysis = None
         prev_goal_achieved = None
         next_action_result = None
@@ -99,9 +116,6 @@ class StructuredPlanningAgent(BaseAgent):
                 action = extract_from_response(json_output["action"]).strip()
                 if action == "":
                     raise KeyError("No action with ```python``` codeblock found.")
-                new_high_level_plan = json_output["high_level_plan"]
-                if new_high_level_plan == "No change." and len(self.trajectory) > 0:
-                    new_high_level_plan = self.trajectory[-1].current_high_level_plan
                 curr_state_analysis = json_output["state_analysis"]
                 prev_goal_achieved = json_output["previous_goal_achieved"]
                 next_action_result = json_output["intended_action_result"]
@@ -129,14 +143,12 @@ class StructuredPlanningAgent(BaseAgent):
             if (
                 action is not None
                 and len(action) > 0
-                and new_high_level_plan is not None
                 and curr_state_analysis is not None
                 and prev_goal_achieved is not None
             ):
                 break
 
         assert action is not None
-        assert new_high_level_plan is not None
         assert curr_state_analysis is not None
         assert prev_goal_achieved is not None
 
@@ -151,7 +163,6 @@ class StructuredPlanningAgent(BaseAgent):
                     truncated_code += line + "\n"
                     if "keyboard." in line or "mouse." in line:
                         break
-                logger.info(f"Truncating code from: {action}\n to: {truncated_code}")
                 action = truncated_code
 
         # Logging model outputs.
@@ -173,7 +184,7 @@ class StructuredPlanningAgent(BaseAgent):
             obs=obs,
             prev_expected_result_achieved=prev_goal_achieved,
             prompt=prompt,
-            current_high_level_plan=new_high_level_plan,
+            current_high_level_plan=curr_high_level_plan,
             action=action,
             current_scene_description=curr_state_analysis,
             next_expected_result=next_action_result,
@@ -182,13 +193,6 @@ class StructuredPlanningAgent(BaseAgent):
             timestamp=0.0,
         )
 
-    def step_action(
-        self, failure_msg: str | None, step_info: StructuredStepInfo
-    ) -> tuple[dict, bool]:
-        """Execute the code if confirmed and record the result.
-        If failure_msg is not None, the action is cancelled.
-        """
-        return super().step_action(failure_msg, step_info)
 
     @property
     def action_prompt(self) -> MessageList:
@@ -197,21 +201,23 @@ class StructuredPlanningAgent(BaseAgent):
         messages.append(
             Message(role="user", content=f"The task instruction: {self.instruction}")
         )
+        # The current high-level plan is the one that is the episode_idx modulo
+        # the number of high-level plans available.
+        curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]
+        messages.append(
+            Message(role="user", content=f"#High-Level Plan to follow: {curr_high_level_plan}")
+        )
         if len(self.prev_attempt_summaries) > 0:
             messages.append(Message(role="user", content="To help you with this task, here are summaries of your previous attempts. Please use these to inform your planning and decision-making: try to improve on past failures and build on past successes!"))
             for i, attempt_summary in enumerate(self.prev_attempt_summaries):
                 messages.append(Message(role="user", content=f"Attempt {i}: {attempt_summary}"))
 
         for i, step in enumerate(self.trajectory):
-            high_level_plan_str = "\n".join(
-                f"{i}. {hls}" for i, hls in enumerate(step.current_high_level_plan)
-            )
             messages.append(
                 Message(
                     role="assistant",
                     content=f"##Step number: {i}.\n"
                     f"##State Analysis: {step.current_scene_description}\n"
-                    f"##High-Level Plan: {high_level_plan_str}"
                     "Previous Action's Goal Achieved?: "
                     f"{step.prev_expected_result_achieved}\n"
                     f"##Executed Action: ```python\n{step.action}\n```\n"
@@ -225,3 +231,39 @@ class StructuredPlanningAgent(BaseAgent):
             messages.append(Message(role="user", content=self.obs))
 
         return messages
+
+    def save_finetuning_data(self, outcome: bool, steps_taken: int, init_obs: np.ndarray | None) -> None:
+        """Save finetuning data."""
+        # Create directory if it doesn't exist
+        save_dir = Path("finetuning_data")
+        save_dir.mkdir(exist_ok=True)
+        image_dir = save_dir / "images"
+        image_dir.mkdir(exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        # Save image if provided
+        init_obs_img_path = None
+        if init_obs is not None:
+            img_filename = f"{self.task_config.task_id}_img_{timestamp}.png"
+            img_path = image_dir / img_filename
+            cv2.imwrite(str(img_path), init_obs)
+            init_obs_img_path = str(img_path)
+
+        curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]
+        task_string = self.instruction
+        data = {
+        "task_string": task_string,
+        "initial_image_path": init_obs_img_path,
+        "hint_string": curr_high_level_plan,
+        "outcome": outcome,
+        "trajectory_metadata": {
+            "steps_taken": steps_taken,
+            }
+        }
+        # Generate unique filename
+        filename = save_dir / f"{self.task_config.task_id}_traj_{timestamp}.json"
+        # Save the JSON file
+        with open(filename, "w") as f:
+            json.dump(data, f, indent=2)        
+        logger.info(f"Saved finetuning data to {filename}")
+

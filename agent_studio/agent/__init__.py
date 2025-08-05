@@ -24,32 +24,27 @@ def register_agents(
             except SyntaxError:
                 logger.error(f"Error parsing {file_path}. Skipping...")
                 continue
+            
+            # Import the module to check inheritance
+            module_name = os.path.relpath(file_path, ".").replace(os.sep, ".").rstrip(".py")
+            try:
+                module = importlib.import_module(module_name)
+            except Exception as e:
+                logger.warning(f"Skip importing {module_name} due to {e}.")
+                continue
+                
             # Check each class definition in the file
             for node in ast.walk(tree):
-                module_name = (
-                    os.path.relpath(file_path, ".").replace(os.sep, ".").rstrip(".py")
-                )
                 if isinstance(node, ast.ClassDef):
-                    for base in node.bases:
-                        if isinstance(base, ast.Name) and base.id == "BaseAgent":
-                            try:
-                                module = importlib.import_module(module_name)
-                                new_class: type[BaseAgent] | None = getattr(
-                                    module, node.name, None
-                                )
-                                if (
-                                    new_class is not None
-                                    and new_class.name not in registered_classes
-                                ):
-                                    registered_classes[new_class.name] = new_class
-                                else:
-                                    raise AttributeError
-                            except Exception as e:
-                                logger.warning(
-                                    f"Skip importing {module_name} {node.name} "
-                                    f"due to {e}."
-                                )
-                            break
+                    try:
+                        # Get the class object
+                        class_obj = getattr(module, node.name, None)
+                        if class_obj is not None and issubclass(class_obj, BaseAgent) and class_obj != BaseAgent:
+                            if class_obj.name not in registered_classes:
+                                registered_classes[class_obj.name] = class_obj
+                    except Exception as e:
+                        logger.warning(f"Skip registering {module_name}.{node.name} due to {e}.")
+                        
     return registered_classes
 
 

@@ -82,6 +82,20 @@ def structured_json_extract_from_response(response: str) -> dict[str, str]:
     return {}
 
 
+def parse_strategies(strategies_txt: str) -> list[str]:
+    """Given an input text with a bunch of strategies, for solving a task, 
+    parse out the strategies individually into a list"""
+    # Find all strategy sections using regex
+    strategy_pattern = r"Strategy \d+:([\s\S]*?)(?=Strategy \d+:|$)"
+    strategies = re.findall(strategy_pattern, strategies_txt)
+    # Clean up each strategy text
+    result = []
+    for i, strategy in enumerate(strategies):
+        clean_strategy = strategy.strip()
+        result.append(clean_strategy)
+    return result
+
+
 def openai_encode_image(image: Path | Image.Image | np.ndarray) -> str:
     if isinstance(image, Path):
         with open(image, "rb") as image_file:

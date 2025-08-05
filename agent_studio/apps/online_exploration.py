@@ -9,6 +9,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+import copy
 
 import cv2
 import jsonpickle
@@ -81,18 +82,58 @@ from agent_studio.utils.gui import (
 )
 from agent_studio.utils.json_utils import (
     apply_env_vars,
-    export_trajectory,
     read_task_jsons,
     read_unfinished_tasks,
 )
-from agent_studio.utils.types import StepInfo, TaskConfig, VideoMeta
+from agent_studio.utils.types import StepInfo, TaskConfig, VideoMeta, Message, MessageList
 from agent_studio.apps.online_benchmark import FrameBuffer, WorkerSignals, TaskThread, GUI, NonGUI, wait_finish
+from agent_studio.llm import ModelManager
 
 config = Config()
 
 logger = logging.getLogger(__name__)
 REMOTE_SERVER_ADDR = f"http://{config.env_server_addr}:{config.env_server_port}"
 
+def reset_task(args, task_config: TaskConfig) -> TaskConfig:
+    # Get remote env_vars
+    if args.remote:
+        response_raw = requests.get(f"{REMOTE_SERVER_ADDR}/env_vars")
+        response = AgentStudioStatusResponse(**response_raw.json())
+        assert (
+            response.status == "success"
+        ), f"Fail to reset task: {response.message}"
+        env_vars = response.message
+        assert isinstance(env_vars, dict), "Invalid env_vars"
+    else:
+        env_vars = config.env_vars
+    # logger.info(f"Env vars: {env_vars}")
+    # logger.info(f"Task config before: {task_config}")
+    env_vars["AS_ROOT"] = "/home/ubuntu/agent_studio"
+    task_config = apply_env_vars(task_config, env_vars)
+    # logger.info(f"Task config after: {task_config}")
+    # Reset
+    try:
+        if task_config.reset_procedure is not None:
+            if args.remote:
+                response_raw = requests.post(
+                    f"{REMOTE_SERVER_ADDR}/task/reset",
+                    json=AgentStudioResetRequest(
+                        procedures=task_config.reset_procedure
+                    ).model_dump(),
+                )
+                response = AgentStudioStatusResponse(**response_raw.json())
+                response = wait_finish(is_eval=False, response=response)
+                assert (
+                    response.status == "finished"
+                    and response.content == "success"
+                ), f"Fail to reset task: {response.message}"
+            else:
+                evaluators = evaluator_router(task_config)
+                evaluators.reset(task_config.reset_procedure)
+    except AssertionError:
+        logger.error(f"Failed to reset task: {task_config.task_id}")
+        raise AssertionError
+    return task_config
 
 def run_exploration(args, interface: NonGUI | None = None) -> None:
     try:
@@ -144,50 +185,13 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
         # later generalize to multiple tasks.
         assert len(task_configs) == 1, "Only support one task for now."
         task_config = task_configs[0]
+        episode_results = []
 
         # Exploration loop.
         for episode in range(args.exp_episodes):
             # Run a single episode of exploration.
             try:
-                # Get remote env_vars
-                if args.remote:
-                    response_raw = requests.get(f"{REMOTE_SERVER_ADDR}/env_vars")
-                    response = AgentStudioStatusResponse(**response_raw.json())
-                    assert (
-                        response.status == "success"
-                    ), f"Fail to reset task: {response.message}"
-                    env_vars = response.message
-                    assert isinstance(env_vars, dict), "Invalid env_vars"
-                else:
-                    env_vars = config.env_vars
-                logger.debug(f"Env vars: {env_vars}")
-                logger.debug(f"Task config before: {task_config}")
-                env_vars["AS_ROOT"] = "/home/ubuntu/agent_studio"
-                task_config = apply_env_vars(task_config, env_vars)
-                logger.debug(f"Task config after: {task_config}")
-                # Reset
-                try:
-                    if task_config.reset_procedure is not None:
-                        if args.remote:
-                            response_raw = requests.post(
-                                f"{REMOTE_SERVER_ADDR}/task/reset",
-                                json=AgentStudioResetRequest(
-                                    procedures=task_config.reset_procedure
-                                ).model_dump(),
-                            )
-                            response = AgentStudioStatusResponse(**response_raw.json())
-                            response = wait_finish(is_eval=False, response=response)
-                            assert (
-                                response.status == "finished"
-                                and response.content == "success"
-                            ), f"Fail to reset task: {response.message}"
-                        else:
-                            evaluators = evaluator_router(task_config)
-                            evaluators.reset(task_config.reset_procedure)
-                except AssertionError:
-                    logger.error(f"Failed to reset task: {task_config.task_id}")
-                    continue
-
+                task_config = reset_task(args, task_config)
                 instruction = task_config.instruction
                 logger.info(f"Task instruction: {instruction}")
 
@@ -203,6 +207,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 start_time = time.time()
                 current_step = 0
                 action_memory = []
+                init_obs = None
                 while True:
                     logger.info(f"Step {current_step}")
                     if task_config.visual:
@@ -212,6 +217,8 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                         obs = interface.get_screenshot()
                     else:
                         obs = None
+                    if init_obs is None:
+                        init_obs = copy.deepcopy(obs)
                     try:
                         step_info = agent.generate_action(
                             obs=obs, model_name=args.model
@@ -324,15 +331,17 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                         error_in_eval = True
 
                 if score == 1.0:
-                    logger.info(f"[Result] (PASS): {feedback}")
+                    logger.info("[Result] (PASS)")
                 else:
                     logger.info(f"[Result] (FAIL): {feedback}")
-
+                episode_results.append(score == 1.0)
                 logger.info(f"Episode {episode} summary:"
                             f"\n\tScore: {score}"
                             f"\n\tFeedback: {feedback}"
                             f"\tSteps: {current_step}"
                             f"\n\tTime: {stop_time - start_time:.2f} seconds")
+                if args.save_finetuning_data:
+                    agent.save_finetuning_data(score == 1.0, len(agent.trajectory), init_obs)
 
             except Exception as e:
                 import traceback
@@ -351,8 +360,6 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                         )
                         response = AgentStudioStatusResponse(**response_raw.json())
                         response = wait_finish(is_eval=False, response=response)
-                        print(">>> STATUS RESPONSE TEXT:", response_raw.text)
-                        print(">>> STATUS RESPONSE CODE:", response_raw.status_code)
                         assert (
                             response.status == "finished"
                             and response.content == "success"
@@ -362,7 +369,10 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                         evaluators.reset(task_config.cleanup_procedure)
 
             # Make the agent aware of this attempt at solving the task.
-            agent.prev_attempt_summaries.append(agent.construct_traj_summary(args.model, score == 1.0, feedback))
+            if args.use_reflexion:
+                agent.prev_attempt_summaries.append(agent.construct_traj_summary(args.model, score == 1.0, feedback))
+        
+        print(f"\n\nFinal Results Successes: {episode_results}\n\n")
             
     except KeyboardInterrupt:
         logger.info("Interrupted by user.")
@@ -436,6 +446,12 @@ def main():
     )
     parser.add_argument(
         "--exp_episodes", type=int, default=3, help="Number of episodes for exploration"
+    )
+    parser.add_argument(
+        "--use_reflexion", action="store_true", help="Use reflexion for exploration"
+    )
+    parser.add_argument(
+        "--save_finetuning_data", action="store_true", help="Save trajectory info used for downstream finetuning"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
