@@ -7,6 +7,9 @@ import datetime
 import logging
 import time
 from pathlib import Path
+import json
+import os
+import cv2
 
 import numpy as np
 
@@ -228,3 +231,39 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             messages.append(Message(role="user", content=self.obs))
 
         return messages
+
+    def save_finetuning_data(self, outcome: bool, steps_taken: int, init_obs: np.ndarray | None) -> None:
+        """Save finetuning data."""
+        # Create directory if it doesn't exist
+        save_dir = Path("finetuning_data")
+        save_dir.mkdir(exist_ok=True)
+        image_dir = save_dir / "images"
+        image_dir.mkdir(exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        # Save image if provided
+        init_obs_img_path = None
+        if init_obs is not None:
+            img_filename = f"{self.task_config.task_id}_img_{timestamp}.png"
+            img_path = image_dir / img_filename
+            cv2.imwrite(str(img_path), init_obs)
+            init_obs_img_path = str(img_path)
+
+        curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]
+        task_string = self.instruction
+        data = {
+        "task_string": task_string,
+        "initial_image_path": init_obs_img_path,
+        "hint_string": curr_high_level_plan,
+        "outcome": outcome,
+        "trajectory_metadata": {
+            "steps_taken": steps_taken,
+            }
+        }
+        # Generate unique filename
+        filename = save_dir / f"{self.task_config.task_id}_traj_{timestamp}.json"
+        # Save the JSON file
+        with open(filename, "w") as f:
+            json.dump(data, f, indent=2)        
+        logger.info(f"Saved finetuning data to {filename}")
+

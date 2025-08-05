@@ -9,6 +9,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+import copy
 
 import cv2
 import jsonpickle
@@ -81,7 +82,6 @@ from agent_studio.utils.gui import (
 )
 from agent_studio.utils.json_utils import (
     apply_env_vars,
-    export_trajectory,
     read_task_jsons,
     read_unfinished_tasks,
 )
@@ -207,6 +207,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 start_time = time.time()
                 current_step = 0
                 action_memory = []
+                init_obs = None
                 while True:
                     logger.info(f"Step {current_step}")
                     if task_config.visual:
@@ -216,6 +217,8 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                         obs = interface.get_screenshot()
                     else:
                         obs = None
+                    if init_obs is None:
+                        init_obs = copy.deepcopy(obs)
                     try:
                         step_info = agent.generate_action(
                             obs=obs, model_name=args.model
@@ -337,6 +340,8 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                             f"\n\tFeedback: {feedback}"
                             f"\tSteps: {current_step}"
                             f"\n\tTime: {stop_time - start_time:.2f} seconds")
+                if args.save_finetuning_data:
+                    agent.save_finetuning_data(score == 1.0, len(agent.trajectory), init_obs)
 
             except Exception as e:
                 import traceback
@@ -444,6 +449,9 @@ def main():
     )
     parser.add_argument(
         "--use_reflexion", action="store_true", help="Use reflexion for exploration"
+    )
+    parser.add_argument(
+        "--save_finetuning_data", action="store_true", help="Save trajectory info used for downstream finetuning"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")

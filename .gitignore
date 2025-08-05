@@ -196,3 +196,4 @@ web/*
 *.sif
 *.sqsh
 *.out
+finetuning_data/*

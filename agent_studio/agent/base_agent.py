@@ -240,3 +240,7 @@ class BaseAgent:
         messages.append(Message(role="user", content=f"##Outcome: {succeeded_str}\n"))
 
         return messages
+
+    def save_finetuning_data(self, outcome: bool, steps_taken: int, init_obs_img_path: str) -> None:
+        """Save finetuning data."""
+        raise NotImplementedError(f"Not implemented for agent {self.name} yet.")
