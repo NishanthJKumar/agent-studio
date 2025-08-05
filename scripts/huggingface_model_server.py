@@ -322,7 +322,7 @@ def parse_args():
         "--model", type=str, default="gemma-3n-e4b-it", help="Model id to use"
     )
     parser.add_argument(
-        "--model_weights_path", type_str, default=None, help="Path to model weights for a finetuned model"
+        "--model_weights_path", type=str, default=None, help="Path to model weights for a finetuned model"
     )
     return parser.parse_args()
 
