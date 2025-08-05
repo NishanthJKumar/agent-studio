@@ -197,3 +197,4 @@ web/*
 *.sqsh
 *.out
 finetuning_data/*
+*finetuned*/*

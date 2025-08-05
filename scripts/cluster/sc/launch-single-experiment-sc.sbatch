@@ -12,8 +12,8 @@
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/single_api/google_docs"
-MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
+PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/vscode/0d38e311-29b5-4925-a480-14a6a82836c8.json"
+MODEL_NAME="gpt-4o-2024-11-20"
 
 # Generate random port numbers
 generate_random_port() {
@@ -44,7 +44,7 @@ if [[ "$MODEL_NAME" == *"gemma"* || "$MODEL_NAME" == *"Qwen"* ]]; then
   source /home/$USER/miniconda3/etc/profile.d/conda.sh
   conda activate agent-studio
   # Launch the huggingface model server in the background
-  python scripts/huggingface_model_server.py --model $MODEL_NAME --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
+  python scripts/huggingface_model_server.py --model $MODEL_NAME --port $HF_SERVER_PORT --model_weights_path system_message_finetuned 2>&1 | tee hugging_server_output.log &
   HUGGINGFACE_SERVER_PID=$!
   echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
 
@@ -111,7 +111,7 @@ for ((i=1; i<=RETRIES; i++)); do
       cd /home/ubuntu/agent_studio
       mkdir -p data
       cp -r eval_online_benchmarks/files/* data/
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --prompting_approach never_giveup_check_output --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --remote
+      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --agent bilevel_planning --prompting_approach structured_planning_decoupled_bilevel --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --plan_scoring_approach uniform --remote
     "
 
   if [ $? -eq 0 ]; then
