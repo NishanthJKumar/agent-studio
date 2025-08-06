@@ -454,7 +454,7 @@ def main():
         "--save_finetuning_data", action="store_true", help="Save trajectory info used for downstream finetuning"
     )
     parser.add_argument(
-        "--finetuning_data_path", action="store_true", default="finetuning_data", help="Location at which to save finetuning data"
+        "--finetuning_data_path",  type=str, default="finetuning_data", help="Location at which to save finetuning data"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
