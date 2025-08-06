@@ -65,6 +65,19 @@ RETRIES=5
 for ((i=1; i<=RETRIES; i++)); do
   enroot remove agent-studio-client
   enroot create -n agent-studio-client agent-studio-client.sqsh
+  echo "Running Command: python agent_studio/apps/online_exploration.py \
+        --task_configs_path $TASK_PATH \
+        --agent $AGENT \
+        --prompting_approach $PROMPTING_APPROACH \
+        --model $MODEL_NAME \
+        --vnc_port $VNC_PORT \
+        --env_server_port $ENV_SERVER_PORT \
+        --model_server 0.0.0.0:$MODEL_SERVER_PORT \
+        --remote \
+        --exp_episodes $EXP_EPISODES \
+        --plan_scoring_approach uniform \
+        --finetuning_data_path $DATA_COLLECTION_DIR \
+        --save_finetuning_data"
   enroot start --env VNC_PASSWORD=123456 \
   --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
   --env VNC_PORT=$VNC_PORT \
