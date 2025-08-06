@@ -72,13 +72,13 @@ def load_qwen_model(model_id="Qwen/Qwen2.5-VL-7B-Instruct", model_weights_path=N
             device_map="auto",
             local_files_only=True,
         )
-        finetuned_model = PeftModel.from_pretrained(
+        model = PeftModel.from_pretrained(
             base_model_for_peft,
             model_weights_path,
             device_map="auto",
             safe_serialization=True,
         )
-        finetuned_model.eval()
+        model.eval()
 
     processor = AutoProcessor.from_pretrained(model_id)
     model_ready = True
