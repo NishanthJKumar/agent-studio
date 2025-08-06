@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=critic-oneround
-#SBATCH --output=critic_oneround-%j.log
-#SBATCH --error=critic_oneround-%j.err
+#SBATCH --output=critic_oneround.log
+#SBATCH --error=critic_oneround.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=10:00:00
