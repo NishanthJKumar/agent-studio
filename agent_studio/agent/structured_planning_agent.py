@@ -43,6 +43,8 @@ class StructuredPlanningAgent(BaseAgent):
         restrict_to_one_step: bool,
         prompt_approach: str = "naive",
         model_server: str = None,
+        summarization_prompt_approach: str = "naive",
+        extra_args: dict = {}
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
         super().__init__(

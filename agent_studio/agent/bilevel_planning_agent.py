@@ -14,6 +14,7 @@ import cv2
 import numpy as np
 
 from agent_studio.agent.structured_planning_agent import StructuredPlanningAgent
+from agent_studio.llm import ModelManager
 from agent_studio.llm.utils import (
     extract_from_response,
     structured_json_extract_from_response,
@@ -44,6 +45,8 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         restrict_to_one_step: bool,
         prompt_approach: str = "naive",
         model_server: str = None,
+        summarization_prompt_approach: str = "naive",
+        extra_args: dict = {}
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
         super().__init__(
@@ -59,6 +62,10 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.prev_task_config: Optional[TaskConfig] = None
         self.episode_idx: int = 0
         self.high_level_plan_candidates: list[str] = []
+        self.extra_args = extra_args
+        assert "scoring_approach" in self.extra_args, "Must specify scoring_approach."
+        model_manager = ModelManager()
+        self.critic_model = model_manager.get_model(self.extra_args["scoring_model_name"], model_server=model_server)
 
 
     def reset(self, task_config: TaskConfig) -> None:
@@ -73,7 +80,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             logger.info(f"\n\nCurrent high-level plan: {self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]}\n\n")
 
 
-    def generate_new_high_level_plan_candidates(self, obs: np.ndarray | None, model_name: str) -> None:
+    def generate_new_high_level_plan_candidates(self, obs: np.ndarray | None, planning_model_name: str, scoring_approach: str, scoring_model_name: str) -> None:
         """Generate new high-level plan candidates."""
         with open(
             f"agent_studio/agent/prompts/diversity_hint_prompt.txt", "r"
@@ -86,17 +93,57 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         )
         if self.obs is not None:
             messages.append(Message(role="user", content=obs))
-        hint_response, _ = self.model.generate_response(messages=messages, model=model_name)
+        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name)
         self.high_level_plan_candidates = parse_strategies(hint_response)
         assert len(self.high_level_plan_candidates) > 0, "No high-level plan candidates generated."
         logger.info(f"Got new task: generated {len(self.high_level_plan_candidates)} high-level plan candidates.")
+        logger.info(f"Scoring plans with strategy {scoring_approach}.")
+        plans_to_scores = {}
+        for i, curr_high_level_plan in enumerate(self.high_level_plan_candidates):
+            curr_score = self.score_high_level_plan(curr_high_level_plan, scoring_model_name, scoring_approach)
+            plans_to_scores[curr_high_level_plan] = curr_score
+            logger.info(f"Scored plan {i}: {curr_score}")
+        self.high_level_plan_candidates = [k for k, v in sorted(plans_to_scores.items(), key=lambda item: item[1], reverse=True)]
+
+
+    def score_high_level_plan(self, curr_high_level_plan: str, model_name: str, scoring_approach: str) -> float:
+        """Score a high-level plan.
+        
+        Right now, this is hardcoded to a specific scoring function and scheme. But in
+        the future, we can make this more flexible.
+        """
+        if scoring_approach == "uniform":
+            return 0.0
+        elif scoring_approach == "critic":
+            HINT_PRED_PROMPT = ("You are an expert-level predictor of whether or not a particular strategy will work for various computer use tasks."
+                "You will be provided with a task instruction (natural language string), potentially an image of the initial state of the environment before task execution, and an agent's strategy to complete the task."
+                "Your job is to determine whether this strategy will succeed at accomplishing the task or not."
+                "If you think it will succeed, output '[PREDICTED OUTCOME] Success.'; otherwise indicate failure. You can also output an explanation of your approach."
+            )
+            messages: MessageList = []
+            messages.append(Message(role="system", content=HINT_PRED_PROMPT))
+            messages.append(Message(role="user",
+                    content=f"Task instruction: {self.task_config.instruction}\nAgent Plan Strategy: {curr_high_level_plan}"
+                )
+            )
+            if self.obs is not None:
+                messages.append(Message(role="user", content=self.obs))
+            response, _ = self.critic_model.generate_response(messages=messages, model=model_name)
+            # NOTE: very simple scoring function for now; can be improved/changed later!
+            if "success" in response.lower():
+                return 1.0
+            else:
+                return 0.0
+        else:
+            raise ValueError(f"Unknown scoring approach: {scoring_approach}")
+
 
     def generate_action(
         self, obs: np.ndarray | None, model_name: str
     ) -> StructuredStepInfo:
         """Generate an action based on the observation."""
         if len(self.high_level_plan_candidates) == 0:
-            self.generate_new_high_level_plan_candidates(obs, model_name)
+            self.generate_new_high_level_plan_candidates(obs, model_name, self.extra_args["scoring_approach"], self.extra_args["scoring_model_name"])
         self.obs = obs
         prompt = self.action_prompt
         assert prompt is not None, "Invalid prompt"
@@ -231,6 +278,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             messages.append(Message(role="user", content=self.obs))
 
         return messages
+
 
     def save_finetuning_data(self, outcome: bool, steps_taken: int, init_obs: np.ndarray | None) -> None:
         """Save finetuning data."""

@@ -441,6 +441,7 @@ class GUI(QMainWindow):
                 prompt_approach=args.prompting_approach,
                 feedback_prompt_approach=args.feedback_prompting_approach,
                 model_server=args.model_server,
+                extra_args={}
             )
         else:
             self.agent = setup_agent(
@@ -451,6 +452,8 @@ class GUI(QMainWindow):
                 runtime_server_port=config.env_server_port,
                 prompt_approach=args.prompting_approach,
                 model_server=args.model_server,
+                extra_args={"scoring_approach": args.plan_scoring_approach, 
+                        "scoring_model_name": args.plan_scoring_model_name}
             )
 
         # self.task_thread: None | TaskThread = None
@@ -1070,6 +1073,8 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 feedback_prompt_approach=args.feedback_prompting_approach,
                 restrict_to_one_step=config.restrict_to_one_step,
                 model_server=args.model_server,
+                extra_args={"scoring_approach": args.plan_scoring_approach, 
+                        "scoring_model_name": args.plan_scoring_model_name}
             )
         else:
             agent = setup_agent(
@@ -1082,6 +1087,8 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 restrict_to_one_step=config.restrict_to_one_step,
                 prompt_approach=args.prompting_approach,
                 model_server=args.model_server,
+                extra_args={"scoring_approach": args.plan_scoring_approach, 
+                        "scoring_model_name": args.plan_scoring_model_name}
             )
 
         # Setup tasks
@@ -1394,6 +1401,12 @@ def main():
     )
     parser.add_argument(
         "--model_server", type=str, help="Model server address for RemoteProvider"
+    )
+    parser.add_argument(
+        "--plan_scoring_approach", type=str, default="uniform", help="Plan scoring approach for the bilevel planning approach"
+    )
+    parser.add_argument(
+        "--plan_scoring_model_name", type=str, default="Qwen/Qwen2.5-VL-7B-Instruct", help="Plan scoring model name"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
