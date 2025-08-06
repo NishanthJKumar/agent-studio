@@ -64,8 +64,6 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.high_level_plan_candidates: list[str] = []
         self.extra_args = extra_args
         assert "scoring_approach" in self.extra_args, "Must specify scoring_approach."
-        # TODO: Get setup to use a new remote model.
-        critic_model = "Qwen/Qwen2.5-VL-7B-Instruct"
         model_manager = ModelManager()
         self.critic_model = model_manager.get_model(self.extra_args["scoring_model_name"], model_server=model_server)
 
