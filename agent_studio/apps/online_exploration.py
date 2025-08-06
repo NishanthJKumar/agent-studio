@@ -156,6 +156,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 feedback_prompt_approach=args.feedback_prompting_approach,
                 restrict_to_one_step=config.restrict_to_one_step,
                 model_server=args.model_server,
+                extra_args={"scoring_approach": args.plan_scoring_approach}
             )
         else:
             agent = setup_agent(
@@ -168,6 +169,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 restrict_to_one_step=config.restrict_to_one_step,
                 prompt_approach=args.prompting_approach,
                 model_server=args.model_server,
+                extra_args={"scoring_approach": args.plan_scoring_approach}
             )
 
         # Setup tasks
@@ -455,6 +457,9 @@ def main():
     )
     parser.add_argument(
         "--finetuning_data_path",  type=str, default="finetuning_data", help="Location at which to save finetuning data"
+    )
+    parser.add_argument(
+        "--plan_scoring_approach", type=str, default="uniform", help="Plan scoring approach for the bilevel planning approach"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")

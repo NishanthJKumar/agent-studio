@@ -87,6 +87,7 @@ for ((i=1; i<=RETRIES; i++)); do
         --model_server 0.0.0.0:$MODEL_SERVER_PORT \
         --remote \
         --exp_episodes $EXP_EPISODES \
+        --plan_scoring_approach uniform \
         --finetuning_data_path $DATA_COLLECTION_DIR \
         --save_finetuning_data
     "
