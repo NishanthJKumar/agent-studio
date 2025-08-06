@@ -170,7 +170,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 prompt_approach=args.prompting_approach,
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
-                    "scoring_model_name": plan_scoring_model_name
+                    "scoring_model_name": args.plan_scoring_model_name
                 }
             )
 
