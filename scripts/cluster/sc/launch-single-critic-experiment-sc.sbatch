@@ -112,7 +112,11 @@ for ((i=1; i<=RETRIES; i++)); do
       cd /home/ubuntu/agent_studio
       mkdir -p data
       cp -r eval_online_benchmarks/files/* data/
-      as-online-benchmark --task_configs_path $PARTICULAR_PATH --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT --agent bilevel_planning --prompting_approach structured_planning_decoupled_bilevel --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT --plan_scoring_approach critic --remote
+      as-online-benchmark --task_configs_path $PARTICULAR_PATH \
+          --model $MODEL_NAME --env_server_port $ENV_SERVER_PORT \
+          --agent bilevel_planning --prompting_approach structured_planning_decoupled_bilevel \
+          --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT \
+          --plan_scoring_approach critic --remote
     "
 
   if [ $? -eq 0 ]; then
