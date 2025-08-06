@@ -88,7 +88,7 @@ for ((i=1; i<=RETRIES; i++)); do
         --remote \
         --exp_episodes $EXP_EPISODES \
         --finetuning_data_path $DATA_COLLECTION_DIR \
-        --save_finetuning_data \
+        --save_finetuning_data
     "
 
   if [ $? -eq 0 ]; then
