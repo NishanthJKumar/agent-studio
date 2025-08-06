@@ -86,7 +86,7 @@ from agent_studio.utils.json_utils import (
     read_unfinished_tasks,
 )
 from agent_studio.utils.types import StepInfo, TaskConfig, VideoMeta, Message, MessageList
-from agent_studio.apps.online_benchmark import FrameBuffer, WorkerSignals, TaskThread, GUI, NonGUI, wait_finish
+from agent_studio.apps.online_benchmark import FrameBuffer, WorkerSignals, GUI, NonGUI, wait_finish
 from agent_studio.llm import ModelManager
 
 config = Config()
