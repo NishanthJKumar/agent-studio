@@ -56,7 +56,6 @@ def load_qwen_model(model_id="Qwen/Qwen2.5-VL-7B-Instruct", model_weights_path=N
         model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             model_id, torch_dtype="auto", device_map="auto"
         )
-        processor = AutoProcessor.from_pretrained(model_id)
         model.eval()
     else:
         logger.info(f"Loading local Qwen model weights from: {model_weights_path}")
@@ -81,7 +80,8 @@ def load_qwen_model(model_id="Qwen/Qwen2.5-VL-7B-Instruct", model_weights_path=N
         )
         finetuned_model.eval()
 
-    model_ready = True  # Set the readiness flag
+    processor = AutoProcessor.from_pretrained(model_id)
+    model_ready = True
     return model, processor
 
 
