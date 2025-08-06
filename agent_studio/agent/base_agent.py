@@ -242,6 +242,6 @@ class BaseAgent:
 
         return messages
 
-    def save_finetuning_data(self, outcome: bool, steps_taken: int, init_obs_img_path: str) -> None:
+    def save_finetuning_data(self, outcome: bool, steps_taken: int, init_obs_img_path: str, data_save_path: str = "finetuning_data") -> None:
         """Save finetuning data."""
         raise NotImplementedError(f"Not implemented for agent {self.name} yet.")

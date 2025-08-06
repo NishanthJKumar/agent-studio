@@ -341,7 +341,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                             f"\tSteps: {current_step}"
                             f"\n\tTime: {stop_time - start_time:.2f} seconds")
                 if args.save_finetuning_data:
-                    agent.save_finetuning_data(score == 1.0, len(agent.trajectory), init_obs)
+                    agent.save_finetuning_data(score == 1.0, len(agent.trajectory), init_obs, args.finetuning_data_path)
 
             except Exception as e:
                 import traceback
@@ -452,6 +452,9 @@ def main():
     )
     parser.add_argument(
         "--save_finetuning_data", action="store_true", help="Save trajectory info used for downstream finetuning"
+    )
+    parser.add_argument(
+        "--finetuning_data_path", action="store_true", default="finetuning_data", help="Location at which to save finetuning data"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")

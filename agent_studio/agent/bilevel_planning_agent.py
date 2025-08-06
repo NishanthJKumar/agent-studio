@@ -280,10 +280,10 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         return messages
 
 
-    def save_finetuning_data(self, outcome: bool, steps_taken: int, init_obs: np.ndarray | None) -> None:
+    def save_finetuning_data(self, outcome: bool, steps_taken: int, init_obs: np.ndarray | None, data_save_path: str = "finetuning_data") -> None:
         """Save finetuning data."""
         # Create directory if it doesn't exist
-        save_dir = Path("finetuning_data")
+        save_dir = Path("data_save_path")
         save_dir.mkdir(exist_ok=True)
         image_dir = save_dir / "images"
         image_dir.mkdir(exist_ok=True)
@@ -293,7 +293,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         init_obs_img_path = None
         if init_obs is not None:
             img_filename = f"{self.task_config.task_id}_img_{timestamp}.png"
-            img_path = image_dir / img_filename
+            img_path = Path("images") / img_filename
             cv2.imwrite(str(img_path), init_obs)
             init_obs_img_path = str(img_path)
 
