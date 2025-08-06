@@ -94,6 +94,7 @@ config = Config()
 logger = logging.getLogger(__name__)
 REMOTE_SERVER_ADDR = f"http://{config.env_server_addr}:{config.env_server_port}"
 
+
 def reset_task(args, task_config: TaskConfig) -> TaskConfig:
     # Get remote env_vars
     if args.remote:
@@ -134,6 +135,279 @@ def reset_task(args, task_config: TaskConfig) -> TaskConfig:
         logger.error(f"Failed to reset task: {task_config.task_id}")
         raise AssertionError
     return task_config
+
+
+# Code duplication due to use of global variable here.
+class TaskThread(QThread):
+    def __init__(
+        self,
+        agent: BaseAgent,
+        task_config: TaskConfig,
+        signal: WorkerSignals,
+        args: argparse.Namespace,
+        results_dir: Path,
+        interface: GUI,
+    ):
+        super().__init__()
+        self.mutex = QMutex()
+        self.wait_condition = QWaitCondition()
+        self.agent: BaseAgent = agent
+        self.task_config: TaskConfig = task_config
+        self.signals = signal
+        self.args = args
+        self.interface = interface
+        self.results_dir = results_dir
+        self.results_dir.mkdir(parents=True, exist_ok=True)
+
+    def wait_finish(self, is_eval: bool, response: AgentStudioStatusResponse):
+        if response.status == "finished":
+            return response
+        elif response.status == "wait_for_input":
+            if is_eval:
+                # evaluation
+                self.mutex.lock()
+                self.signals.status_bar_signal.emit(
+                    "color: red;", "Waiting for user input..."
+                )
+                self.signals.show_input_dialog_signal.emit(
+                    "Human Evaluation", response.content
+                )
+                self.wait_condition.wait(self.mutex)
+                self.mutex.unlock()
+                user_input = self.user_input
+                self.signals.status_bar_signal.emit("color: blue;", "Evaluating...")
+            else:
+                # reset
+                if config.need_human_confirmation:
+                    self.mutex.lock()
+                    self.signals.status_bar_signal.emit(
+                        "color: red;", "Waiting for user input..."
+                    )
+                    self.signals.show_dialog_signal.emit(
+                        "Confirm Action", response.content
+                    )
+                    self.wait_condition.wait(self.mutex)
+                    self.mutex.unlock()
+                    user_input = self.user_input
+                else:
+                    user_input = "y"
+                self.signals.status_bar_signal.emit("color: blue;", "Resetting Task...")
+            response_raw = requests.post(
+                url=f"{REMOTE_SERVER_ADDR}/task/confirm",
+                json=AgentStudioTextRequest(message=user_input).model_dump(),
+            )
+            assert response_raw.status_code == 200
+            response = AgentStudioStatusResponse(**response_raw.json())
+            return self.wait_finish(is_eval, response)
+        else:
+            raise ValueError(f"Unknown status: {response.status}, {response.content}")
+
+    def run(self):
+        if not self.args.remote:
+            raise ValueError("Local mode is not supported.")
+        try:
+            logger.info(f"Start task: {self.task_config.task_id}")
+            # Get remote env_vars
+            response_raw = requests.get(f"{REMOTE_SERVER_ADDR}/env_vars")
+            response = AgentStudioStatusResponse(**response_raw.json())
+            assert (
+                response.status == "success"
+            ), f"Fail to reset task: {response.message}"
+            env_vars = response.message
+            assert isinstance(env_vars, dict), "Invalid env_vars"
+            logger.debug(f"Env vars: {env_vars}")
+            logger.debug(f"Task config before: {self.task_config}")
+            self.task_config = apply_env_vars(self.task_config, env_vars)
+            logger.debug(f"Task config after: {self.task_config}")
+            # Reset
+            if self.task_config.reset_procedure is not None:
+                self.signals.status_bar_signal.emit("color: blue;", "Resetting Task...")
+                response_raw = requests.post(
+                    f"{REMOTE_SERVER_ADDR}/task/reset",
+                    json=AgentStudioResetRequest(
+                        procedures=self.task_config.reset_procedure
+                    ).model_dump(),
+                )
+                response = AgentStudioStatusResponse(**response_raw.json())
+                response = self.wait_finish(is_eval=False, response=response)
+                if not (
+                    response.status == "finished" and response.content == "success"
+                ):
+                    raise ValueError(
+                        f"Fail to reset task: {response.message}"
+                        f", get response {response.content}"
+                    )
+
+            instruction = self.task_config.instruction
+            logger.info(f"Task instruction: {instruction}")
+
+            # Reset the agent
+            self.signals.status_bar_signal.emit("color: blue;", "Resetting Agent...")
+            self.agent.reset(task_config=self.task_config)
+            if self.task_config.visual:
+                assert (
+                    self.interface is not None
+                ), "Interface has to be open for visual tasks."
+                self.interface.start_recording()
+
+            # Loop until the task is done or the max step is reached.
+            start_time = time.time()
+            current_step = 0
+            action_memory = []
+            while True:
+                logger.info(f"Step {current_step}")
+                if self.task_config.visual:
+                    obs = self.interface.get_screenshot()
+                else:
+                    obs = None
+                self.signals.status_bar_signal.emit(
+                    "color: blue;", "Generating Action..."
+                )
+                try:
+                    step_info = self.agent.generate_action(
+                        obs=obs, model_name=self.args.model
+                    )
+                    action = step_info.action
+                    action_memory.append(action)
+                except Exception as e:
+                    logger.error(f"Failed to generate action: {e}")
+                    step_info = StepInfo()
+                    action = ""
+
+                failure_msg: None | str = None
+                if config.need_human_confirmation:
+                    self.mutex.lock()
+                    self.signals.status_bar_signal.emit(
+                        "color: red;", "Waiting for user input..."
+                    )
+                    self.signals.show_dialog_signal_python.emit(
+                        "Execute Action?", action
+                    )
+                    self.wait_condition.wait(self.mutex)
+                    self.mutex.unlock()
+                    if self.user_input.strip().lower() != "y":
+                        failure_msg = "Cancelled by human."
+                # If the max step is reached.
+                elif current_step >= self.task_config.max_steps:
+                    failure_msg = "Max step reached."
+                # If the time limit is reached.
+                elif (
+                    self.args.use_time_limit
+                    and time.time() - start_time > self.task_config.max_time
+                ):
+                    failure_msg = "Time limit reached."
+                # If the action is empty.
+                elif action == "":
+                    failure_msg = "Failed to generate action."
+                # If the action is the same as the previous two actions.
+                elif (
+                    len(action_memory) >= 20
+                    and action_memory[-1] == action_memory[-2] == action_memory[-3]
+                ):
+                    failure_msg = "Repeated action."
+                self.signals.status_bar_signal.emit(
+                    "color: blue;", "Executing Command..."
+                )
+                runtime_output, done = self.agent.step_action(
+                    failure_msg=failure_msg, step_info=step_info
+                )
+                self.signals.runtime_output_signal.emit(runtime_output)
+                # Wait for the action to be executed
+                time.sleep(config.min_action_interval)
+                if done:
+                    break
+                current_step += 1
+            stop_time = time.time()
+
+            self.signals.exec_finish_signal.emit()
+            self.signals.status_bar_signal.emit("color: blue;", "Evaluating Task...")
+            if not self.args.no_log:
+                video_meta: VideoMeta | None = None
+                task_result_path = Path(self.results_dir) / self.task_config.task_id
+                if not task_result_path.exists():
+                    task_result_path.mkdir(parents=True, exist_ok=True)
+                if self.task_config.visual:
+                    video_folder = task_result_path
+                    video_folder.mkdir(parents=True, exist_ok=True)
+                    video_path = video_folder / "video.mp4"
+                    video_meta = self.interface.save_video(video_path)
+                    logger.info(f"Video saved to {video_path}")
+
+            response_raw = requests.post(
+                f"{REMOTE_SERVER_ADDR}/task/eval",
+                json=AgentStudioEvalRequest(
+                    procedures=self.task_config.eval_procedure,
+                    as_kwargs=str(
+                        jsonpickle.encode({"trejectory": self.agent.trajectory})
+                    ),
+                ).model_dump(),
+            )
+            response = AgentStudioStatusResponse(**response_raw.json())
+            response = self.wait_finish(is_eval=True, response=response)
+            if not (
+                response.status == "finished"
+                and isinstance(response.message, dict)  # noqa: E501
+            ):
+                raise ValueError(f"Fail to evaluate task: {response.message}")
+            score, feedback = (
+                response.message["score"],
+                response.message["feedback"],
+            )
+
+            if score == 1.0:
+                logger.info(f"[Result] (PASS): {feedback}")
+            else:
+                logger.info(f"[Result] (FAIL): {feedback}")
+            self.signals.evaluation_result_signal.emit(
+                f"Score: {score}\nFeedback: {feedback}"
+            )
+
+            if not self.args.no_log:
+                self.signals.status_bar_signal.emit(
+                    "color: blue;", "Exporting Trajectory..."
+                )
+                export_trajectory(
+                    task_config=self.task_config,
+                    trajectory=self.agent.trajectory,
+                    path=task_result_path,
+                    score=score,
+                    feedback=feedback,
+                    token_count=self.agent.get_token_count(),
+                    time_cost=stop_time - start_time,
+                    video_meta=video_meta,
+                )
+        except Exception as e:
+            import traceback
+
+            logger.error(f"[Unhandled Error] {repr(e)}]")
+            traceback.print_exc()
+        finally:
+            # Cleanup
+            if self.task_config.cleanup_procedure is not None:
+                self.signals.status_bar_signal.emit(
+                    "color: blue;", "Cleaning up Task..."
+                )
+                response_raw = requests.post(
+                    f"{REMOTE_SERVER_ADDR}/task/reset",
+                    json=AgentStudioResetRequest(
+                        procedures=self.task_config.cleanup_procedure
+                    ).model_dump(),
+                )
+                response = AgentStudioStatusResponse(**response_raw.json())
+                response = self.wait_finish(is_eval=False, response=response)
+                if not (
+                    response.status == "finished" and response.content == "success"
+                ):
+                    logger.error(f"Fail to cleanup task: {response.message}")
+            self.signals.status_bar_signal.emit("color: green;", "Ready")
+            self.signals.eval_finish_signal.emit()
+
+    def receive_user_input(self, text: str):
+        self.mutex.lock()
+        self.user_input = text  # Store the user input
+        self.wait_condition.wakeAll()  # Resume the thread
+        self.mutex.unlock()
+
 
 def run_exploration(args, interface: NonGUI | None = None) -> None:
     try:
@@ -482,6 +756,7 @@ def main():
     # Update the REMOTE_SERVER_ADDR
     global REMOTE_SERVER_ADDR
     REMOTE_SERVER_ADDR = f"http://{config.env_server_addr}:{config.env_server_port}"
+    logger.info(f"REMOTE_SERVER_ADDR: {REMOTE_SERVER_ADDR}")
 
     # Ensure a second screen is available.
     app = QApplication(sys.argv)
