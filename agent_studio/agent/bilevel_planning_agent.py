@@ -64,8 +64,10 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.high_level_plan_candidates: list[str] = []
         self.extra_args = extra_args
         assert "scoring_approach" in self.extra_args, "Must specify scoring_approach."
-        model_manager = ModelManager()
-        self.critic_model = model_manager.get_model(self.extra_args["scoring_model_name"], model_server=model_server)
+        self.critic_modedl = None
+        if self.extra_args["scoring_approach"] == "critic":
+            model_manager = ModelManager()
+            self.critic_model = model_manager.get_model(self.extra_args["scoring_model_name"], model_server=model_server)
 
 
     def reset(self, task_config: TaskConfig) -> None:
