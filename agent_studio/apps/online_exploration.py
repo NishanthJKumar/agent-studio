@@ -318,6 +318,10 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
 
                 # Evaluate
                 error_in_eval = False
+                print()
+                print(task_config)
+                print(env_vars)
+                print()
                 if args.remote:
                     response_raw = requests.post(
                         f"{REMOTE_SERVER_ADDR}/task/eval",
