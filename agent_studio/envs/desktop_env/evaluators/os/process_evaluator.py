@@ -25,7 +25,7 @@ def find_procs_by_name(name: str) -> list[psutil.Process]:
         try:
             name_ = p.name()
             exe = p.exe()
-            logging.info(f"Found process: {name_} {exe}")
+            # logging.info(f"Found process: {name_} {exe}")
         except (psutil.AccessDenied, psutil.ZombieProcess, psutil.NoSuchProcess):
             continue
         if template.match(name_) or template.match(os.path.basename(exe)):
@@ -80,10 +80,13 @@ class ProcessEvaluator(Evaluator):
             logging.info(f"Waiting for process matching: {wait_for}")
             for process_matching_attempt_idx in range(10):
                 if len(find_procs_by_name(wait_for)) > 0:
+                    logging.info("Matching process found.")
                     break
                 logging.info("No matching process found, sleeping...")
                 time.sleep(0.5)
-            logging.info("Matching process found.")
+            else:
+                logging.info("Matching process not found!")
+            
         logging.info("Exiting process creation!")
 
     @reset_handler("pkill_by_name")
