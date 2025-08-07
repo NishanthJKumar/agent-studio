@@ -19,7 +19,7 @@ AGENT="bilevel_planning"
 PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
 EXP_EPISODES=6
 OUTPUT_DIR="experiment_results_$(date +%Y%m%d_%H%M%S)"
-DATA_COLLECTION_DIR="exploration_for_dinetuning_data_test" # TODO: change this to be more meaningful/unique later!
+DATA_COLLECTION_DIR="exploration_for_finetuning_data_test" # TODO: change this to be more meaningful/unique later!
 FINETUNING_SCRIPT_PATH="path/to/external/finetuning_script.py"
 
 # Generate random port numbers
