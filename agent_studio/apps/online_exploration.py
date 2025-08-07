@@ -124,6 +124,7 @@ def reset_task(args, task_config: TaskConfig) -> TaskConfig:
                 )
                 response = AgentStudioStatusResponse(**response_raw.json())
                 response = wait_finish(is_eval=False, response=response)
+                logger.info(f"Reset response: {response}")
                 assert (
                     response.status == "finished"
                     and response.content == "success"
