@@ -318,9 +318,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
 
                 # Evaluate
                 error_in_eval = False
-                print()
-                print(task_config)
-                print()
+                logger.info(f"\n\n config: {task_config} \n\n")
                 if args.remote:
                     response_raw = requests.post(
                         f"{REMOTE_SERVER_ADDR}/task/eval",
