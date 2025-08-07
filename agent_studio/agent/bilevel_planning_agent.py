@@ -295,7 +295,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         init_obs_img_path = None
         if init_obs is not None:
             img_filename = f"{self.task_config.task_id}_img_{timestamp}.png"
-            img_path = img_dir / img_filename
+            img_path = image_dir / img_filename
             cv2.imwrite(str(img_path), init_obs)
             init_obs_img_path = str(Path("images") / img_filename)
 
