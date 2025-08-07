@@ -2,7 +2,7 @@
   "task_id": "0d38e311-29b5-4925-a480-14a6a82836c8",
   "instruction": "Please help me find the file that contains \"import openai\" in the current VS Code project and delete that file.",
   "visual": true,
-  "max_steps": 1,
+  "max_steps": 0,
   "eval_procedure": [
     {
       "evaluator": "filesystem",
