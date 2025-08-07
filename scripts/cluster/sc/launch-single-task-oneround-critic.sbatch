@@ -21,13 +21,6 @@ EXP_EPISODES=6
 OUTPUT_DIR="experiment_results_$(date +%Y%m%d_%H%M%S)"
 DATA_COLLECTION_DIR="exploration_for_finetuning_data_test" # TODO: change this to be more meaningful/unique later!
 FINETUNING_SCRIPT_PATH="path/to/external/finetuning_script.py"
-CLEAN_BENCHMARKS_DIR="/home/njkmr/eval_online_benchmarks"
-CURR_BECNHMARKS_DIR="${PWD}/eval_online_benchmarks"
-
-# We copy over the eval_online_benchmarks dir to prevent any data
-# contamination from the agent potentially having edited these!
-rm -rf "$CURR_BECNHMARKS_DIR"
-cp -r "$CLEAN_BENCHMARKS_DIR" "$CURR_BECNHMARKS_DIR"
 
 # Generate random port numbers
 generate_random_port() {
@@ -59,8 +52,8 @@ enroot start --env VNC_PASSWORD=123456 \
     --env API_WEB_SOCKET=$API_WEB_SOCKET \
     --env API_SOCKET=$API_SOCKET \
     --mount /dev/shm:/dev/shm  \
-    --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio \
-    --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data \
+    --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio:rbind,ro \
+    --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:rbind,ro \
     --mount ${PWD}/supervisor_logs/:/var/log \
     --root --rw agent-studio-server &
 SERVER_PID=$!
@@ -72,20 +65,6 @@ RETRIES=5
 for ((i=1; i<=RETRIES; i++)); do
   enroot remove agent-studio-client
   enroot create -n agent-studio-client agent-studio-client.sqsh
-  CMD="python agent_studio/apps/online_exploration.py \
-        --task_configs_path $TASK_PATH \
-        --agent $AGENT \
-        --prompting_approach $PROMPTING_APPROACH \
-        --model $MODEL_NAME \
-        --vnc_port $VNC_PORT \
-        --env_server_port $ENV_SERVER_PORT \
-        --model_server 0.0.0.0:$MODEL_SERVER_PORT \
-        --remote \
-        --exp_episodes $EXP_EPISODES \
-        --plan_scoring_approach uniform \
-        --finetuning_data_path $DATA_COLLECTION_DIR \
-        --save_finetuning_data"
-  echo "Running Command: $CMD"
   enroot start --env VNC_PASSWORD=123456 \
   --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
   --env VNC_PORT=$VNC_PORT \
@@ -93,11 +72,9 @@ for ((i=1; i<=RETRIES; i++)); do
   --env API_WEB_SOCKET=$API_WEB_SOCKET \
   --env API_SOCKET=$API_SOCKET \
   --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
-  --mount ${PWD}/:/home/ubuntu/agent_studio/ \
+  --mount "${PWD}:/home/ubuntu/agent_studio" \
   --root --rw agent-studio-client -c "
       cd /home/ubuntu/agent_studio
-      mkdir -p data
-      cp -r eval_online_benchmarks/files/* data/
       python agent_studio/apps/online_exploration.py \
         --task_configs_path $TASK_PATH \
         --agent $AGENT \
