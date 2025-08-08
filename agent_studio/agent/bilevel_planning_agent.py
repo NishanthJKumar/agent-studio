@@ -72,7 +72,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
 
     def reset(self, task_config: TaskConfig) -> None:
         """Reset the agent's state with a new task configuration."""
-        super().ƒ(task_config)
+        super().reset(task_config)
         if self.task_config != self.prev_task_config:
             self.curr_high_level_plan_idx = 0
             self.high_level_plan_candidates = []
