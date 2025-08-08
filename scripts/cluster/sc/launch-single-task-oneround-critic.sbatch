@@ -49,23 +49,23 @@ SERVER_SOCKET=$(generate_random_port)
 HF_SERVER_PORT=$(generate_random_port)
 MODEL_SERVER_PORT=$(generate_random_port)
 
-# # Launch the server (will keep running throughout the workflow)
-# echo "Launching server..."
-# enroot remove agent-studio-server
-# enroot create -n agent-studio-server agent-studio-server.sqsh
-# enroot start --env VNC_PASSWORD=123456 \
-#     --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
-#     --env VNC_PORT=$VNC_PORT \
-#     --env SERVER_SOCKET=$SERVER_SOCKET \
-#     --env API_WEB_SOCKET=$API_WEB_SOCKET \
-#     --env API_SOCKET=$API_SOCKET \
-#     --mount /dev/shm:/dev/shm  \
-#     --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio:rbind,ro \
-#     --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:rbind,ro \
-#     --mount ${PWD}/supervisor_logs/:/var/log \
-#     --root --rw agent-studio-server &
-# SERVER_PID=$!
-# echo "Server launched with PID $SERVER_PID"
+# Launch the server (will keep running throughout the workflow)
+echo "Launching server..."
+enroot remove agent-studio-server
+enroot create -n agent-studio-server agent-studio-server.sqsh
+enroot start --env VNC_PASSWORD=123456 \
+    --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+    --env VNC_PORT=$VNC_PORT \
+    --env SERVER_SOCKET=$SERVER_SOCKET \
+    --env API_WEB_SOCKET=$API_WEB_SOCKET \
+    --env API_SOCKET=$API_SOCKET \
+    --mount /dev/shm:/dev/shm  \
+    --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio:rbind,ro \
+    --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:rbind,ro \
+    --mount ${PWD}/supervisor_logs/:/var/log \
+    --root --rw agent-studio-server &
+SERVER_PID=$!
+echo "Server launched with PID $SERVER_PID"
 
 # # Launch data collection client.
 # echo "Starting data collection..."
@@ -106,11 +106,11 @@ MODEL_SERVER_PORT=$(generate_random_port)
 #   sleep 5  # Wait before retrying
 # done
 
-echo "Starting model training on data from $DATA_COLLECTION_DIR"
-source /home/$USER/miniconda3/etc/profile.d/conda.sh
-conda activate agent-studio
-python -u $FINETUNING_SCRIPT_PATH --data_folder $DATA_COLLECTION_DIR --output_folder $SAVED_WEIGHTS_DIR --log_file $FINETUNING_LOGGING_PATH --num_train_epochs $NUM_TRAINING_EPOCHS
-echo "Model training completed!"
+# echo "Starting model training on data from $DATA_COLLECTION_DIR"
+# source /home/$USER/miniconda3/etc/profile.d/conda.sh
+# conda activate agent-studio
+# python -u $FINETUNING_SCRIPT_PATH --data_folder $DATA_COLLECTION_DIR --output_folder $SAVED_WEIGHTS_DIR --log_file $FINETUNING_LOGGING_PATH --num_train_epochs $NUM_TRAINING_EPOCHS
+# echo "Model training completed!"
 
 # Now that training is done, launch a server with these loaded weights.
 echo "Launching server with trained model weights!"
