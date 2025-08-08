@@ -507,7 +507,6 @@ def main():
     # Update the REMOTE_SERVER_ADDR
     global REMOTE_SERVER_ADDR
     REMOTE_SERVER_ADDR = f"http://{config.env_server_addr}:{config.env_server_port}"
-    logger.info(f"REMOTE_SERVER_ADDR: {REMOTE_SERVER_ADDR}")
 
     # Ensure a second screen is available.
     app = QApplication(sys.argv)

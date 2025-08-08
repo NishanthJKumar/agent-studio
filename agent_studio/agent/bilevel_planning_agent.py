@@ -64,7 +64,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.high_level_plan_candidates: list[str] = []
         self.extra_args = extra_args
         assert "scoring_approach" in self.extra_args, "Must specify scoring_approach."
-        self.critic_modedl = None
+        self.critic_model = None
         if self.extra_args["scoring_approach"] == "critic":
             model_manager = ModelManager()
             self.critic_model = model_manager.get_model(self.extra_args["scoring_model_name"], model_server=model_server)
@@ -72,7 +72,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
 
     def reset(self, task_config: TaskConfig) -> None:
         """Reset the agent's state with a new task configuration."""
-        super().reset(task_config)
+        super().ƒ(task_config)
         if self.task_config != self.prev_task_config:
             self.curr_high_level_plan_idx = 0
             self.high_level_plan_candidates = []
