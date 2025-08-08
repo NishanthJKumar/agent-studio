@@ -86,13 +86,14 @@ from agent_studio.utils.json_utils import (
     read_unfinished_tasks,
 )
 from agent_studio.utils.types import StepInfo, TaskConfig, VideoMeta, Message, MessageList
-from agent_studio.apps.online_benchmark import FrameBuffer, WorkerSignals, TaskThread, GUI, NonGUI, wait_finish
+from agent_studio.apps.online_benchmark import FrameBuffer, WorkerSignals, TaskThread, GUI, NonGUI
 from agent_studio.llm import ModelManager
 
 config = Config()
 
 logger = logging.getLogger(__name__)
 REMOTE_SERVER_ADDR = f"http://{config.env_server_addr}:{config.env_server_port}"
+
 
 def reset_task(args, task_config: TaskConfig) -> TaskConfig:
     # Get remote env_vars
@@ -123,6 +124,7 @@ def reset_task(args, task_config: TaskConfig) -> TaskConfig:
                 )
                 response = AgentStudioStatusResponse(**response_raw.json())
                 response = wait_finish(is_eval=False, response=response)
+                logger.info(f"Reset response: {response}")
                 assert (
                     response.status == "finished"
                     and response.content == "success"
@@ -134,6 +136,28 @@ def reset_task(args, task_config: TaskConfig) -> TaskConfig:
         logger.error(f"Failed to reset task: {task_config.task_id}")
         raise AssertionError
     return task_config
+
+
+# Code duplication due to use of global variable here.
+def wait_finish(is_eval: bool, response: AgentStudioStatusResponse):
+    if response.status == "finished":
+        return response
+    elif response.status == "wait_for_input":
+        # Can't override in eval mode
+        if config.need_human_confirmation and not is_eval:
+            user_input = input(response.content)
+        else:
+            user_input = "y"
+        response_raw = requests.post(
+            url=f"{REMOTE_SERVER_ADDR}/task/confirm",
+            json=AgentStudioTextRequest(message=user_input).model_dump(),
+        )
+        assert response_raw.status_code == 200
+        response = AgentStudioStatusResponse(**response_raw.json())
+        return wait_finish(is_eval, response)
+    else:
+        raise ValueError(f"Unknown status: {response.status}, {response.content}")
+# End code dupe
 
 def run_exploration(args, interface: NonGUI | None = None) -> None:
     try:
@@ -156,6 +180,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 feedback_prompt_approach=args.feedback_prompting_approach,
                 restrict_to_one_step=config.restrict_to_one_step,
                 model_server=args.model_server,
+                extra_args={"scoring_approach": args.plan_scoring_approach}
             )
         else:
             agent = setup_agent(
@@ -168,6 +193,9 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 restrict_to_one_step=config.restrict_to_one_step,
                 prompt_approach=args.prompting_approach,
                 model_server=args.model_server,
+                extra_args={"scoring_approach": args.plan_scoring_approach, 
+                    "scoring_model_name": args.plan_scoring_model_name
+                }
             )
 
         # Setup tasks
@@ -291,6 +319,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
 
                 # Evaluate
                 error_in_eval = False
+                logger.info(f"\n\n config: {task_config} \n\n")
                 if args.remote:
                     response_raw = requests.post(
                         f"{REMOTE_SERVER_ADDR}/task/eval",
@@ -341,7 +370,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                             f"\tSteps: {current_step}"
                             f"\n\tTime: {stop_time - start_time:.2f} seconds")
                 if args.save_finetuning_data:
-                    agent.save_finetuning_data(score == 1.0, len(agent.trajectory), init_obs)
+                    agent.save_finetuning_data(score == 1.0, len(agent.trajectory), init_obs, args.finetuning_data_path)
 
             except Exception as e:
                 import traceback
@@ -452,6 +481,15 @@ def main():
     )
     parser.add_argument(
         "--save_finetuning_data", action="store_true", help="Save trajectory info used for downstream finetuning"
+    )
+    parser.add_argument(
+        "--finetuning_data_path",  type=str, default="finetuning_data", help="Location at which to save finetuning data"
+    )
+    parser.add_argument(
+        "--plan_scoring_approach", type=str, default="uniform", help="Plan scoring approach for the bilevel planning approach"
+    )
+    parser.add_argument(
+        "--plan_scoring_model_name", type=str, default="Qwen/Qwen2.5-VL-7B-Instruct", help="Plan scoring model name"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")

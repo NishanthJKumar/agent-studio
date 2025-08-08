@@ -64,13 +64,15 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.high_level_plan_candidates: list[str] = []
         self.extra_args = extra_args
         assert "scoring_approach" in self.extra_args, "Must specify scoring_approach."
-        model_manager = ModelManager()
-        self.critic_model = model_manager.get_model(self.extra_args["scoring_model_name"], model_server=model_server)
+        self.critic_model = None
+        if self.extra_args["scoring_approach"] == "critic":
+            model_manager = ModelManager()
+            self.critic_model = model_manager.get_model(self.extra_args["scoring_model_name"], model_server=model_server)
 
 
     def reset(self, task_config: TaskConfig) -> None:
         """Reset the agent's state with a new task configuration."""
-        super().reset(task_config)
+        super().ƒ(task_config)
         if self.task_config != self.prev_task_config:
             self.curr_high_level_plan_idx = 0
             self.high_level_plan_candidates = []
@@ -280,10 +282,10 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         return messages
 
 
-    def save_finetuning_data(self, outcome: bool, steps_taken: int, init_obs: np.ndarray | None) -> None:
+    def save_finetuning_data(self, outcome: bool, steps_taken: int, init_obs: np.ndarray | None, data_save_path: str = "finetuning_data") -> None:
         """Save finetuning data."""
         # Create directory if it doesn't exist
-        save_dir = Path("finetuning_data")
+        save_dir = Path(data_save_path)
         save_dir.mkdir(exist_ok=True)
         image_dir = save_dir / "images"
         image_dir.mkdir(exist_ok=True)
@@ -295,7 +297,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             img_filename = f"{self.task_config.task_id}_img_{timestamp}.png"
             img_path = image_dir / img_filename
             cv2.imwrite(str(img_path), init_obs)
-            init_obs_img_path = str(img_path)
+            init_obs_img_path = str(Path("images") / img_filename)
 
         curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]
         task_string = self.instruction

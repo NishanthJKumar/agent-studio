@@ -135,8 +135,8 @@ enroot start --env VNC_PASSWORD=123456 \
     --env API_SOCKET=$API_SOCKET \
     --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
     --mount /dev/shm:/dev/shm  \
-    --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio \
-    --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data \
+    --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio:rbind,ro \
+    --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:rbind,ro \
     --mount ${PWD}/supervisor_logs/:/var/log \
     --root --rw agent-studio-server &
 SERVER_PID=$!
