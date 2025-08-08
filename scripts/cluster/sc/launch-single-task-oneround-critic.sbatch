@@ -13,8 +13,8 @@
 # Define variables
 USER="njkmr"
 TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/0d38e311-29b5-4925-a480-14a6a82836c8.json"
-MODEL_NAME="gpt-4o-2024-11-20"
-CRITIC_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
+ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
+CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 AGENT="bilevel_planning"
 PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
 EXP_EPISODES=6
@@ -22,8 +22,15 @@ OUTPUT_DIR="experiment_results_$(date +%Y%m%d_%H%M%S)"
 DATA_COLLECTION_DIR="exploration_for_finetuning_data_test" # TODO: change this to be more meaningful/unique later!
 SAVED_WEIGHTS_DIR="exploration_for_finetuning_trained_weights" # TODO: once we turn this to run multiple rounds, we need to change this with every roudn
 FINETUNING_SCRIPT_PATH="../agentic-value-function-finetuning/agent-studio-hint-finetuning.py"
+FINETUNING_LOGGING_PATH="direct_training.log"
+NUM_TRAINING_EPOCHS="200"
 
-# Generate random port numbers
+# Ensure there's no buffering and we actually print training details to the 
+# logging files immediately.
+export PYTHONUNBUFFERED=1
+
+
+# Utility function to generate random port numbers
 generate_random_port() {
   while :; do
     PORT=$((RANDOM % 64512 + 1024))
@@ -80,7 +87,7 @@ MODEL_SERVER_PORT=$(generate_random_port)
 #         --task_configs_path $TASK_PATH \
 #         --agent $AGENT \
 #         --prompting_approach $PROMPTING_APPROACH \
-#         --model $MODEL_NAME \
+#         --model $ACTOR_MODEL_NAME \
 #         --vnc_port $VNC_PORT \
 #         --env_server_port $ENV_SERVER_PORT \
 #         --model_server 0.0.0.0:$MODEL_SERVER_PORT \
@@ -99,5 +106,74 @@ MODEL_SERVER_PORT=$(generate_random_port)
 #   sleep 5  # Wait before retrying
 # done
 
+echo "Starting model training on data from $DATA_COLLECTION_DIR"
+source /home/$USER/miniconda3/etc/profile.d/conda.sh
 conda activate agent-studio
-python $FINETUNING_SCRIPT_PATH --data_folder $DATA_COLLECTION_DIR --output_folder $SAVED_WEIGHTS_DIR
+python -u $FINETUNING_SCRIPT_PATH --data_folder $DATA_COLLECTION_DIR --output_folder $SAVED_WEIGHTS_DIR --log_file $FINETUNING_LOGGING_PATH --num_train_epochs $NUM_TRAINING_EPOCHS
+echo "Model training completed!"
+
+# Now that training is done, launch a server with these loaded weights.
+echo "Launching server with trained model weights!"
+# Launch the huggingface model server in the background
+python scripts/huggingface_model_server.py --model $CRITIC_ACTOR_MODEL_NAME --port $HF_SERVER_PORT --model_weights_path $SAVED_WEIGHTS_DIR/checkpoint-$NUM_TRAINING_EPOCHS/ 2>&1 | tee hugging_server_output.log &
+HUGGINGFACE_SERVER_PID=$!
+echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
+# Wait for the server to initialize
+MAX_ATTEMPTS=100
+ATTEMPT=0
+SERVER_READY=false
+
+while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+  echo "Checking if the server is ready (attempt $((ATTEMPT+1))/$MAX_ATTEMPTS)..."
+  # Check the readiness endpoint
+  if curl -s http://127.0.0.1:$HF_SERVER_PORT/ready | grep -q '"status":"ready"'; then
+    echo "Model loaded; server is ready!"
+    SERVER_READY=true
+    break
+  fi
+  ATTEMPT=$((ATTEMPT+1))
+  sleep 5  # Wait before retrying
+done
+
+if [ "$SERVER_READY" = false ]; then
+  echo "Server did not become ready in time. Exiting."
+  exit 1
+fi
+
+# Finally, we eval these weights on the same task we collected data on!
+echo "Starting client..."
+RETRIES=5
+for ((i=1; i<=RETRIES; i++)); do
+  enroot remove agent-studio-client
+  enroot create -n agent-studio-client agent-studio-client.sqsh
+  enroot start --env VNC_PASSWORD=123456 \
+  --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+  --env VNC_PORT=$VNC_PORT \
+  --env SERVER_SOCKET=$SERVER_SOCKET \
+  --env API_WEB_SOCKET=$API_WEB_SOCKET \
+  --env API_SOCKET=$API_SOCKET \
+  --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+  --mount ${PWD}/:/home/ubuntu/agent_studio/ \
+  --root --rw agent-studio-client -c "
+      cd /home/ubuntu/agent_studio
+      mkdir -p data
+      cp -r eval_online_benchmarks/files/* data/
+      as-online-benchmark --task_configs_path $TASK_PATH \
+          --model $ACTOR_MODEL_NAME --env_server_port $ENV_SERVER_PORT \
+          --agent bilevel_planning --prompting_approach structured_planning_decoupled_bilevel \
+          --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT \
+          --plan_scoring_approach critic --remote
+    "
+
+  if [ $? -eq 0 ]; then
+    echo "Client successfully connected and completed its task."
+    break
+  fi
+  echo "Client connection attempt $i failed, retrying..."
+  sleep 5  # Wait before retrying
+done
+
+# Step 4: Clean up
+echo "Killing server process with PID $SERVER_PID"
+kill $SERVER_PID
+echo "Experiment completed."
