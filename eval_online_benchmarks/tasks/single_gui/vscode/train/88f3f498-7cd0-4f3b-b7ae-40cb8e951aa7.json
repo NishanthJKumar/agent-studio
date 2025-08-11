@@ -92,6 +92,28 @@
       "params": {
         "name": "code"
       }
+    },
+    {
+      "evaluator": "process",
+      "function": "pkill_by_name",
+      "params": {
+        "name": "pcmanfm"
+      }
+    },
+    {
+      "evaluator": "process",
+      "function": "pkill_by_name",
+      "params": {
+        "name": "tilix"
+      }
+    },
+
+    {
+      "evaluator": "process",
+      "function": "pkill_by_name",
+      "params": {
+        "name": "lxterminal"
+      }
     }
   ],
   "max_time": 60

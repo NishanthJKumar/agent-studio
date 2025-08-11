@@ -49,7 +49,9 @@
       "params": {
         "cmd": [
           "code",
-          "${AS_ROOT}/vscode_workspace/README.md"
+          "${AS_ROOT}/vscode_workspace/README.md",
+          "--no-sandbox",
+          "--user-data-dir=${AS_ROOT}/.vscode-root"
         ],
         "wait_for": "code"
       }
@@ -82,6 +84,28 @@
       "function": "pkill_by_name",
       "params": {
         "name": "code"
+      }
+    },
+    {
+      "evaluator": "process",
+      "function": "pkill_by_name",
+      "params": {
+        "name": "pcmanfm"
+      }
+    },
+    {
+      "evaluator": "process",
+      "function": "pkill_by_name",
+      "params": {
+        "name": "tilix"
+      }
+    },
+
+    {
+      "evaluator": "process",
+      "function": "pkill_by_name",
+      "params": {
+        "name": "lxterminal"
       }
     }
   ],
