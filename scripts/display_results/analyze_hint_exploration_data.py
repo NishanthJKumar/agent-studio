@@ -19,7 +19,7 @@ for json_file in folder_path.glob("*.json"):
 for task_name, successes in task_config_to_successes.items():
     print(f"{task_name} has {sum(successes)} successes out of {len(successes)} trials")
 
-print(f"Total number of successes: {sum(sum(successes)) for successes in task_config_to_successes.values()}")
+print(f"Total number of successes: {sum(sum(successes) for successes in task_config_to_successes.values())}")
 print(f"Total number of trials: {sum(len(successes) for successes in task_config_to_successes.values())}")
 
 
