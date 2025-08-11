@@ -146,6 +146,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         """Generate an action based on the observation."""
         if len(self.high_level_plan_candidates) == 0:
             self.generate_new_high_level_plan_candidates(obs, model_name, self.extra_args["scoring_approach"], self.extra_args["scoring_model_name"])
+            logger.info(f"Curr plan: {self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]}")
         self.obs = obs
         prompt = self.action_prompt
         assert prompt is not None, "Invalid prompt"

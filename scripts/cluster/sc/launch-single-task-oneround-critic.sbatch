@@ -12,7 +12,7 @@
 
 # Define variables
 USER="njkmr"
-TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/train/"
+TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/train/1d3861fa-d605-48be-9337-b5188c351663.json"
 ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
 CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 AGENT="bilevel_planning"
