@@ -22,7 +22,6 @@ def register_agents(
             try:
                 tree = ast.parse(file_contents)
             except SyntaxError:
-                import ipdb; ipdb.set_trace()
                 logger.error(f"Error parsing {file_path}. Skipping...")
                 continue
             
