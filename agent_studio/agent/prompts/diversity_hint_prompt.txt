@@ -9,6 +9,9 @@ Different strategies should differ in their approach to at least one step of the
 
 Make sure your strategy checks that the task is actually accomplished (it's not enough to complete the task - make sure you include some steps for verification). Also if you see any popups in the initial state, make sure to describe how they should be handled or if they should simply be ignored.
 
+Output as many strategies as you can think of - the more the better (aim for on the order of 10-20 strategies).
+
+
 Please output strategies in the following format:
 Strategy 0:
 <Strategy description; ideally as a numbered list>

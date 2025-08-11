@@ -209,199 +209,197 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
         for task_config in task_configs_json:
             task_configs.append(TaskConfig.model_validate(task_config))
 
-        # TODO: we start with just doing this for a single task; we will
-        # later generalize to multiple tasks.
-        assert len(task_configs) == 1, "Only support one task for now."
-        task_config = task_configs[0]
-        episode_results = []
-
         # Exploration loop.
-        for episode in range(args.exp_episodes):
-            # Run a single episode of exploration.
-            try:
-                task_config = reset_task(args, task_config)
-                instruction = task_config.instruction
-                logger.info(f"Task instruction: {instruction}")
+        for task_config in tqdm(task_configs, desc="Collecting data across tasks"):
+            episode_results = []
+            for episode in range(args.exp_episodes):
+                logger.info(f"Start task: {task_config.task_id}, episode: {episode}")
 
-                # Reset the agent
-                agent.reset(task_config=task_config)
-                if task_config.visual:
-                    assert (
-                        interface is not None
-                    ), "Interface has to be open for visual tasks."
-                    interface.start_recording()
+                # Run a single episode of exploration.
+                try:
+                    task_config = reset_task(args, task_config)
+                    instruction = task_config.instruction
+                    logger.info(f"Task instruction: {instruction}")
 
-                # Loop until the task is done or the max step is reached.
-                start_time = time.time()
-                current_step = 0
-                action_memory = []
-                init_obs = None
-                while True:
-                    logger.info(f"Step {current_step}")
+                    # Reset the agent
+                    agent.reset(task_config=task_config)
                     if task_config.visual:
                         assert (
                             interface is not None
                         ), "Interface has to be open for visual tasks."
-                        obs = interface.get_screenshot()
-                    else:
-                        obs = None
-                    if init_obs is None:
-                        init_obs = copy.deepcopy(obs)
-                    try:
-                        step_info = agent.generate_action(
-                            obs=obs, model_name=args.model
+                        interface.start_recording()
+
+                    # Loop until the task is done or the max step is reached.
+                    start_time = time.time()
+                    current_step = 0
+                    action_memory = []
+                    init_obs = None
+                    while True:
+                        logger.info(f"Step {current_step}")
+                        if task_config.visual:
+                            assert (
+                                interface is not None
+                            ), "Interface has to be open for visual tasks."
+                            obs = interface.get_screenshot()
+                        else:
+                            obs = None
+                        if init_obs is None:
+                            init_obs = copy.deepcopy(obs)
+                        try:
+                            step_info = agent.generate_action(
+                                obs=obs, model_name=args.model
+                            )
+                            action = step_info.action
+                            action_memory.append(action)
+                        except Exception as e:
+                            logger.error(f"Failed to generate action: {e}")
+                            step_info = StepInfo(
+                                obs=obs,
+                                action="",
+                                prompt=[],
+                                response="",
+                                unexecuted_code="",
+                                info={},
+                                result={},
+                                timestamp=0.0,
+                            )
+                            action = ""
+
+                        failure_msg: None | str = None
+                        if config.need_human_confirmation and (
+                            input(f"Action:\n{action}\nConfirm action (y/n): ")
+                            .strip()
+                            .lower()
+                            != "y"
+                        ):
+                            failure_msg = "Cancelled by human."
+                        # If the max step is reached.
+                        elif current_step >= task_config.max_steps:
+                            failure_msg = "Max step reached."
+                        # If the time limit is reached, the action is not confirmed.
+                        elif (
+                            args.use_time_limit
+                            and time.time() - start_time > task_config.max_time
+                        ):
+                            failure_msg = "Time limit reached."
+                        # If the action is empty.
+                        elif action == "":
+                            failure_msg = "Failed to generate action."
+                        # If the action is the same as the previous nine actions.
+                        elif (
+                            len(action_memory) >= 20
+                            and action_memory[-1] == action_memory[-2] == action_memory[-3]
+                        ):
+                            failure_msg = "Repeated action."
+                        result, done = agent.step_action(
+                            failure_msg=failure_msg, step_info=step_info
                         )
-                        action = step_info.action
-                        action_memory.append(action)
-                    except Exception as e:
-                        logger.error(f"Failed to generate action: {e}")
-                        step_info = StepInfo(
-                            obs=obs,
-                            action="",
-                            prompt=[],
-                            response="",
-                            unexecuted_code="",
-                            info={},
-                            result={},
-                            timestamp=0.0,
-                        )
-                        action = ""
+                        time.sleep(config.min_action_interval)
+                        if done:
+                            break
+                        current_step += 1
+                    stop_time = time.time()
 
-                    failure_msg: None | str = None
-                    if config.need_human_confirmation and (
-                        input(f"Action:\n{action}\nConfirm action (y/n): ")
-                        .strip()
-                        .lower()
-                        != "y"
-                    ):
-                        failure_msg = "Cancelled by human."
-                    # If the max step is reached.
-                    elif current_step >= task_config.max_steps:
-                        failure_msg = "Max step reached."
-                    # If the time limit is reached, the action is not confirmed.
-                    elif (
-                        args.use_time_limit
-                        and time.time() - start_time > task_config.max_time
-                    ):
-                        failure_msg = "Time limit reached."
-                    # If the action is empty.
-                    elif action == "":
-                        failure_msg = "Failed to generate action."
-                    # If the action is the same as the previous nine actions.
-                    elif (
-                        len(action_memory) >= 20
-                        and action_memory[-1] == action_memory[-2] == action_memory[-3]
-                    ):
-                        failure_msg = "Repeated action."
-                    result, done = agent.step_action(
-                        failure_msg=failure_msg, step_info=step_info
-                    )
-                    time.sleep(config.min_action_interval)
-                    if done:
-                        break
-                    current_step += 1
-                stop_time = time.time()
+                    if not args.no_log:
+                        results_json_dir = results_dir / "json_results"
+                        if not results_json_dir.exists():
+                            results_json_dir.mkdir(parents=True, exist_ok=True)
+                        task_trajectory_path = results_json_dir / task_config.task_id
+                        if not task_trajectory_path.exists():
+                            task_trajectory_path.mkdir(parents=True, exist_ok=True)
+                        video_meta: VideoMeta | None = None
+                        if task_config.visual:
+                            task_trajectory_path.mkdir(parents=True, exist_ok=True)
+                            video_path = task_trajectory_path / "video.mp4"
+                            assert interface is not None
+                            video_meta = interface.save_video(video_path)
+                            logger.info(f"Video saved to {video_path}")
 
-                if not args.no_log:
-                    results_json_dir = results_dir / "json_results"
-                    if not results_json_dir.exists():
-                        results_json_dir.mkdir(parents=True, exist_ok=True)
-                    task_trajectory_path = results_json_dir / task_config.task_id
-                    if not task_trajectory_path.exists():
-                        task_trajectory_path.mkdir(parents=True, exist_ok=True)
-                    video_meta: VideoMeta | None = None
-                    if task_config.visual:
-                        task_trajectory_path.mkdir(parents=True, exist_ok=True)
-                        video_path = task_trajectory_path / "video.mp4"
-                        assert interface is not None
-                        video_meta = interface.save_video(video_path)
-                        logger.info(f"Video saved to {video_path}")
-
-                # Evaluate
-                error_in_eval = False
-                logger.info(f"\n\n config: {task_config} \n\n")
-                if args.remote:
-                    response_raw = requests.post(
-                        f"{REMOTE_SERVER_ADDR}/task/eval",
-                        json=AgentStudioEvalRequest(
-                            procedures=task_config.eval_procedure,
-                            as_kwargs=str(
-                                jsonpickle.encode({"trajectory": agent.trajectory})
-                            ),
-                        ).model_dump(),
-                    )
-                    response = AgentStudioStatusResponse(**response_raw.json())
-                    response = wait_finish(is_eval=True, response=response)
-                    if not (
-                        response.status == "finished"
-                        and isinstance(response.message, dict)  # noqa: E501
-                    ):
-                        logger.error(
-                            f"[Caught Unhandled Error in Eval] {str(response.message)}]"
-                        )
-                        score = 0.0
-                        feedback = "Evaluator broke for reason: " + str(
-                            response.message
-                        )
-                        error_in_eval = True
-                    else:
-                        score, feedback = (
-                            response.message["score"],
-                            response.message["feedback"],
-                        )
-                else:
-                    logger.info("Start evaluation")
-                    try:
-                        score, feedback = evaluators(task_config.eval_procedure)
-                    except Exception as e:
-                        logger.error(f"[Caught Unhandled Error in Eval] {str(e)}]")
-                        score = 0.0
-                        feedback = "Evaluator broke for reason: " + str(e)
-                        error_in_eval = True
-
-                if score == 1.0:
-                    logger.info("[Result] (PASS)")
-                else:
-                    logger.info(f"[Result] (FAIL): {feedback}")
-                episode_results.append(score == 1.0)
-                logger.info(f"Episode {episode} summary:"
-                            f"\n\tScore: {score}"
-                            f"\n\tFeedback: {feedback}"
-                            f"\tSteps: {current_step}"
-                            f"\n\tTime: {stop_time - start_time:.2f} seconds")
-                if args.save_finetuning_data:
-                    agent.save_finetuning_data(score == 1.0, len(agent.trajectory), init_obs, args.finetuning_data_path)
-
-            except Exception as e:
-                import traceback
-
-                logger.error(f"[Unhandled Error] {repr(e)}]")
-                traceback.print_exc()
-            finally:
-                # Clean up
-                if task_config.cleanup_procedure is not None:
+                    # Evaluate
+                    error_in_eval = False
+                    logger.info(f"\n\n config: {task_config} \n\n")
                     if args.remote:
                         response_raw = requests.post(
-                            f"{REMOTE_SERVER_ADDR}/task/reset",
-                            json=AgentStudioResetRequest(
-                                procedures=task_config.cleanup_procedure
+                            f"{REMOTE_SERVER_ADDR}/task/eval",
+                            json=AgentStudioEvalRequest(
+                                procedures=task_config.eval_procedure,
+                                as_kwargs=str(
+                                    jsonpickle.encode({"trajectory": agent.trajectory})
+                                ),
                             ).model_dump(),
                         )
                         response = AgentStudioStatusResponse(**response_raw.json())
-                        response = wait_finish(is_eval=False, response=response)
-                        assert (
+                        response = wait_finish(is_eval=True, response=response)
+                        if not (
                             response.status == "finished"
-                            and response.content == "success"
-                        ), f"Fail to reset task: {response.message}"
+                            and isinstance(response.message, dict)  # noqa: E501
+                        ):
+                            logger.error(
+                                f"[Caught Unhandled Error in Eval] {str(response.message)}]"
+                            )
+                            score = 0.0
+                            feedback = "Evaluator broke for reason: " + str(
+                                response.message
+                            )
+                            error_in_eval = True
+                        else:
+                            score, feedback = (
+                                response.message["score"],
+                                response.message["feedback"],
+                            )
                     else:
-                        evaluators = evaluator_router(task_config)
-                        evaluators.reset(task_config.cleanup_procedure)
+                        logger.info("Start evaluation")
+                        try:
+                            score, feedback = evaluators(task_config.eval_procedure)
+                        except Exception as e:
+                            logger.error(f"[Caught Unhandled Error in Eval] {str(e)}]")
+                            score = 0.0
+                            feedback = "Evaluator broke for reason: " + str(e)
+                            error_in_eval = True
 
-            # Make the agent aware of this attempt at solving the task.
-            if args.use_reflexion:
-                agent.prev_attempt_summaries.append(agent.construct_traj_summary(args.model, score == 1.0, feedback))
+                    if score == 1.0:
+                        logger.info("[Result] (PASS)")
+                    else:
+                        logger.info(f"[Result] (FAIL): {feedback}")
+                    episode_results.append(score == 1.0)
+                    logger.info(f"Episode {episode} summary:"
+                                f"\n\tScore: {score}"
+                                f"\n\tFeedback: {feedback}"
+                                f"\tSteps: {current_step}"
+                                f"\n\tTime: {stop_time - start_time:.2f} seconds")
+                    if args.save_finetuning_data:
+                        agent.save_finetuning_data(score == 1.0, len(agent.trajectory), init_obs, args.finetuning_data_path)
+
+                except Exception as e:
+                    import traceback
+
+                    logger.error(f"[Unhandled Error] {repr(e)}]")
+                    traceback.print_exc()
+                finally:
+                    # Clean up
+                    if task_config.cleanup_procedure is not None:
+                        if args.remote:
+                            response_raw = requests.post(
+                                f"{REMOTE_SERVER_ADDR}/task/reset",
+                                json=AgentStudioResetRequest(
+                                    procedures=task_config.cleanup_procedure
+                                ).model_dump(),
+                            )
+                            response = AgentStudioStatusResponse(**response_raw.json())
+                            response = wait_finish(is_eval=False, response=response)
+                            assert (
+                                response.status == "finished"
+                                and response.content == "success"
+                            ), f"Fail to reset task: {response.message}"
+                        else:
+                            evaluators = evaluator_router(task_config)
+                            evaluators.reset(task_config.cleanup_procedure)
+
+                # Make the agent aware of this attempt at solving the task.
+                if args.use_reflexion:
+                    agent.prev_attempt_summaries.append(agent.construct_traj_summary(args.model, score == 1.0, feedback))
         
-        print(f"\n\nFinal Results Successes: {episode_results}\n\n")
+            logger.info(f"\n\nFinal Results Successes for task {task_config.task_id}: {episode_results}\n\n")
             
     except KeyboardInterrupt:
         logger.info("Interrupted by user.")

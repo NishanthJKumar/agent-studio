@@ -70,10 +70,12 @@ def read_json(
         file_path (str): Path to the .json file
     """
     with open(file_path, "r") as file:
-        if end_idx is None:
-            data = json.load(file)[start_idx:]
-        else:
-            data = json.load(file)[start_idx:end_idx]
+        data = json.load(file)
+        if isinstance(data, list):
+            if end_idx is None:
+                data = data[start_idx:]
+            else:
+                data = data[start_idx:end_idx]
     return data
 
 
