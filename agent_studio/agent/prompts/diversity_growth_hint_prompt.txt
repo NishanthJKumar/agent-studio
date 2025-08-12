@@ -7,6 +7,8 @@ Importantly, note that the agent doesn't need to open any sort of terminal to ex
 
 Different strategies should differ in their approach to at least one step of the task (e.g. one strategy might be to use the mouse to click a particular menu option, another might involve using keyboard shortcuts to select the option, yet another might involve directly outputting python code that runs bash commands). Output the strategies in decreasing order of what is likely to work (with most-likely at the top).
 
+You will be presented with a few example strategies. Please try to come up with examples that are as different as possible from the ones you are given.
+
 Make sure your strategy checks that the task is actually accomplished (it's not enough to complete the task - make sure you include some steps for verification). Also if you see any popups in the initial state, make sure to describe how they should be handled or if they should simply be ignored.
 
 Output as many strategies as you can think of - the more the better (aim for on the order of 10-20 strategies).

@@ -69,7 +69,6 @@ class StructuredPlanningAgent(BaseAgent):
     def reset(self, task_config: TaskConfig) -> None:
         """Reset the agent's state with a new task configuration."""
         self.task_config = task_config
-        self.instruction = task_config.instruction
         self.trajectory = []
         self.obs = None
         self.step_info: StructuredStepInfo | None = None
@@ -197,7 +196,7 @@ class StructuredPlanningAgent(BaseAgent):
         messages: MessageList = []
         messages.append(Message(role="system", content=self._system_prompt))        
         messages.append(
-            Message(role="user", content=f"The task instruction: {self.instruction}")
+            Message(role="user", content=f"The task instruction: {self.task_config.instruction}")
         )
         if len(self.prev_attempt_summaries) > 0:
             messages.append(Message(role="user", content="To help you with this task, here are summaries of your previous attempts. Please use these to inform your planning and decision-making: try to improve on past failures and build on past successes!"))

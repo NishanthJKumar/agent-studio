@@ -62,6 +62,8 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.prev_task_config: Optional[TaskConfig] = None
         self.episode_idx: int = 0
         self.high_level_plan_candidates: list[str] = []
+        self.curr_high_level_plan: Optional[str] = None
+        self.rng = np.random.default_rng(23)
         self.extra_args = extra_args
         assert "scoring_approach" in self.extra_args, "Must specify scoring_approach."
         self.critic_model = None
@@ -69,21 +71,28 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             model_manager = ModelManager()
             self.critic_model = model_manager.get_model(self.extra_args["scoring_model_name"], model_server=model_server)
 
+        self.num_plan_examples_to_sample: int = self.extra_args.get("num_plan_examples_to_sample", 5)
+        self.num_unique_plan_candidates: int = self.extra_args.get("num_unique_plan_candidates", 5)
+
+
 
     def reset(self, task_config: TaskConfig) -> None:
         """Reset the agent's state with a new task configuration."""
         super().reset(task_config)
         if self.task_config != self.prev_task_config:
-            self.curr_high_level_plan_idx = 0
+            self.episode_idx = 0
             self.high_level_plan_candidates = []
             self.prev_task_config = copy.deepcopy(self.task_config)
         else:
             self.episode_idx += 1
-            logger.info(f"\n\nCurrent high-level plan: {self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]}\n\n")
+            assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen!"
+            self.curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx]
+            logger.info(f"\n\nCurrent high-level plan: {self.curr_high_level_plan}\n\n")
 
 
     def generate_new_high_level_plan_candidates(self, obs: np.ndarray | None, planning_model_name: str, scoring_approach: str, scoring_model_name: str) -> None:
         """Generate new high-level plan candidates."""
+        # Start by generating initial candidate plans set.
         with open(
             f"agent_studio/agent/prompts/diversity_hint_prompt.txt", "r"
         ) as file:
@@ -96,7 +105,14 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         if self.obs is not None:
             messages.append(Message(role="user", content=obs))
         hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name)
-        self.high_level_plan_candidates = parse_strategies(hint_response)
+        self.high_level_plan_candidates = list(set(parse_strategies(hint_response)))
+
+        # Scale up and generate additional plans.
+        while len(self.high_level_plan_candidates) < self.num_unique_plan_candidates:
+            new_plans_set = self.generate_additional_high_level_plan_candidates(obs, planning_model_name)
+            self.high_level_plan_candidates = list(set(self.high_level_plan_candidates) | new_plans_set)
+        
+        # Score the plans to order them.
         assert len(self.high_level_plan_candidates) > 0, "No high-level plan candidates generated."
         logger.info(f"Got new task: generated {len(self.high_level_plan_candidates)} high-level plan candidates.")
         logger.info(f"Scoring plans with strategy {scoring_approach}.")
@@ -106,6 +122,31 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             plans_to_scores[curr_high_level_plan] = curr_score
             logger.info(f"Scored plan {i}: {curr_score}")
         self.high_level_plan_candidates = [k for k, v in sorted(plans_to_scores.items(), key=lambda item: item[1], reverse=True)]
+        assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen!"
+        self.curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx]
+        
+
+
+    def generate_additional_high_level_plan_candidates(self, obs: np.ndarray | None, planning_model_name: str) -> set[str]:
+        """Generate new high-level plan candidates."""
+        assert self.high_level_plan_candidates is not None and len(self.high_level_plan_candidates) > 0, "No high-level plan candidates available."
+        sample_size = min(len(self.high_level_plan_candidates), self.num_plan_examples_to_sample)
+        example_plans = self.rng.choice(self.high_level_plan_candidates, sample_size, replace=False)
+        with open(
+            f"agent_studio/agent/prompts/diversity_growth_hint_prompt.txt", "r"
+        ) as file:
+            diversity_prompt = file.read()        
+        messages: MessageList = []
+        messages.append(Message(role="system", content=diversity_prompt))
+        messages.append(
+            Message(role="user", content=f"The task instruction: {self.task_config.instruction}")
+        )
+        if self.obs is not None:
+            messages.append(Message(role="user", content=obs))
+        for i, example_plan in enumerate(example_plans):
+            messages.append(Message(role="user", content=f"Example plan {i}: {example_plan}\n"))
+        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name)
+        return set(parse_strategies(hint_response))
 
 
     def score_high_level_plan(self, curr_high_level_plan: str, model_name: str, scoring_approach: str) -> float:
@@ -153,7 +194,6 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         response, info = self.model.generate_response(messages=prompt, model=model_name)
         assert response is not None, "Failed to generate response."
         self.total_tokens += info.get("total_tokens", 0)
-        curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]
 
         # Reprompting loop for correct formatting.
         action = None
@@ -234,7 +274,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             obs=obs,
             prev_expected_result_achieved=prev_goal_achieved,
             prompt=prompt,
-            current_high_level_plan=curr_high_level_plan,
+            current_high_level_plan=self.curr_high_level_plan,
             action=action,
             current_scene_description=curr_state_analysis,
             next_expected_result=next_action_result,
@@ -249,13 +289,12 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         messages: MessageList = []
         messages.append(Message(role="system", content=self._system_prompt))        
         messages.append(
-            Message(role="user", content=f"The task instruction: {self.instruction}")
+            Message(role="user", content=f"The task instruction: {self.task_config.instruction}")
         )
         # The current high-level plan is the one that is the episode_idx modulo
         # the number of high-level plans available.
-        curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]
         messages.append(
-            Message(role="user", content=f"#High-Level Plan to follow: {curr_high_level_plan}")
+            Message(role="user", content=f"#High-Level Plan to follow: {self.curr_high_level_plan}")
         )
         if len(self.prev_attempt_summaries) > 0:
             messages.append(Message(role="user", content="To help you with this task, here are summaries of your previous attempts. Please use these to inform your planning and decision-making: try to improve on past failures and build on past successes!"))
@@ -300,12 +339,12 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             cv2.imwrite(str(img_path), init_obs)
             init_obs_img_path = str(Path("images") / img_filename)
 
-        curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]
-        task_string = self.instruction
+        assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen!"
+        task_string = self.task_config.instruction
         data = {
         "task_string": task_string,
         "initial_image_path": init_obs_img_path,
-        "hint_string": curr_high_level_plan,
+        "hint_string": self.curr_high_level_plan,
         "outcome": outcome,
         "trajectory_metadata": {
             "steps_taken": steps_taken,

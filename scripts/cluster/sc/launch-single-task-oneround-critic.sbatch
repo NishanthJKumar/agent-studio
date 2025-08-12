@@ -114,13 +114,22 @@ echo "Server launched with PID $SERVER_PID"
 # echo "Model training completed!"
 # echo "Best epoch: $best_epoch"
 
+# Determine which checkpoint to use
+if [ -z "$best_epoch" ]; then
+  CHECKPOINT_TO_USE=$NUM_TRAINING_EPOCHS
+  echo "Using default checkpoint: $CHECKPOINT_TO_USE"
+else
+  CHECKPOINT_TO_USE=$best_epoch
+  echo "Using best epoch checkpoint: $CHECKPOINT_TO_USE"
+fi
+
 # Now that training is done, launch a server with these loaded weights.
 echo "Launching server with trained model weights!"
 # Launch the huggingface model server in the background
 # Activate the conda environment
 source /home/$USER/miniconda3/etc/profile.d/conda.sh
 conda activate agent-studio
-python scripts/huggingface_model_server.py --model $CRITIC_ACTOR_MODEL_NAME --port $HF_SERVER_PORT --model_weights_path $SAVED_WEIGHTS_DIR/checkpoint-$NUM_TRAINING_EPOCHS/ 2>&1 | tee hugging_server_output.log &
+python scripts/huggingface_model_server.py --model $CRITIC_ACTOR_MODEL_NAME --port $HF_SERVER_PORT --model_weights_path $SAVED_WEIGHTS_DIR/checkpoint-$CHECKPOINT_TO_USE/ 2>&1 | tee hugging_server_output.log &
 HUGGINGFACE_SERVER_PID=$!
 echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
 # Wait for the server to initialize
