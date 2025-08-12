@@ -137,7 +137,7 @@ for ((i=1; i<=RETRIES; i++)); do
         --remote \
         --exp_episodes $EXP_EPISODES \
         --plan_scoring_approach uniform \
-        --finetuning_data_path ${DATA_COLLECTION_DIR}_${BASE_NAME} \
+        --finetuning_data_path ${DATA_COLLECTION_DIR} \
         --save_finetuning_data
     "
 
