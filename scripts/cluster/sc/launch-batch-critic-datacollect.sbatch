@@ -3,7 +3,7 @@
 #SBATCH --time=24:00:00
 #SBATCH --mem=500G
 #SBATCH --account=comem
-#SBATCH --qos=h100_comem_high
+#SBATCH --qos=h100_lowest
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
@@ -103,7 +103,6 @@ enroot start --env VNC_PASSWORD=123456 \
     --mount /dev/shm:/dev/shm  \
     --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio:rbind,ro \
     --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:rbind,ro \
-    --mount ${PWD}/supervisor_logs/:/var/log \
     --root --rw $SERVER_CONTAINER &
 SERVER_PID=$!
 echo "Server launched with PID $SERVER_PID"
