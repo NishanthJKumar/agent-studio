@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --array=1-10
+#SBATCH --array=1-20
 #SBATCH --time=24:00:00
 #SBATCH --mem=500G
 #SBATCH --account=comem
@@ -14,8 +14,8 @@ ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
 CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 AGENT="bilevel_planning"
 PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
-EXP_EPISODES=20
-DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_200"
+EXP_EPISODES=200
+DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_maxxxxed"
 
 # Create array of JSON files with full paths (in sorted order for consistency)
 JSON_FILES=(
@@ -29,10 +29,20 @@ JSON_FILES=(
   "eval_online_benchmarks/tasks/single_gui/vscode/train/88f3f498-7cd0-4f3b-b7ae-40cb8e951aa7.json"
   "eval_online_benchmarks/tasks/single_gui/vscode/train/8a48df09-4141-4cf9-89c6-e193e0f42451.json"
   "eval_online_benchmarks/tasks/single_gui/vscode/train/8bbe5ae1-611f-474e-a334-ad56c875e4bc.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/1d3861fa-d605-48be-9337-b5188c351663.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/6034aa6c-2892-4ebd-bdfb-a7cfdddd0cbf.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/760b4347-bf5d-4633-ad6d-8047e9271fac.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/93b4281d-c6e7-4b39-8b3b-0132f1dd8615.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/a1f7f045-7938-4042-a445-fcd7d84aa2a4.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/b5b54c18-fddd-42f1-8299-00ab0a1397ae.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/c4e9503c-822e-4297-a3c5-d4e0e5ad596d.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/d2c5244a-d32b-4bc5-9cf8-616da006ee7a.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/d7a47fa4-5e5b-4028-8d4e-a031f96c67b0.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/df81e919-58eb-4dea-87ba-4b6a6321a9c2.json"
 )
 
 # Get the JSON file for this array task
-if [ "$SLURM_ARRAY_TASK_ID" -ge 1 ] && [ "$SLURM_ARRAY_TASK_ID" -le 10 ]; then
+if [ "$SLURM_ARRAY_TASK_ID" -ge 1 ] && [ "$SLURM_ARRAY_TASK_ID" -le 20 ]; then
   TASK_CONFIG_PATH="${JSON_FILES[$((SLURM_ARRAY_TASK_ID-1))]}"
   # Extract base name for job identification
   BASE_NAME=$(basename "$TASK_CONFIG_PATH" .json)
@@ -43,8 +53,8 @@ else
 fi
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="critic-datacollect-${BASE_NAME}.log"
-ERROR_FILE="critic-datacollect-${BASE_NAME}.err"
+OUTPUT_FILE="critic-datacollect-enmasse-${BASE_NAME}.log"
+ERROR_FILE="critic-datacollect-enmasse-${BASE_NAME}.err"
 exec 1>$OUTPUT_FILE
 exec 2>$ERROR_FILE
 
