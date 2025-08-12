@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=critic-oneround
-#SBATCH --output=critic_oneround-vscode-trainset-eval-200.log
-#SBATCH --error=critic_oneround-vscode-trainset-eval-200.err
+#SBATCH --output=critic_oneround-vscode-testset-eval-200.log
+#SBATCH --error=critic_oneround-vscode-testset-eval-200.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=24:00:00
@@ -12,7 +12,7 @@
 
 # Define variables
 USER="njkmr"
-TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/train"
+TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/test"
 ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
 CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 AGENT="bilevel_planning"
