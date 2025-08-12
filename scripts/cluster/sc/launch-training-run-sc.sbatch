@@ -18,9 +18,9 @@ CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 AGENT="bilevel_planning"
 OUTPUT_DIR="experiment_results_$(date +%Y%m%d_%H%M%S)"
 DATA_COLLECTION_DIR="exploration_for_finetuning_vscode" # TODO: change this to be more meaningful/unique later!
-SAVED_WEIGHTS_DIR="exploration_for_finetuning_vscode_trained_weights" # TODO: once we turn this to run multiple rounds, we need to change this with every roudn
+SAVED_WEIGHTS_DIR="test_vscode_trained_weights" # TODO: once we turn this to run multiple rounds, we need to change this with every roudn
 FINETUNING_SCRIPT_PATH="../agentic-value-function-finetuning/agent-studio-hint-finetuning.py"
-FINETUNING_LOGGING_PATH="direct_training-vscode.log"
+FINETUNING_LOGGING_PATH="test-training-vscode.log"
 NUM_TRAINING_EPOCHS="200"
 
 # Ensure there's no buffering and we actually print training details to the 
