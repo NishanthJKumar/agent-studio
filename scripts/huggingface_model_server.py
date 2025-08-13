@@ -158,6 +158,17 @@ def convert_message_to_gemma_format(
     return model_message
 
 
+def save_debug_image(img, index=0):
+    """Save an image to a file for debugging purposes"""
+    debug_dir = Path("debug_images")
+    debug_dir.mkdir(exist_ok=True)
+    timestamp = int(time.time())
+    filename = debug_dir / f"debug_image_{timestamp}_{index}.png"
+    img.save(filename)
+    logger.info(f"Saved debug image to {filename}")
+    return filename
+
+
 def convert_message_to_qwen_format(
     raw_messages: MessageList,
 ) -> list[dict[str, Any]]:
@@ -169,12 +180,14 @@ def convert_message_to_qwen_format(
     for msg in raw_messages:
         if isinstance(msg.content, np.ndarray):
             img = Image.fromarray(msg.content).convert("RGB")
+            save_debug_image(img, 0)
             content = {
                 "type": "image",
                 "image": img,
             }
         elif isinstance(msg.content, Path):
             img = Image.open(msg.content).convert("RGB")
+            save_debug_image(img, 0)
             content = {"type": "image", "image": img}
         elif isinstance(msg.content, str):
             content = {"type": "text", "text": msg.content}
