@@ -102,7 +102,6 @@
         "name": "tilix"
       }
     },
-
     {
       "evaluator": "process",
       "function": "pkill_by_name",
