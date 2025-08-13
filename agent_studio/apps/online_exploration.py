@@ -274,7 +274,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                         ):
                             failure_msg = "Cancelled by human."
                         # If the max step is reached.
-                        elif current_step >= task_config.max_steps:
+                        elif current_step 1:#>= task_config.max_steps:
                             failure_msg = "Max step reached."
                         # If the time limit is reached, the action is not confirmed.
                         elif (
