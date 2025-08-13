@@ -93,7 +93,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         messages.append(
             Message(role="user", content=f"The task instruction: {self.task_config.instruction}")
         )
-        if self.obs is not None:
+        if obs is not None:
             messages.append(Message(role="user", content=obs))
         hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name)
         self.high_level_plan_candidates = parse_strategies(hint_response)
@@ -124,12 +124,12 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             )
             messages: MessageList = []
             messages.append(Message(role="system", content=HINT_PRED_PROMPT))
+            if self.obs is not None:
+                messages.append(Message(role="user", content=self.obs))
             messages.append(Message(role="user",
                     content=f"Task instruction: {self.task_config.instruction}\nAgent Plan Strategy: {curr_high_level_plan}"
                 )
             )
-            if self.obs is not None:
-                messages.append(Message(role="user", content=self.obs))
             response, _ = self.critic_model.generate_response(messages=messages, model=model_name)
             # NOTE: very simple scoring function for now; can be improved/changed later!
             if "success" in response.lower():

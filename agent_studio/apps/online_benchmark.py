@@ -1168,6 +1168,8 @@ def eval(args, interface: NonGUI | None = None) -> None:
                             interface is not None
                         ), "Interface has to be open for visual tasks."
                         obs = interface.get_screenshot()
+                        # logger.info("Writing out initial screenshot!")
+                        # cv2.imwrite("online_benchmark_test_img.png", obs)
                     else:
                         obs = None
                     try:

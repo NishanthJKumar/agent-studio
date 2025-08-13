@@ -181,8 +181,8 @@ def convert_message_to_qwen_format(
         if isinstance(msg.content, np.ndarray):
             # By default the images are bgr, so we need to swap
             # the channel order.
-            img = img[:, :, ::-1]
-            img = Image.fromarray(msg.content).convert("RGB")
+            img = msg.content[:, :, ::-1]
+            img = Image.fromarray(img).convert("RGB")
             save_debug_image(img, 0)
             content = {
                 "type": "image",
