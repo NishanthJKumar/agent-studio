@@ -54,6 +54,7 @@
           "${AS_ROOT}/vscode_workspace",
           "--disable-workspace-trust",
           "--no-sandbox",
+          "--disable-restore-windows",
           "--user-data-dir=${AS_ROOT}/.vscode-root"
         ],
         "wait_for": "code"
