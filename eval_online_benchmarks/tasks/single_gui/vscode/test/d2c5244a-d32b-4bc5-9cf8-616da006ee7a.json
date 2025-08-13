@@ -81,6 +81,7 @@
           "code",
           "${AS_ROOT}/vscode_workspace/vscode_workspace.code-workspace",
           "--no-sandbox",
+          "--disable-workspace-trust",
           "--user-data-dir=${AS_ROOT}/.vscode-root"
         ],
         "wait_for": "code"

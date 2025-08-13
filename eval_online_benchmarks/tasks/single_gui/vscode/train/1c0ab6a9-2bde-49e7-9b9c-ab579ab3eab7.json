@@ -58,6 +58,7 @@
         "cmd": [
           "code",
           "${AS_ROOT}/vscode_workspace/example_file.txt",
+          "--disable-workspace-trust",
           "--no-sandbox",
           "--user-data-dir=${AS_ROOT}/.vscode-root"
         ],

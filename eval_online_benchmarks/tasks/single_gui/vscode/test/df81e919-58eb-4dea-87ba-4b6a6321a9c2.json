@@ -39,6 +39,7 @@
         "cmd": [
           "code",
           "--no-sandbox",
+          "--disable-workspace-trust",
           "--user-data-dir=${AS_ROOT}/.vscode-root"
         ],
         "wait_for": "code"

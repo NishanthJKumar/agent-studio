@@ -245,6 +245,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                             obs = None
                         if init_obs is None and obs is not None:
                             init_obs = copy.deepcopy(obs)
+                            import ipdb; ipdb.set_trace()
                         try:
                             step_info = agent.generate_action(
                                 obs=obs, model_name=args.model

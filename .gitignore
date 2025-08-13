@@ -198,3 +198,4 @@ web/*
 *.out
 finetuning_data/*
 *finetun*/*
+debug_images/*
