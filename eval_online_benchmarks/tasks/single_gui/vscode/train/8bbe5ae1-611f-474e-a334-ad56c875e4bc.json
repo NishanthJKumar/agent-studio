@@ -109,6 +109,13 @@
       "params": {
         "name": "lxterminal"
       }
+    },
+    {
+    "evaluator": "process",
+    "function": "pkill_by_name",
+    "params": {
+      "name": "lxpanel"
+      }
     }
   ],
   "max_time": 60
