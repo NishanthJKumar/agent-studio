@@ -168,12 +168,14 @@ def convert_message_to_qwen_format(
     past_role = None
     for msg in raw_messages:
         if isinstance(msg.content, np.ndarray):
+            img = Image.fromarray(msg.content).convert("RGB")
             content = {
                 "type": "image",
-                "image": Image.fromarray(msg.content).convert("RGB"),
+                "image": img,
             }
         elif isinstance(msg.content, Path):
-            content = {"type": "image", "image": Image.open(msg.content).convert("RGB")}
+            img = Image.open(msg.content).convert("RGB")
+            content = {"type": "image", "image": img}
         elif isinstance(msg.content, str):
             content = {"type": "text", "text": msg.content}
         current_role = msg.role
@@ -260,6 +262,8 @@ async def generate(
         text = processor.apply_chat_template(
             qwen_input_messages, tokenize=False, add_generation_prompt=True
         )
+        # DEBUGGING!
+        logger.info(text)
         image_inputs, video_inputs = process_vision_info(qwen_input_messages)
         inputs = processor(
             text=[text],

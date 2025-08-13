@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=critic-oneround
-#SBATCH --output=critic_oneround-vscode-testset-eval-200.log
-#SBATCH --error=critic_oneround-vscode-testset-eval-200.err
+#SBATCH --output=8bbe5ae1-611f-474e-a334-ad56c875e4bc-vscode-trainset-eval-200.log
+#SBATCH --error=8bbe5ae1-611f-474e-a334-ad56c875e4bc-vscode-trainset-eval-200.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=24:00:00
@@ -12,7 +12,7 @@
 
 # Define variables
 USER="njkmr"
-TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/test"
+TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/train/8bbe5ae1-611f-474e-a334-ad56c875e4bc.json"
 ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
 CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 AGENT="bilevel_planning"
@@ -20,10 +20,10 @@ PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
 EXP_EPISODES=20
 OUTPUT_DIR="experiment_results_$(date +%Y%m%d_%H%M%S)"
 DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_200" # TODO: change this to be more meaningful/unique later!
-SAVED_WEIGHTS_DIR="exploration_for_finetuning_vscode_trained_weights" # TODO: once we turn this to run multiple rounds, we need to change this with every round
+SAVED_WEIGHTS_DIR="../agentic-value-function-finetuning/qwen-vl-vscode-finetuning-test-single-task" # TODO: once we turn this to run multiple rounds, we need to change this with every round
 FINETUNING_SCRIPT_PATH="../agentic-value-function-finetuning/agent-studio-hint-finetuning.py"
 FINETUNING_LOGGING_PATH="direct_training-vscode.log"
-NUM_TRAINING_EPOCHS="646"
+NUM_TRAINING_EPOCHS="100"
 
 # Ensure there's no buffering and we actually print training details to the 
 # logging files immediately.
@@ -114,13 +114,22 @@ echo "Server launched with PID $SERVER_PID"
 # echo "Model training completed!"
 # echo "Best epoch: $best_epoch"
 
+# Determine which checkpoint to use
+if [ -z "$best_epoch" ]; then
+  CHECKPOINT_TO_USE=$NUM_TRAINING_EPOCHS
+  echo "Using default checkpoint: $CHECKPOINT_TO_USE"
+else
+  CHECKPOINT_TO_USE=$best_epoch
+  echo "Using best epoch checkpoint: $CHECKPOINT_TO_USE"
+fi
+
 # Now that training is done, launch a server with these loaded weights.
 echo "Launching server with trained model weights!"
 # Launch the huggingface model server in the background
 # Activate the conda environment
 source /home/$USER/miniconda3/etc/profile.d/conda.sh
 conda activate agent-studio
-python scripts/huggingface_model_server.py --model $CRITIC_ACTOR_MODEL_NAME --port $HF_SERVER_PORT --model_weights_path $SAVED_WEIGHTS_DIR/checkpoint-$NUM_TRAINING_EPOCHS/ 2>&1 | tee hugging_server_output.log &
+python scripts/huggingface_model_server.py --model $CRITIC_ACTOR_MODEL_NAME --port $HF_SERVER_PORT --model_weights_path $SAVED_WEIGHTS_DIR/checkpoint-$CHECKPOINT_TO_USE/ 2>&1 | tee hugging_server_output.log &
 HUGGINGFACE_SERVER_PID=$!
 echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
 # Wait for the server to initialize
