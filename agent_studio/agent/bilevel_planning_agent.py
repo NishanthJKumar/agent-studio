@@ -127,7 +127,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             if self.obs is not None:
                 messages.append(Message(role="user", content=self.obs))
             messages.append(Message(role="user",
-                    content=f"Task instruction: {self.task_config.instruction}\nAgent Plan Strategy: {curr_high_level_plan}"
+                    content=f"Task Instruction: {self.task_config.instruction}\nAgent Plan Strategy: {curr_high_level_plan}"
                 )
             )
             response, _ = self.critic_model.generate_response(messages=messages, model=model_name)
