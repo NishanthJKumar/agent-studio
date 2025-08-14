@@ -15,6 +15,13 @@
   ],
   "reset_procedure": [
     {
+      "evaluator": "filesystem",
+      "function": "rmdir",
+      "params": {
+        "path": "${AS_ROOT}/.vscode-root"
+      }
+    },
+    {
       "evaluator": "process",
       "function": "pkill_by_name",
       "params": {
