@@ -59,6 +59,7 @@
         "cmd": [
           "code",
           "${AS_ROOT}/vscode_workspace",
+          "--new-window",
           "--disable-workspace-trust",
           "--no-sandbox",
           "--disable-restore-windows",
