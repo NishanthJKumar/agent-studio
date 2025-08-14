@@ -80,6 +80,7 @@
         "cmd": [
           "code",
           "--no-sandbox",
+          "--new-window",
           "--disable-workspace-trust",
           "--user-data-dir=${AS_ROOT}/.vscode-root"
         ],

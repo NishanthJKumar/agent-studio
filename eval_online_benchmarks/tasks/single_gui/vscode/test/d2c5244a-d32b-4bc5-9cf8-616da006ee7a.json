@@ -88,6 +88,7 @@
           "code",
           "${AS_ROOT}/vscode_workspace/vscode_workspace.code-workspace",
           "--no-sandbox",
+          "--new-window",
           "--disable-workspace-trust",
           "--user-data-dir=${AS_ROOT}/.vscode-root"
         ],
