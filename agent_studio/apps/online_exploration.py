@@ -245,6 +245,8 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                             obs = None
                         if init_obs is None and obs is not None:
                             init_obs = copy.deepcopy(obs)
+                            logger.info("init_obs recorded!")
+                            cv2.imwrite(f"init_obs_{episode}.png", init_obs)
                         try:
                             step_info = agent.generate_action(
                                 obs=obs, model_name=args.model
@@ -274,7 +276,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                         ):
                             failure_msg = "Cancelled by human."
                         # If the max step is reached.
-                        elif current_step 1:#>= task_config.max_steps:
+                        elif current_step >= task_config.max_steps:
                             failure_msg = "Max step reached."
                         # If the time limit is reached, the action is not confirmed.
                         elif (
