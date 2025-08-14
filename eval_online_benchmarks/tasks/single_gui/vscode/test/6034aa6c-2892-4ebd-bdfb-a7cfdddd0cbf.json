@@ -19,6 +19,13 @@
   ],
   "reset_procedure": [
     {
+      "evaluator": "filesystem",
+      "function": "rmdir",
+      "params": {
+        "path": "${AS_ROOT}/.vscode-root"
+      }
+    },
+    {
       "evaluator": "vscode",
       "function": "uninstall_all_extensions",
       "params": {}
