@@ -77,10 +77,10 @@ You can browse `http://127.0.0.1:6080` to interact with the remote machine throu
 1. Move the `agent-studio-server.sif` file under the home directory.
 1. Run this command to launch an experiment on the server:
 ```bash
-sbatch scripts/cluster/launch-single-experiment.sbatch
+sbatch scripts/cluster/a100/launch-single-experiment-a100.sbatch
 ```
 You can set the config of what model, and what tasks you want to run, from within that `.sbatch` script.
-Similarly, you can also run the `launch-batch-experiments.sbatch` script to run multiple experiments in parallel.
+Similarly, you can also run the `launch-batch-experiment-a100.sbatch` script to run multiple experiments in parallel.
 
 ### Enroot
 1. Obtain the `agent-studio-server.sqsh` and `agent-studio-client.sqsh` files (ask if you don't have them).
@@ -92,7 +92,12 @@ Similarly, you can also run the `launch-batch-experiments.sbatch` script to run 
     ./dockerfiles/enroot-build.sh client
     ```
 1. Make sure that there is a directory under the main `agent-studio` directory called `supervisor_logs`, and that directory has `nginx` and `supervisor` sub-directories.
-1. 
+1. Run this command to launch an experiment on the server:
+```bash
+sbatch scripts/cluster/sc/launch-single-experiment-sc.sbatch
+```
+You can set the config of what model, and what tasks you want to run, from within that `.sbatch` script.
+Similarly, you can also run the `launch-batch-experiment-sc.sbatch` script to run multiple experiments in parallel.
 
 ## Task Description
 
