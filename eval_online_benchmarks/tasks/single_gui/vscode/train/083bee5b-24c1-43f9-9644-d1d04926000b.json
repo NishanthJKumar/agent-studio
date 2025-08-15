@@ -65,7 +65,9 @@
         "cmd": [
           "code",
           "--no-sandbox",
-          "--user-data-dir=${AS_ROOT}/.vscode-root"
+          "--user-data-dir=${AS_ROOT}/.vscode-root",
+          "--disable-extension=GitHub.copilot",
+          "--disable-extension=GitHub.copilot-chat"
         ],
         "wait_for": "code"
       }
