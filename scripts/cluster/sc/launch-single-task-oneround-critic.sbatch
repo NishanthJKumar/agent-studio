@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=critic-oneround
-#SBATCH --output=8bbe5ae1-611f-474e-a334-ad56c875e4bc-vscode-trainingandeval.log
-#SBATCH --error=8bbe5ae1-611f-474e-a334-ad56c875e4bc-vscode-trainingandeval.err
+#SBATCH --output=8bbe5ae1-611f-474e-a334-ad56c875e4bc-vscode-eval.log
+#SBATCH --error=8bbe5ae1-611f-474e-a334-ad56c875e4bc-vscode-eval.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=24:00:00
@@ -19,11 +19,11 @@ AGENT="bilevel_planning"
 PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
 EXP_EPISODES=20
 OUTPUT_DIR="experiment_results_$(date +%Y%m%d_%H%M%S)"
-DATA_COLLECTION_DIR="single-task-finetuning-explo-test-1/" # TODO: change this to be more meaningful/unique later!
+DATA_COLLECTION_DIR="single-task-finetuning-explo-test-fresh/" # TODO: change this to be more meaningful/unique later!
 SAVED_WEIGHTS_DIR="../agentic-value-function-finetuning/qwen-vl-vscode-finetuning-test-single-task" # TODO: once we turn this to run multiple rounds, we need to change this with every round
 FINETUNING_SCRIPT_PATH="../agentic-value-function-finetuning/agent-studio-hint-finetuning.py"
 FINETUNING_LOGGING_PATH="direct_training-vscode.log"
-NUM_TRAINING_EPOCHS="200"
+NUM_TRAINING_EPOCHS="190"
 
 # Ensure there's no buffering and we actually print training details to the 
 # logging files immediately.
