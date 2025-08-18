@@ -13,6 +13,7 @@ import cv2
 
 import numpy as np
 
+from agentic_value_functions.plan_hints import HINT_PRED_PROMT
 from agent_studio.agent.structured_planning_agent import StructuredPlanningAgent
 from agent_studio.llm import ModelManager
 from agent_studio.llm.utils import (
@@ -117,13 +118,8 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         if scoring_approach == "uniform":
             return 0.0
         elif scoring_approach == "critic":
-            HINT_PRED_PROMPT = ("You are an expert-level predictor of whether or not a particular strategy will work for various computer use tasks."
-                "You will be provided with a task instruction (natural language string), potentially an image of the initial state of the environment before task execution, and an agent's strategy to complete the task."
-                "Your job is to determine whether this strategy will succeed at accomplishing the task or not."
-                "If you think it will succeed, output '[PREDICTED OUTCOME] Success.'; otherwise indicate failure. You can also output an explanation of your approach."
-            )
             messages: MessageList = []
-            messages.append(Message(role="system", content=HINT_PRED_PROMPT))
+            messages.append(Message(role="system", content=HINT_PRED_PROMT))
             if self.obs is not None:
                 messages.append(Message(role="user", content=self.obs))
             messages.append(Message(role="user",

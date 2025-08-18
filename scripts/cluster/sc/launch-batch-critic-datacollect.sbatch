@@ -15,7 +15,7 @@ CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 AGENT="bilevel_planning"
 PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
 EXP_EPISODES=20
-DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_200"
+DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_200_fixedscreenshots"
 
 # Create array of JSON files with full paths (in sorted order for consistency)
 JSON_FILES=(
