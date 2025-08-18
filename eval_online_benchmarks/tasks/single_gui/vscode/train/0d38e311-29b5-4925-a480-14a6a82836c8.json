@@ -59,6 +59,8 @@
           "code",
           "${AS_ROOT}/vscode_workspace",
           "--new-window",
+          "--disable-restore-windows",
+          "--skip-add-to-recently-opened",
           "--disable-workspace-trust",
           "--no-sandbox",
           "--user-data-dir=${AS_ROOT}/.vscode-root",
