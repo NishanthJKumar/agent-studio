@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=critic-oneround
-#SBATCH --output=traintasks-vscode-eval.log
-#SBATCH --error=traintasks-vscode-eval.err
+#SBATCH --output=tentasktrainweighted-vscode-eval10.log
+#SBATCH --error=tentasktrainweighted-vscode-eval10.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=24:00:00
@@ -14,16 +14,16 @@
 USER="njkmr"
 TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/train/"
 ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
-CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
+CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct-critic"
 AGENT="bilevel_planning"
 PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
 EXP_EPISODES=20
 OUTPUT_DIR="experiment_results_$(date +%Y%m%d_%H%M%S)"
 DATA_COLLECTION_DIR="single-task-finetuning-explo-test-fresh/" # TODO: change this to be more meaningful/unique later!
-SAVED_WEIGHTS_DIR="../agentic-value-function-finetuning/qwen-vl-vscode-finetuning-test10" # TODO: once we turn this to run multiple rounds, we need to change this with every round
+SAVED_WEIGHTS_DIR="../agentic-value-function-finetuning/qwen-vl-vscode-finetuning-weighted-test10" # TODO: once we turn this to run multiple rounds, we need to change this with every round
 FINETUNING_SCRIPT_PATH="../agentic-value-function-finetuning/agentic_value_functions/plan_hints/agent-studio-hint-finetuning.py"
 FINETUNING_LOGGING_PATH="direct_training-vscode.log"
-NUM_TRAINING_EPOCHS="520"
+NUM_TRAINING_EPOCHS="637"
 
 # Ensure there's no buffering and we actually print training details to the 
 # logging files immediately.

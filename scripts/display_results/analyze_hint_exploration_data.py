@@ -35,8 +35,10 @@ def main():
 
     for (task_name, plan), outcomes in task_config_and_plan_to_outcome.items():
         outcomes_set = set(outcome[0] for outcome in outcomes)
-        if len(outcomes_set) == 1:
-            print(f"{task_name} has different outcomes for the same plan! {outcomes[1] for outcome in outcomes}")
+        if len(outcomes_set) > 1:
+            print()
+            print(f"{task_name} has different outcomes for the same plan! {list(outcome[1] for outcome in outcomes)}")
+            print()
 
 
 if __name__ == "__main__":
