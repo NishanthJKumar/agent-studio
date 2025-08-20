@@ -278,6 +278,7 @@ async def generate(
             # Decode from critic model using the messages directly
             qwen_input_messages = convert_message_to_qwen_format(messages_decoded)
             logger.info("Starting critic model inference!")
+            logger.info(f"Input: {messages_decoded}")
             total_start_time = time.time()
 
             # Use the predict_from_messages function to get Success/Failure prediction
