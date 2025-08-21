@@ -8,78 +8,131 @@ import numpy as np
 from PIL import Image
 
 
+def _balance_json_block(text: str, start_idx: int) -> str:
+    """Return smallest balanced {...} substring starting at start_idx,
+    ignoring braces inside JSON strings."""
+    i = start_idx
+    depth = 0
+    in_string = False
+    escape = False
+    started = False
+
+    while i < len(text):
+        ch = text[i]
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == '\\':
+                escape = True
+            elif ch == '"':
+                in_string = False
+        else:
+            if ch == '"':
+                in_string = True
+            elif ch == '{':
+                depth += 1
+                started = True
+            elif ch == '}':
+                depth -= 1
+                if started and depth == 0:
+                    return text[start_idx:i+1]
+        i += 1
+    return text[start_idx:i]
+
+
+def _escape_quotes_in_backticked_blocks(s: str) -> str:
+    pattern = r"```([a-zA-Z0-9_+\-]*)\n(.*?)\n```"
+    def repl(m):
+        lang, content = m.group(1), m.group(2)
+        # escape quotes
+        content = content.replace('"', '\\"')
+        # escape newlines
+        content = content.replace("\n", "\\n")
+        return f"```{lang}\\n{content}\\n```"
+    return re.sub(pattern, repl, s, flags=re.DOTALL)
+
+
+def _normalize_json_literals_outside_strings(s: str) -> str:
+    """Convert True/False/None to true/false/null only when *not* inside a JSON string."""
+    out = []
+    i = 0
+    in_string = False
+    escape = False
+
+    def word_at(idx, word):
+        end = idx + len(word)
+        if end > len(s) or s[idx:end] != word:
+            return False
+        before_ok = idx == 0 or (not s[idx-1].isalnum() and s[idx-1] != '_')
+        after_ok  = end == len(s) or (not s[end].isalnum() and s[end] != '_')
+        return before_ok and after_ok
+
+    while i < len(s):
+        ch = s[i]
+        out.append(ch)
+        if in_string:
+            if escape: escape = False
+            elif ch == '\\': escape = True
+            elif ch == '"': in_string = False
+            i += 1; continue
+        if ch == '"':
+            in_string = True
+            i += 1; continue
+
+        replaced = False
+        for py, js in (("True","true"),("False","false"),("None","null")):
+            if word_at(i, py):
+                out.pop()
+                out.append(js)
+                i += len(py)
+                replaced = True
+                break
+        if not replaced:
+            i += 1
+    return "".join(out)
+
+
+def structured_json_extract_from_response(response: str) -> dict:
+    """Extract JSON from ```json fenced block or first balanced {...}, while preserving code blocks."""
+    fence = "```json\n"
+    if fence in response:
+        start = response.find(fence) + len(fence)
+        candidate = _balance_json_block(response, start)
+    else:
+        # fallback: first balanced {...}
+        first_brace = response.find('{')
+        if first_brace == -1:
+            return {}
+        candidate = _balance_json_block(response, first_brace)
+
+    # 1) Protect code blocks by escaping inner double quotes
+    candidate_patched = _escape_quotes_in_backticked_blocks(candidate)
+
+    # 2) Try parse as-is
+    try:
+        return json.loads(candidate_patched)
+    except json.JSONDecodeError:
+        pass
+
+    # 3) If needed, normalize Python-ish literals *outside* strings and retry
+    normalized = _normalize_json_literals_outside_strings(candidate_patched)
+    try:
+        return json.loads(normalized)
+    except json.JSONDecodeError:
+        return {}
+
+
 def extract_from_response(response: str, backtick="```") -> str:
     if backtick == "```":
-        # Matches anything between ```<optional label>\n and \n```
         pattern = r"```(?:[a-zA-Z]*)\n?(.*?)\n?```"
+        flags = re.DOTALL
     elif backtick == "`":
         pattern = r"`(.*?)`"
+        flags = 0
     else:
         raise ValueError(f"Unknown backtick: {backtick}")
-    match = re.search(
-        pattern, response, re.DOTALL
-    )  # re.DOTALL makes . match also newlines
-    if match:
-        extracted_string = match.group(1)
-    else:
-        extracted_string = ""
-
-    return extracted_string
-
-
-def structured_json_extract_from_response(response: str) -> dict[str, str]:
-    # Look for JSON block with proper start and end markers
-    start_marker = "```json\n"
-
-    if start_marker in response:
-        start_idx = response.find(start_marker) + len(start_marker)
-        content = response[start_idx:]
-        brace_count = 0
-        json_end_idx = 0
-
-        final_close_brace_idx = 0
-        for i, char in enumerate(content):
-            if char == "{":
-                brace_count += 1
-            elif char == "}":
-                final_close_brace_idx = i + 1
-                brace_count -= 1
-                if brace_count == 0:
-                    json_end_idx = i + 1
-                    break
-        if brace_count > 0:
-            json_end_idx = final_close_brace_idx
-
-        if json_end_idx > 0:
-            extracted_string = content[:json_end_idx]
-            # Fix nested code blocks by escaping newlines within them
-            nested_code_pattern = r"```[a-zA-Z]*\n(.*?)\n```"
-
-            def escape_newlines(match):
-                lang = (
-                    match.group(0).split("```")[1].split("\n")[0]
-                )  # Extract language identifier
-                code_content = match.group(1)
-                escaped_content = code_content.replace("\n", "\\n")
-                escaped_content = escaped_content.replace('"', '\\"')
-                return f"```{lang}\\n{escaped_content}```"
-
-            fixed_string = re.sub(
-                nested_code_pattern, escape_newlines, extracted_string, flags=re.DOTALL
-            )
-            # Replace Python booleans with JSON booleans
-            fixed_string = fixed_string.replace(" True", " true").replace(
-                " False", " false"
-            )
-            fixed_string = fixed_string.replace(":True", ":true").replace(
-                ":False", ":false"
-            )
-            fixed_string = fixed_string.replace("\n", "")
-            try:
-                return json.loads(fixed_string)
-            except json.JSONDecodeError:
-                return {}
-    return {}
+    m = re.search(pattern, response, flags)
+    return m.group(1) if m else ""
 
 
 def parse_strategies(strategies_txt: str) -> list[str]:
