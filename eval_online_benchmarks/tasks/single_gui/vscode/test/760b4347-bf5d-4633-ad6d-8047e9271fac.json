@@ -1,6 +1,6 @@
 {
   "task_id": "760b4347-bf5d-4633-ad6d-8047e9271fac",
-  "instruction": "Please help me modify VS Code setting to hide all \"__pycache__\" folders in the explorer view.",
+  "instruction": "Please make the VS Code settings hide all \"__pycache__\" folders in the explorer view.",
   "visual": true,
   "max_steps": 30,
   "eval_procedure": [

@@ -19,7 +19,7 @@
           },
           {
             "extension_id": "davidanson.vscode-markdownlint",
-            "enabled": true
+            "enabled": false
           }
         ]
       }
