@@ -34,6 +34,13 @@
       }
     },
     {
+      "evaluator": "filesystem",
+      "function": "rmdir",
+      "params": {
+        "path": "/tmp/vscode"
+      }
+    },
+    {
       "evaluator": "vscode",
       "function": "uninstall_all_extensions",
       "params": {}
