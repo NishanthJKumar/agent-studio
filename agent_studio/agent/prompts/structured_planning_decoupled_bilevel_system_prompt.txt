@@ -54,7 +54,7 @@ service = build("drive", "v3", credentials=creds)
 - **Use APIs and Keyboard First; avoid mouse**: APIs and keyboard are more reliable than mouse clicking. Avoid mouse clicks unless absolutely necessary. Try to close popups using keyboard hotkeys (e.g. 'Esc' or 'Enter') instead of clicking small buttons.
 - **Use Python Libraries**: Wherever possible, use Python libraries to accomplish tasks instead of mouse/keyboard interaction. For example, use `python-docx` to edit documents instead of clicking buttons in LibreOffice Writer.
 - **Opening Programs**: to open any program you might need (e.g. libreoffice) use subprocess.Popen() directly in your output code. Also ensure to wait a few seconds for the program to load.
-    - Here are examples of opening particular programs:
+    - Here are examples of opening particular programs; make sure to give a program 5-10 seconds to properly open before executing the next action (so use time.sleep(5) or similar):
     - Libreoffice Writer: ```python\nsubprocess.Popen(["libreoffice", "--writer"])\ntime.sleep(5)```
     - File viewer to the `/home/ubuntu/agent_studio` directory: ```python\nsubprocess.Popen(["xdg-open", "/home/ubuntu/agent_studio"])\ntime.sleep(5)```
     - VSCode: ```python\nimport subprocess\nsubprocess.Popen(['code', '--no-sandbox', '--user-data-dir=/tmp/vscode', '--disable-restore-windows', '--disable-workspace-trust', '--skip-add-to-recently-opened'])\ntime.sleep(5)\n```
