@@ -138,11 +138,11 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
                     return 1.0
                 else:
                     return 0.0
-            elif scoring_approach == "log_prob_mag":
+            elif scoring_approach == "critic_log_prob_mag":
                 assert "logit_scores" in extra_info, "Logit scores not found in extra info."
                 logit_scores = extra_info["logit_scores"]
                 return logit_scores["Success."]
-            elif scoring_approach == "log_prob_diff":
+            elif scoring_approach == "critic_log_prob_diff":
                 assert "logit_scores" in extra_info, "Logit scores not found in extra info."
                 logit_scores = extra_info["logit_scores"]
                 success_logit = logit_scores["Success."]

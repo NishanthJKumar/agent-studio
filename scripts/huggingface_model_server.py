@@ -350,7 +350,7 @@ async def generate(
                         "tokens_per_second": (
                             tokens_per_second if "gemma" in model_name else 0
                         ),
-                    }
+                    },
                     "logit_scores": logit_scores,
                 }
             ),
