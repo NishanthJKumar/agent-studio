@@ -116,7 +116,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         """
         if scoring_approach == "uniform":
             return 0.0
-        elif scoring_approach == "critic":
+        elif "critic" in scoring_approach:
             messages: MessageList = []
             HINT_PRED_PROMT = ("You are an expert-level predictor of whether or not a particular strategy will work for various computer use tasks."
                 "You will be provided with a task instruction (natural language string), potentially an image of the initial state of the environment before task execution, and an agent's strategy to complete the task."
@@ -129,12 +129,27 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
                     content=f"Task Instruction: {self.task_config.instruction}\nAgent Plan Strategy: {curr_high_level_plan}"
                 )
             )
-            response, _ = self.critic_model.generate_response(messages=messages, model=model_name)
-            # NOTE: very simple scoring function for now; can be improved/changed later!
-            if "success" in response.lower():
-                return 1.0
+            response, extra_info = self.critic_model.generate_response(messages=messages, model=model_name)
+            # NOTE: we hardcode the classes to be "success" and "failure" here; we'll have to change this if we
+            # change classes. Might be worth adding a class mapping to the config/some kind of more general
+            # mechanism.
+            if scoring_approach == "critic_naive":
+                if "success" in response.lower():
+                    return 1.0
+                else:
+                    return 0.0
+            elif scoring_approach == "log_prob_mag":
+                assert "logit_scores" in extra_info, "Logit scores not found in extra info."
+                logit_scores = extra_info["logit_scores"]
+                return logit_scores["Success."]
+            elif scoring_approach == "log_prob_diff":
+                assert "logit_scores" in extra_info, "Logit scores not found in extra info."
+                logit_scores = extra_info["logit_scores"]
+                success_logit = logit_scores["Success."]
+                failure_logit = logit_scores["Failure."]
+                return success_logit - failure_logit              
             else:
-                return 0.0
+                raise ValueError(f"Unknown scoring approach: {scoring_approach}")  
         else:
             raise ValueError(f"Unknown scoring approach: {scoring_approach}")
 

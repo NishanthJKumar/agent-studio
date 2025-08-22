@@ -239,6 +239,7 @@ async def generate(
     global model, processor
 
     messages_decoded = str2bytes(request.messages)
+    logit_scores = {}
 
     if "gemma" in model_name:
         # Process for Gemma model
@@ -294,6 +295,7 @@ async def generate(
             logger.info(f"Prediction: {predicted_label}, Scores: {scores}")
 
             decoded = predicted_label
+            logit_scores = scores
 
         else:
             # Process for Qwen model
@@ -349,6 +351,7 @@ async def generate(
                             tokens_per_second if "gemma" in model_name else 0
                         ),
                     }
+                    "logit_scores": logit_scores,
                 }
             ),
         }
