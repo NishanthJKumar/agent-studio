@@ -35,7 +35,6 @@ model = None
 processor = None
 model_ready = False
 model_name = None
-scorer = None
 
 
 def load_gemma_model(model_id="google/gemma-3n-e4b-it"):
@@ -52,7 +51,7 @@ def load_gemma_model(model_id="google/gemma-3n-e4b-it"):
 
 def load_qwen_model(model_id="Qwen/Qwen2.5-VL-7B-Instruct", model_weights_path=None):
     """Load the Qwen model and processor"""
-    global model, processor, model_ready, scorer
+    global model, processor, model_ready
     if model_weights_path is None:
         logger.info(f"Loading Qwen model: {model_id}")
         model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
