@@ -130,7 +130,6 @@ class BaseAgent:
                 unexecuted_code = action[len(truncated_code) :]
                 action = truncated_code
 
-        # Logging model outputs.
         if "log_model_output" in self.extra_args and self.extra_args["log_model_output"]:
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"output_{timestamp}.txt"
