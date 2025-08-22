@@ -1,6 +1,6 @@
 {
   "task_id": "a1f7f045-7938-4042-a445-fcd7d84aa2a4",
-  "instruction": "Open VSCode in the ${AS_ROOT}/vscode_workspace directory and then open the file '${AS_ROOT}/vscode_workspace/README.md' in it. You should disable all extensions.",
+  "instruction": "Open VSCode with all extensions disabled in the ${AS_ROOT}/vscode_workspace directory and then open the file '${AS_ROOT}/vscode_workspace/README.md' in it.",
   "visual": true,
   "max_steps": 30,
   "eval_procedure": [
