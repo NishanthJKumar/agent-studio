@@ -81,6 +81,12 @@ def load_qwen_model(model_id="Qwen/Qwen2.5-VL-7B-Instruct", model_weights_path=N
             safe_serialization=True,
         )
         model.eval()
+        gen = model.generation_config
+        gen.do_sample = False
+        gen.temperature = None
+        gen.top_p = None
+        gen.top_k = None
+        gen.use_cache = False
 
     processor = AutoProcessor.from_pretrained(model_id)
     model_ready = True

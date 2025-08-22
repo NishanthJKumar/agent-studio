@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=critic-oneround
-#SBATCH --output=test-vscode-eval10.log
-#SBATCH --error=test-vscode-eval10.err
+#SBATCH --output=93b-test-vscode-eval10.log
+#SBATCH --error=93b-test-vscode-eval10.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=24:00:00
@@ -12,7 +12,7 @@
 
 # Define variables
 USER="njkmr"
-TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/test/"
+TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/test/93b4281d-c6e7-4b39-8b3b-0132f1dd8615.json"
 ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
 CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct-critic"
 AGENT="bilevel_planning"
@@ -62,7 +62,6 @@ enroot start --env VNC_PASSWORD=123456 \
     --mount /dev/shm:/dev/shm  \
     --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio:rbind,ro \
     --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:rbind,ro \
-    --mount ${PWD}/supervisor_logs/:/var/log \
     --root --rw agent-studio-server &
 SERVER_PID=$!
 echo "Server launched with PID $SERVER_PID"
