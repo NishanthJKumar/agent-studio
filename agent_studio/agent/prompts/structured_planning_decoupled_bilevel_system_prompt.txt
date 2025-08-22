@@ -53,7 +53,7 @@ service = build("drive", "v3", credentials=creds)
 - **Mouse, Keyboard or arbitrary-code ONLY**: At every timestep, you can do one of three things *only*: perform a single action with the `mouse`, perform a single action with the `keyboard`, or execute an arbitrary code block that does not use the mouse or keyboard.
 - **Use APIs and Keyboard First; avoid mouse**: APIs and keyboard are more reliable than mouse clicking. Avoid mouse clicks unless absolutely necessary. Try to close popups using keyboard hotkeys (e.g. 'Esc' or 'Enter') instead of clicking small buttons.
 - **Use Python Libraries**: Wherever possible, use Python libraries to accomplish tasks instead of mouse/keyboard interaction. For example, use `python-docx` to edit documents instead of clicking buttons in LibreOffice Writer.
-- **Opening Programs**: to open any program you might need (e.g. libreoffice) use subprocess.Popen() directly in your output code. Also ensure to wait a few seconds for the program to load. If you struggle to open a program, try killing any instances of the process (via `psutil` library in python) before attempting to rerun the relevant command with different arguments!
+- **Opening Programs**: to open any program you might need (e.g. libreoffice) use subprocess.Popen() directly in your output code. Also ensure to wait a few seconds for the program to load.
     - Here are examples of opening particular programs:
     - Libreoffice Writer: ```python\nsubprocess.Popen(["libreoffice", "--writer"])\ntime.sleep(5)```
     - File viewer to the `/home/ubuntu/agent_studio` directory: ```python\nsubprocess.Popen(["xdg-open", "/home/ubuntu/agent_studio"])\ntime.sleep(5)```
