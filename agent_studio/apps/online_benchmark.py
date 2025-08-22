@@ -1055,11 +1055,11 @@ def wait_finish(is_eval: bool, response: AgentStudioStatusResponse):
 def eval(args, interface: NonGUI | None = None) -> None:
     try:
         # Setup agent
-        if args.log_model_outputs:
-            results_dir = Path(
+        results_dir = Path(
                 f"{args.log_dir}/{args.model}/{args.agent}/{args.prompting_approach}"
             )
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        if args.log_model_outputs:
             (results_dir / timestamp).mkdir(parents=True, exist_ok=True)
         if args.agent == "feedback":
             agent = setup_agent(
