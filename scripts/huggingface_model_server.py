@@ -191,14 +191,14 @@ def convert_message_to_qwen_format(
             # the channel order.
             img = msg.content[:, :, ::-1]
             img = Image.fromarray(img).convert("RGB")
-            save_debug_image(img, 0)
+            # save_debug_image(img, 0)
             content = {
                 "type": "image",
                 "image": img,
             }
         elif isinstance(msg.content, Path):
             img = Image.open(msg.content).convert("RGB")
-            save_debug_image(img, 0)
+            # save_debug_image(img, 0)
             content = {"type": "image", "image": img}
         elif isinstance(msg.content, str):
             content = {"type": "text", "text": msg.content}
