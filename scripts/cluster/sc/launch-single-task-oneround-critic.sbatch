@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=critic-oneround
-#SBATCH --output=93b-test-vscode-eval10.log
-#SBATCH --error=93b-test-vscode-eval10.err
+#SBATCH --output=test-vscode-eval10.log
+#SBATCH --error=test-vscode-eval10.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=24:00:00
@@ -12,7 +12,7 @@
 
 # Define variables
 USER="njkmr"
-TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/test/93b4281d-c6e7-4b39-8b3b-0132f1dd8615.json"
+TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/test/"
 ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
 CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct-critic"
 AGENT="bilevel_planning"
@@ -62,56 +62,57 @@ enroot start --env VNC_PASSWORD=123456 \
     --mount /dev/shm:/dev/shm  \
     --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio:rbind,ro \
     --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:rbind,ro \
+    --mount ${PWD}/supervisor_logs/:/var/log \
     --root --rw agent-studio-server &
 SERVER_PID=$!
 echo "Server launched with PID $SERVER_PID"
 
-# # Launch data collection client.
-# echo "Starting data collection..."
-# RETRIES=5
-# for ((i=1; i<=RETRIES; i++)); do
-#   enroot remove agent-studio-client
-#   enroot create -n agent-studio-client agent-studio-client.sqsh
-#   enroot start --env VNC_PASSWORD=123456 \
-#   --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
-#   --env VNC_PORT=$VNC_PORT \
-#   --env SERVER_SOCKET=$SERVER_SOCKET \
-#   --env API_WEB_SOCKET=$API_WEB_SOCKET \
-#   --env API_SOCKET=$API_SOCKET \
-#   --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
-#   --mount "${PWD}:/home/ubuntu/agent_studio" \
-#   --root --rw agent-studio-client -c "
-#       cd /home/ubuntu/agent_studio
-#       python agent_studio/apps/online_exploration.py \
-#         --task_configs_path $TASK_PATH \
-#         --agent $AGENT \
-#         --prompting_approach $PROMPTING_APPROACH \
-#         --model $ACTOR_MODEL_NAME \
-#         --vnc_port $VNC_PORT \
-#         --env_server_port $ENV_SERVER_PORT \
-#         --model_server 0.0.0.0:$MODEL_SERVER_PORT \
-#         --remote \
-#         --exp_episodes $EXP_EPISODES \
-#         --plan_scoring_approach uniform \
-#         --finetuning_data_path $DATA_COLLECTION_DIR \
-#         --save_finetuning_data
-#     "
+# Launch data collection client.
+echo "Starting data collection..."
+RETRIES=5
+for ((i=1; i<=RETRIES; i++)); do
+  enroot remove agent-studio-client
+  enroot create -n agent-studio-client agent-studio-client.sqsh
+  enroot start --env VNC_PASSWORD=123456 \
+  --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+  --env VNC_PORT=$VNC_PORT \
+  --env SERVER_SOCKET=$SERVER_SOCKET \
+  --env API_WEB_SOCKET=$API_WEB_SOCKET \
+  --env API_SOCKET=$API_SOCKET \
+  --env ENV_SERVER_PORT=$ENV_SERVER_PORT \
+  --mount "${PWD}:/home/ubuntu/agent_studio" \
+  --root --rw agent-studio-client -c "
+      cd /home/ubuntu/agent_studio
+      python agent_studio/apps/online_exploration.py \
+        --task_configs_path $TASK_PATH \
+        --agent $AGENT \
+        --prompting_approach $PROMPTING_APPROACH \
+        --model $ACTOR_MODEL_NAME \
+        --vnc_port $VNC_PORT \
+        --env_server_port $ENV_SERVER_PORT \
+        --model_server 0.0.0.0:$MODEL_SERVER_PORT \
+        --remote \
+        --exp_episodes $EXP_EPISODES \
+        --plan_scoring_approach uniform \
+        --finetuning_data_path $DATA_COLLECTION_DIR \
+        --save_finetuning_data
+    "
 
-#   if [ $? -eq 0 ]; then
-#     echo "Data collection successfully connected and completed its task."
-#     break
-#   fi
-#   echo "Data collection attempt $i failed, retrying..."
-#   sleep 5  # Wait before retrying
-# done
+  if [ $? -eq 0 ]; then
+    echo "Data collection successfully connected and completed its task."
+    break
+  fi
+  echo "Data collection attempt $i failed, retrying..."
+  sleep 5  # Wait before retrying
+done
 
-# echo "Starting model training on data from $DATA_COLLECTION_DIR"
-# source /home/$USER/miniconda3/etc/profile.d/conda.sh
-# conda activate agent-studio
-# output=$(python -u $FINETUNING_SCRIPT_PATH --data_folder $DATA_COLLECTION_DIR --output_folder $SAVED_WEIGHTS_DIR --log_file $FINETUNING_LOGGING_PATH --num_train_epochs $NUM_TRAINING_EPOCHS)
-# best_epoch=$(echo "$output" | grep "BEST_EPOCH=" | cut -d'=' -f2)
-# echo "Model training completed!"
-# echo "Best epoch: $best_epoch"
+echo "Starting model training on data from $DATA_COLLECTION_DIR"
+source /home/$USER/miniconda3/etc/profile.d/conda.sh
+conda activate agent-studio
+output=$(python -u $FINETUNING_SCRIPT_PATH --data_folder $DATA_COLLECTION_DIR --output_folder $SAVED_WEIGHTS_DIR --log_file $FINETUNING_LOGGING_PATH --num_train_epochs $NUM_TRAINING_EPOCHS)
+best_epoch=$(echo "$output" | grep "BEST_EPOCH=" | cut -d'=' -f2)
+echo "Model training completed!"
+echo "Best epoch: $best_epoch"
 
 # Determine which checkpoint to use
 if [ -z "$best_epoch" ]; then
