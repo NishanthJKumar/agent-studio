@@ -65,7 +65,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.extra_args = extra_args
         assert "scoring_approach" in self.extra_args, "Must specify scoring_approach."
         self.critic_model = None
-        if self.extra_args["scoring_approach"] == "critic":
+        if "critic" in self.extra_args["scoring_approach"]:
             model_manager = ModelManager()
             self.critic_model = model_manager.get_model(self.extra_args["scoring_model_name"], model_server=model_server)
 
