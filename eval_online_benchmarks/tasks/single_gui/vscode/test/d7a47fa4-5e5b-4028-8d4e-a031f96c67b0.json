@@ -27,6 +27,13 @@
   ],
   "reset_procedure": [
     {
+      "evaluator": "filesystem",
+      "function": "rmdir",
+      "params": {
+        "path": "${AS_ROOT}/.vscode-root"
+      }
+    },
+    {
       "evaluator": "vscode",
       "function": "uninstall_all_extensions",
       "params": {}
@@ -73,6 +80,9 @@
         "cmd": [
           "code",
           "--no-sandbox",
+          "--new-window",
+          "--disable-restore-windows",
+          "--skip-add-to-recently-opened",
           "--user-data-dir=${AS_ROOT}/.vscode-root",
           "--disable-extension=GitHub.copilot",
           "--disable-extension=GitHub.copilot-chat"

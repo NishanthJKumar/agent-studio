@@ -102,20 +102,28 @@ class VSCodeEvaluator(Evaluator):
         # Path to VSCode state database (adjust for your OS)
         if os.name == "nt":
             # Windows path
-            vscode_state_db = os.path.expanduser(
+            vscode_state_db = [os.path.expanduser(
                 r"~/AppData/Roaming/Code/User/globalStorage/state.vscdb"
-            )
+            ),
+            os.path.expanduser(r"C:/Users/username/AppData/Local/Temp/vscode/User/globalStorage/state.vscdb")
+            ]
         elif os.name == "posix":
             # Linux/Mac path
-            vscode_state_db = os.path.expanduser(
+            vscode_state_db = [os.path.expanduser(
                 "~/.config/Code/User/globalStorage/state.vscdb"
-            )
+            ),
+            os.path.expanduser("/tmp/vscode/User/globalStorage/state.vscdb")
+            ]
         else:
             raise Exception("Unsupported OS")
 
         # Check if the file exists
-        if not os.path.exists(vscode_state_db):
-            raise FeedbackException("VSCode state file not found")
+        for path in vscode_state_db:
+            if os.path.exists(path):
+                vscode_state_db = path
+                break
+        else:
+            raise Exception("VSCode state file not found")
 
         # Connect to the SQLite database
         conn = sqlite3.connect(vscode_state_db)

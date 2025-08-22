@@ -19,6 +19,13 @@
       "evaluator": "filesystem",
       "function": "rmdir",
       "params": {
+        "path": "${AS_ROOT}/.vscode-root"
+      }
+    },
+    {
+      "evaluator": "filesystem",
+      "function": "rmdir",
+      "params": {
         "path": "${AS_ROOT}/vscode_workspace"
       }
     },
@@ -51,6 +58,10 @@
         "cmd": [
           "code",
           "${AS_ROOT}/vscode_workspace",
+          "--new-window",
+          "--disable-restore-windows",
+          "--skip-add-to-recently-opened",
+          "--disable-workspace-trust",
           "--no-sandbox",
           "--user-data-dir=${AS_ROOT}/.vscode-root",
           "--disable-extension=GitHub.copilot",

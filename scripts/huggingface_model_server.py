@@ -24,6 +24,7 @@ from transformers import (
 
 from agent_studio.utils.communication import bytes2str, str2bytes
 from agent_studio.utils.types import MessageList
+from agent_studio.utils.critic_model_utils import predict_from_messages
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,12 @@ def load_qwen_model(model_id="Qwen/Qwen2.5-VL-7B-Instruct", model_weights_path=N
             safe_serialization=True,
         )
         model.eval()
+        gen = model.generation_config
+        gen.do_sample = False
+        gen.temperature = None
+        gen.top_p = None
+        gen.top_k = None
+        gen.use_cache = False
 
     processor = AutoProcessor.from_pretrained(model_id)
     model_ready = True
@@ -158,6 +165,17 @@ def convert_message_to_gemma_format(
     return model_message
 
 
+def save_debug_image(img, index=0):
+    """Save an image to a file for debugging purposes"""
+    debug_dir = Path("debug_images")
+    debug_dir.mkdir(exist_ok=True)
+    timestamp = int(time.time())
+    filename = debug_dir / f"debug_image_{timestamp}_{index}.png"
+    img.save(filename)
+    logger.info(f"Saved debug image to {filename}")
+    return filename
+
+
 def convert_message_to_qwen_format(
     raw_messages: MessageList,
 ) -> list[dict[str, Any]]:
@@ -168,12 +186,19 @@ def convert_message_to_qwen_format(
     past_role = None
     for msg in raw_messages:
         if isinstance(msg.content, np.ndarray):
+            # By default the images are bgr, so we need to swap
+            # the channel order.
+            img = msg.content[:, :, ::-1]
+            img = Image.fromarray(img).convert("RGB")
+            # save_debug_image(img, 0)
             content = {
                 "type": "image",
-                "image": Image.fromarray(msg.content).convert("RGB"),
+                "image": img,
             }
         elif isinstance(msg.content, Path):
-            content = {"type": "image", "image": Image.open(msg.content).convert("RGB")}
+            img = Image.open(msg.content).convert("RGB")
+            # save_debug_image(img, 0)
+            content = {"type": "image", "image": img}
         elif isinstance(msg.content, str):
             content = {"type": "text", "text": msg.content}
         current_role = msg.role
@@ -254,37 +279,56 @@ async def generate(
         decoded = processor.decode(generation, skip_special_tokens=True)
 
     elif "Qwen" in model_name:
-        # Process for Qwen model
-        qwen_input_messages = convert_message_to_qwen_format(messages_decoded)
-        # Prepare inputs for Qwen model
-        text = processor.apply_chat_template(
-            qwen_input_messages, tokenize=False, add_generation_prompt=True
-        )
-        image_inputs, video_inputs = process_vision_info(qwen_input_messages)
-        inputs = processor(
-            text=[text],
-            images=image_inputs,
-            videos=video_inputs,
-            padding=True,
-            return_tensors="pt",
-        )
-        inputs = inputs.to(model.device)
-        logger.info("Starting Qwen model inference!")
-        total_start_time = time.time()
-        # Generate response
-        with torch.inference_mode():
-            generated_ids = model.generate(**inputs, max_new_tokens=1000)
-            generated_ids_trimmed = [
-                out_ids[len(in_ids) :]
-                for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-            ]
-        total_time = time.time() - total_start_time
-        logger.info(f"Model inference complete {total_time}!")
-        decoded = processor.batch_decode(
-            generated_ids_trimmed,
-            skip_special_tokens=True,
-            clean_up_tokenization_spaces=False,
-        )[0]
+        if "critic" in model_name:
+            # Decode from critic model using the messages directly
+            qwen_input_messages = convert_message_to_qwen_format(messages_decoded)
+            logger.info("Starting critic model inference!")
+            logger.info(f"Input: {messages_decoded}")
+            total_start_time = time.time()
+
+            # Use the predict_from_messages function to get Success/Failure prediction
+            predicted_label, scores = predict_from_messages(qwen_input_messages, model, processor)
+
+            total_time = time.time() - total_start_time
+            logger.info(f"Critic model inference complete in {total_time:.2f}s!")
+            logger.info(f"Prediction: {predicted_label}, Scores: {scores}")
+
+            decoded = predicted_label
+
+        else:
+            # Process for Qwen model
+            qwen_input_messages = convert_message_to_qwen_format(messages_decoded)
+            # Prepare inputs for Qwen model
+            text = processor.apply_chat_template(
+                qwen_input_messages, tokenize=False, add_generation_prompt=True
+            )
+            # DEBUGGING!
+            logger.info(text)
+            image_inputs, video_inputs = process_vision_info(qwen_input_messages)
+            inputs = processor(
+                text=[text],
+                images=image_inputs,
+                videos=video_inputs,
+                padding=True,
+                return_tensors="pt",
+            )
+            inputs = inputs.to(model.device)
+            logger.info("Starting Qwen model inference!")
+            total_start_time = time.time()
+            # Generate response
+            with torch.inference_mode():
+                generated_ids = model.generate(**inputs, max_new_tokens=1000)
+                generated_ids_trimmed = [
+                    out_ids[len(in_ids) :]
+                    for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+                ]
+            total_time = time.time() - total_start_time
+            logger.info(f"Model inference complete {total_time}!")
+            decoded = processor.batch_decode(
+                generated_ids_trimmed,
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=False,
+            )[0]
 
     else:
         return JSONResponse(
@@ -338,7 +382,11 @@ if __name__ == "__main__":
     if "gemma" in model_name:
         load_gemma_model(model_name)
     elif "Qwen" in model_name:
-        load_qwen_model(model_name, args.model_weights_path)
+        if "critic" in model_name:
+            base_model_name = model_name.split("-critic")[0]
+            load_qwen_model(base_model_name, args.model_weights_path)
+        else:
+            load_qwen_model(model_name, args.model_weights_path)
     else:
         raise ValueError(
             f"Unknown model type: {model_name}. "

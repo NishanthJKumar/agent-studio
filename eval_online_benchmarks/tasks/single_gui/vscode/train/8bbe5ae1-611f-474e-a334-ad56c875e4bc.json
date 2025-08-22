@@ -20,6 +20,13 @@
       "evaluator": "filesystem",
       "function": "rmdir",
       "params": {
+        "path": "${AS_ROOT}/.vscode-root"
+      }
+    },
+    {
+      "evaluator": "filesystem",
+      "function": "rmdir",
+      "params": {
         "path": "${AS_HOME}/.config/Code/User"
       }
     },
@@ -52,7 +59,12 @@
         "cmd": [
           "code",
           "${AS_ROOT}/vscode_workspace",
+          "--new-window",
+          "--disable-restore-windows",
+          "--skip-add-to-recently-opened",
+          "--disable-workspace-trust",
           "--no-sandbox",
+          "--disable-restore-windows",
           "--user-data-dir=${AS_ROOT}/.vscode-root",
           "--disable-extension=GitHub.copilot",
           "--disable-extension=GitHub.copilot-chat"
@@ -64,7 +76,7 @@
       "evaluator": "system",
       "function": "sleep",
       "params": {
-        "seconds": 5
+        "seconds": 10
       }
     }
   ],
@@ -104,12 +116,18 @@
         "name": "tilix"
       }
     },
-
     {
       "evaluator": "process",
       "function": "pkill_by_name",
       "params": {
         "name": "lxterminal"
+      }
+    },
+    {
+    "evaluator": "process",
+    "function": "pkill_by_name",
+    "params": {
+      "name": "lxpanel"
       }
     }
   ],

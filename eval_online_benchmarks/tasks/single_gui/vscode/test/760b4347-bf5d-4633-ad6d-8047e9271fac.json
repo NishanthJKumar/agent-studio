@@ -1,6 +1,6 @@
 {
   "task_id": "760b4347-bf5d-4633-ad6d-8047e9271fac",
-  "instruction": "Please help me modify VS Code setting to hide all \"__pycache__\" folders in the explorer view.",
+  "instruction": "Please help me create VS Code settings to hide all \"__pycache__\" folders in the explorer view.",
   "visual": true,
   "max_steps": 30,
   "eval_procedure": [
@@ -18,6 +18,13 @@
     }
   ],
   "reset_procedure": [
+    {
+      "evaluator": "filesystem",
+      "function": "rmdir",
+      "params": {
+        "path": "${AS_ROOT}/.vscode-root"
+      }
+    },
     {
       "evaluator": "filesystem",
       "function": "rmdir",
@@ -46,6 +53,10 @@
         "cmd": [
           "code",
           "--no-sandbox",
+          "--new-window",
+          "--disable-restore-windows",
+          "--disable-workspace-trust",
+          "--skip-add-to-recently-opened",
           "--user-data-dir=${AS_ROOT}/.vscode-root",
           "--disable-extension=GitHub.copilot",
           "--disable-extension=GitHub.copilot-chat"

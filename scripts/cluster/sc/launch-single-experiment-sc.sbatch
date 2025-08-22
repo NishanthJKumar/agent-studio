@@ -1,19 +1,19 @@
 #!/bin/bash
 #SBATCH --job-name=agent_experiment
-#SBATCH --output=test-qwen-singleapi-docs.log
-#SBATCH --error=test-qwen-singleapi-docs.err
+#SBATCH --output=test.log
+#SBATCH --error=test.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=10:00:00  # Adjust the time as needed
 #SBATCH --mem=500G
 #SBATCH --account=comem
-#SBATCH --qos=h100_comem_high
+#SBATCH --qos=h100_lowest
 #SBATCH --ntasks-per-node 1
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/single_api/google_docs"
-MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
+PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/vscode/train/8bbe5ae1-611f-474e-a334-ad56c875e4bc.json"
+MODEL_NAME="gpt-4o-2024-11-20"
 
 # Generate random port numbers
 generate_random_port() {

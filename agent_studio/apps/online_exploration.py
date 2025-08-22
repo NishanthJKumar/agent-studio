@@ -11,7 +11,6 @@ import time
 from pathlib import Path
 import copy
 
-import cv2
 import jsonpickle
 import numpy as np
 import requests
@@ -243,7 +242,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                             obs = interface.get_screenshot()
                         else:
                             obs = None
-                        if init_obs is None:
+                        if init_obs is None and obs is not None:
                             init_obs = copy.deepcopy(obs)
                         try:
                             step_info = agent.generate_action(

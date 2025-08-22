@@ -93,7 +93,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         messages.append(
             Message(role="user", content=f"The task instruction: {self.task_config.instruction}")
         )
-        if self.obs is not None:
+        if obs is not None:
             messages.append(Message(role="user", content=obs))
         hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name)
         self.high_level_plan_candidates = parse_strategies(hint_response)
@@ -117,19 +117,18 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         if scoring_approach == "uniform":
             return 0.0
         elif scoring_approach == "critic":
-            HINT_PRED_PROMPT = ("You are an expert-level predictor of whether or not a particular strategy will work for various computer use tasks."
+            messages: MessageList = []
+            HINT_PRED_PROMT = ("You are an expert-level predictor of whether or not a particular strategy will work for various computer use tasks."
                 "You will be provided with a task instruction (natural language string), potentially an image of the initial state of the environment before task execution, and an agent's strategy to complete the task."
                 "Your job is to determine whether this strategy will succeed at accomplishing the task or not."
-                "If you think it will succeed, output '[PREDICTED OUTCOME] Success.'; otherwise indicate failure. You can also output an explanation of your approach."
-            )
-            messages: MessageList = []
-            messages.append(Message(role="system", content=HINT_PRED_PROMPT))
-            messages.append(Message(role="user",
-                    content=f"Task instruction: {self.task_config.instruction}\nAgent Plan Strategy: {curr_high_level_plan}"
-                )
-            )
+                f"You must answer in the following format exactly: 'Success.' or 'Failure.'. No extra words.")
+            messages.append(Message(role="system", content=HINT_PRED_PROMT))
             if self.obs is not None:
                 messages.append(Message(role="user", content=self.obs))
+            messages.append(Message(role="user",
+                    content=f"Task Instruction: {self.task_config.instruction}\nAgent Plan Strategy: {curr_high_level_plan}"
+                )
+            )
             response, _ = self.critic_model.generate_response(messages=messages, model=model_name)
             # NOTE: very simple scoring function for now; can be improved/changed later!
             if "success" in response.lower():
@@ -144,10 +143,10 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self, obs: np.ndarray | None, model_name: str
     ) -> StructuredStepInfo:
         """Generate an action based on the observation."""
+        self.obs = obs
         if len(self.high_level_plan_candidates) == 0:
             self.generate_new_high_level_plan_candidates(obs, model_name, self.extra_args["scoring_approach"], self.extra_args["scoring_model_name"])
-            logger.info(f"Curr plan: {self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]}")
-        self.obs = obs
+            logger.info(f"Curr plan: {self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]}")        
         prompt = self.action_prompt
         assert prompt is not None, "Invalid prompt"
         response, info = self.model.generate_response(messages=prompt, model=model_name)

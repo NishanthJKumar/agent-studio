@@ -34,6 +34,13 @@
       "evaluator": "filesystem",
       "function": "rmdir",
       "params": {
+        "path": "${AS_ROOT}/.vscode-root"
+      }
+    },
+    {
+      "evaluator": "filesystem",
+      "function": "rmdir",
+      "params": {
         "path": "${AS_HOME}/.config/Code/User"
       }
     },

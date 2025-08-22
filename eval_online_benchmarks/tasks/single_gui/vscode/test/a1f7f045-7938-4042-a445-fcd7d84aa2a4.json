@@ -19,13 +19,27 @@
           },
           {
             "extension_id": "davidanson.vscode-markdownlint",
-            "enabled": true
+            "enabled": false
           }
         ]
       }
     }
   ],
   "reset_procedure": [
+    {
+      "evaluator": "filesystem",
+      "function": "rmdir",
+      "params": {
+        "path": "${AS_ROOT}/.vscode-root"
+      }
+    },
+    {
+      "evaluator": "filesystem",
+      "function": "rmdir",
+      "params": {
+        "path": "/tmp/vscode"
+      }
+    },
     {
       "evaluator": "vscode",
       "function": "uninstall_all_extensions",
