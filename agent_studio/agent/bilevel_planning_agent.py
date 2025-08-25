@@ -83,7 +83,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             self.prev_task_config = copy.deepcopy(self.task_config)
         else:
             self.episode_idx += 1
-            assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen!"
+            assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen (3)!"
             self.curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx]
             logger.info(f"\n\nCurrent high-level plan: {self.curr_high_level_plan}\n\n")
 
@@ -120,7 +120,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             plans_to_scores[curr_high_level_plan] = curr_score
             logger.info(f"Scored plan {i}: {curr_score}")
         self.high_level_plan_candidates = [k for k, v in sorted(plans_to_scores.items(), key=lambda item: item[1], reverse=True)]
-        assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen!"
+        assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen (1)!"
         self.curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx]
 
     
@@ -352,7 +352,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             cv2.imwrite(str(img_path), init_obs)
             init_obs_img_path = str(Path("images") / img_filename)
 
-        assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen!"
+        assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen (2)!"
         curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]
         task_string = self.instruction
         data = {
