@@ -163,6 +163,7 @@ class VSCodeEvaluator(Evaluator):
     ) -> float:
         score = 1.0
         installed_extensions: dict = self.vscode_connector.list_extensions()
+        logger.info(f"Installed extensions: {installed_extensions}")
         if exists:
             if extension_id not in installed_extensions:
                 raise FeedbackException(f"Extension {extension_id} is not installed")
