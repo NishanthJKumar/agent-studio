@@ -1,6 +1,8 @@
 import argparse
 import logging
 import time
+import os
+import random
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +32,21 @@ logger = logging.getLogger(__name__)
 
 app = fastapi.FastAPI()
 
+
+# Setup for model determinism.
+SEED = 23
+random.seed(SEED); np.random.seed(SEED)
+torch.manual_seed(SEED); torch.cuda.manual_seed_all(SEED)
+torch.use_deterministic_algorithms(True)
+os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"   # or ":4096:8"
+torch.backends.cuda.matmul.allow_tf32 = False
+torch.backends.cudnn.allow_tf32 = False
+torch.backends.cudnn.deterministic = True
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+torch.set_num_threads(1)
+
+
 # Global variables for model and processor
 model = None
 processor = None
@@ -56,8 +73,9 @@ def load_qwen_model(model_id="Qwen/Qwen2.5-VL-7B-Instruct", model_weights_path=N
         logger.info(f"Loading Qwen model: {model_id}")
         model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             model_id, torch_dtype="auto", device_map="auto"
-        )
-        model.eval()
+        ).eval()
+        if isinstance(model, PeftModel):
+            model = model.merge_and_unload().eval()
     else:
         logger.info(f"Loading local Qwen model weights from: {model_weights_path}")
         # 4-bit quantization config for efficient inference.
@@ -80,12 +98,12 @@ def load_qwen_model(model_id="Qwen/Qwen2.5-VL-7B-Instruct", model_weights_path=N
             safe_serialization=True,
         )
         model.eval()
-        gen = model.generation_config
-        gen.do_sample = False
-        gen.temperature = None
-        gen.top_p = None
-        gen.top_k = None
-        gen.use_cache = False
+    gen = model.generation_config
+    gen.do_sample = False
+    gen.temperature = None
+    gen.top_p = None
+    gen.top_k = None
+    gen.use_cache = False
 
     processor = AutoProcessor.from_pretrained(model_id)
     model_ready = True
