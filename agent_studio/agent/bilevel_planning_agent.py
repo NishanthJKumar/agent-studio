@@ -105,7 +105,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         logger.info(f"Got new task: generating plan candidates!")
         hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name)        
         self.high_level_plan_candidates = list(set(parse_strategies(hint_response)))
-        logger.info(f"Generated {len(self.high_level_plan_candidates)} high-level plan candidates.")
+        logger.info(f"Generated {len(self.high_level_plan_candidates)} high-level plan candidates. Need {self.num_unique_plan_candidates}.")
 
         # Scale up and generate additional plans.
         while len(self.high_level_plan_candidates) < self.num_unique_plan_candidates:

@@ -1418,7 +1418,7 @@ def main():
         "--log_model_outputs", action="store_true", help="Log model outputs"
     )
     parser.add_argument(
-        "--num_plan_hints", type=int, default=10, help="Number of plan hints to use"
+        "--num_plan_hints", type=int, default=5, help="Number of plan hints to use"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
