@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --array=1-1
+#SBATCH --array=1-12
 #SBATCH --time=24:00:00
 #SBATCH --mem=500G
 #SBATCH --account=comem
@@ -21,18 +21,18 @@ DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_test_30"
 
 # JSON task list (sorted for consistency)
 JSON_FILES=(
-  # "eval_online_benchmarks/tasks/single_gui/vscode/train/08d6db0f-8b06-41ae-bb20-26250e0a760f.json"
-  # "eval_online_benchmarks/tasks/single_gui/vscode/train/3b3098d8-6626-4d8d-a291-2ad19b73d0f2.json"
-  # "eval_online_benchmarks/tasks/single_gui/vscode/train/8a48df09-4141-4cf9-89c6-e193e0f42451.json"
-  # "eval_online_benchmarks/tasks/single_gui/vscode/train/0d38e311-29b5-4925-a480-14a6a82836c8.json"
-  # "eval_online_benchmarks/tasks/single_gui/vscode/train/3dcc6db1-7ca5-412d-b519-142724d41ef2.json"
-  # "eval_online_benchmarks/tasks/single_gui/vscode/train/8bbe5ae1-611f-474e-a334-ad56c875e4bc.json"
-  # "eval_online_benchmarks/tasks/single_gui/vscode/train/1c0ab6a9-2bde-49e7-9b9c-ab579ab3eab7.json"
-  # "eval_online_benchmarks/tasks/single_gui/vscode/train/5d020bcd-acb7-46ee-a21b-3a261cede5ce.json"
-  # "eval_online_benchmarks/tasks/single_gui/vscode/test/1d3861fa-d605-48be-9337-b5188c351663.json"
-  # "eval_online_benchmarks/tasks/single_gui/vscode/test/93b4281d-c6e7-4b39-8b3b-0132f1dd8615.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/train/08d6db0f-8b06-41ae-bb20-26250e0a760f.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/train/3b3098d8-6626-4d8d-a291-2ad19b73d0f2.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/train/8a48df09-4141-4cf9-89c6-e193e0f42451.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/train/0d38e311-29b5-4925-a480-14a6a82836c8.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/train/3dcc6db1-7ca5-412d-b519-142724d41ef2.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/train/8bbe5ae1-611f-474e-a334-ad56c875e4bc.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/train/1c0ab6a9-2bde-49e7-9b9c-ab579ab3eab7.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/train/5d020bcd-acb7-46ee-a21b-3a261cede5ce.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/1d3861fa-d605-48be-9337-b5188c351663.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/93b4281d-c6e7-4b39-8b3b-0132f1dd8615.json"
   "eval_online_benchmarks/tasks/single_gui/vscode/test/760b4347-bf5d-4633-ad6d-8047e9271fac.json"
-  # "eval_online_benchmarks/tasks/single_gui/vscode/test/d2c5244a-d32b-4bc5-9cf8-616da006ee7a.json"
+  "eval_online_benchmarks/tasks/single_gui/vscode/test/d2c5244a-d32b-4bc5-9cf8-616da006ee7a.json"
 )
 
 ############################################
