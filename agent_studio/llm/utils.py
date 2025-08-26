@@ -139,7 +139,7 @@ def parse_strategies(strategies_txt: str) -> list[str]:
     """Given an input text with a bunch of strategies, for solving a task, 
     parse out the strategies individually into a list"""
     # Find all strategy sections using regex
-    strategy_pattern = r"Strategy:([\s\S]*?)(?=Strategy:|---|$)"
+    strategy_pattern = r"(?:\*\*Strategy\s*\d+:|Strategy:)\s*([\s\S]*?)(?=(?:\*\*Strategy\s*\d+:|Strategy:)|---|$)"
     strategies = re.findall(strategy_pattern, strategies_txt)
     # Clean up each strategy text
     result = []
