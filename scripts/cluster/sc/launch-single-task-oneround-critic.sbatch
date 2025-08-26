@@ -177,7 +177,9 @@ for ((i=1; i<=RETRIES; i++)); do
           --model $ACTOR_MODEL_NAME --env_server_port $ENV_SERVER_PORT \
           --agent bilevel_planning --prompting_approach structured_planning_decoupled_bilevel \
           --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT \
-          --plan_scoring_approach $CRITIQUE_APPROACH --remote
+          --plan_scoring_approach $CRITIQUE_APPROACH 
+          --num_plan_hints $EXP_EPISODES
+          --remote
     "
 
   if [ $? -eq 0 ]; then

@@ -441,7 +441,10 @@ class GUI(QMainWindow):
                 prompt_approach=args.prompting_approach,
                 feedback_prompt_approach=args.feedback_prompting_approach,
                 model_server=args.model_server,
-                extra_args={}
+                extra_args={"scoring_approach": args.plan_scoring_approach, 
+                    "scoring_model_name": args.plan_scoring_model_name,
+                    "num_unique_plan_candidates": args.num_plan_hints
+                }
             )
         else:
             self.agent = setup_agent(
@@ -453,7 +456,9 @@ class GUI(QMainWindow):
                 prompt_approach=args.prompting_approach,
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
-                        "scoring_model_name": args.plan_scoring_model_name}
+                        "scoring_model_name": args.plan_scoring_model_name,
+                        "num_unique_plan_candidates": args.num_plan_hints
+                        }
             )
 
         # self.task_thread: None | TaskThread = None
@@ -1411,6 +1416,9 @@ def main():
     )
     parser.add_argument(
         "--log_model_outputs", action="store_true", help="Log model outputs"
+    )
+    parser.add_argument(
+        "--num_plan_hints", type=int, default=10, help="Number of plan hints to use"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
