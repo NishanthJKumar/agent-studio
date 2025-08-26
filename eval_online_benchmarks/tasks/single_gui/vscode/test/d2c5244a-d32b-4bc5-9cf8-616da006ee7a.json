@@ -88,6 +88,8 @@
           "code",
           "${AS_ROOT}/vscode_workspace/vscode_workspace.code-workspace",
           "--no-sandbox",
+          "--new-window",
+          "--disable-restore-windows",
           "--user-data-dir=${AS_ROOT}/.vscode-root",
           "--disable-extension=GitHub.copilot",
           "--disable-extension=GitHub.copilot-chat"

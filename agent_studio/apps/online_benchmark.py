@@ -1056,10 +1056,11 @@ def eval(args, interface: NonGUI | None = None) -> None:
     try:
         # Setup agent
         results_dir = Path(
-            f"{args.log_dir}/{args.model}/{args.agent}/{args.prompting_approach}"
-        )
+                f"{args.log_dir}/{args.model}/{args.agent}/{args.prompting_approach}"
+            )
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        (results_dir / timestamp).mkdir(parents=True, exist_ok=True)
+        if args.log_model_outputs:
+            (results_dir / timestamp).mkdir(parents=True, exist_ok=True)
         if args.agent == "feedback":
             agent = setup_agent(
                 agent_name=args.agent,
@@ -1407,6 +1408,9 @@ def main():
     )
     parser.add_argument(
         "--plan_scoring_model_name", type=str, default="Qwen/Qwen2.5-VL-7B-Instruct", help="Plan scoring model name"
+    )
+    parser.add_argument(
+        "--log_model_outputs", action="store_true", help="Log model outputs"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")

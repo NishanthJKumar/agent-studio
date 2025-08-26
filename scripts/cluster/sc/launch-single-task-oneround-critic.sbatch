@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=critic-oneround
-#SBATCH --output=test-vscode-eval10.log
-#SBATCH --error=test-vscode-eval10.err
+#SBATCH --output=test-vscode-log_prob_diff-eval10.log
+#SBATCH --error=test-vscode-log_prob_diff-eval10.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=24:00:00
@@ -24,6 +24,7 @@ SAVED_WEIGHTS_DIR="../agentic-value-function-finetuning/finetuning-10tasks-sampl
 FINETUNING_SCRIPT_PATH="../agentic-value-function-finetuning/agentic_value_functions/plan_hints/agent-studio-hint-finetuning.py"
 FINETUNING_LOGGING_PATH="direct_training-vscode.log"
 NUM_TRAINING_EPOCHS="299"
+CRITIQUE_APPROACH="critic_log_prob_diff"
 
 # Ensure there's no buffering and we actually print training details to the 
 # logging files immediately.
@@ -176,7 +177,7 @@ for ((i=1; i<=RETRIES; i++)); do
           --model $ACTOR_MODEL_NAME --env_server_port $ENV_SERVER_PORT \
           --agent bilevel_planning --prompting_approach structured_planning_decoupled_bilevel \
           --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT \
-          --plan_scoring_approach critic --remote
+          --plan_scoring_approach $CRITIQUE_APPROACH --remote
     "
 
   if [ $? -eq 0 ]; then

@@ -1,8 +1,8 @@
-import os
-from pathlib import Path
-from PIL import Image
+import os, hashlib
+
 import logging
 import torch
+import torch.nn.functional as F
 from qwen_vl_utils import process_vision_info
 
 ANSWER_TAG = "<|answer|>"
@@ -11,36 +11,48 @@ LABELS = ["Success.", "Failure."]
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
+    handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
 
 
-def to_dev_dtype(x, device):
-    if isinstance(x, torch.Tensor):
-        x = x.to(device)
-        if x.dtype.is_floating_point and x.dtype != torch.bfloat16:
-            x = x.to(torch.bfloat16)
-    return x
+def _sha(t: torch.Tensor) -> str:
+    return hashlib.sha256(t.detach().cpu().numpy().tobytes()).hexdigest()[:16]
+
+def _debug_dump_once(inputs_on_device, model, processor, texts=None, tag=""):
+    # Print dtypes/devices
+    try:
+        p = next(model.parameters())
+        print(f"[CRITIC DEBUG {tag}] model dtype={p.dtype}, device={p.device}, eval={not model.training}")
+    except StopIteration:
+        pass
+    import torch
+    print(f"[CRITIC DEBUG {tag}] TF32 matmul={torch.backends.cuda.matmul.allow_tf32}, cudnn.tf32={torch.backends.cudnn.allow_tf32}")
+
+    # Fingerprint inputs
+    for k,v in inputs_on_device.items():
+        if isinstance(v, torch.Tensor):
+            print(f"[CRITIC DEBUG {tag}] {k}: shape={tuple(v.shape)}, dtype={v.dtype}, hash={_sha(v)}")
+
+    # Two forwards back-to-back on IDENTICAL tensors
+    with torch.no_grad():
+        out1 = model(**inputs_on_device)
+        out2 = model(**inputs_on_device)
+    max_abs = (out1.logits - out2.logits).abs().max().item()
+    print(f"[CRITIC DEBUG {tag}] max_abs_diff_back_to_back_logits={max_abs:.3e}")
 
 
-def prepare_inputs_from_messages(messages, processor):
+def _make_batched_inputs_for_labels(messages, processor, labels):
     """
-    Prepare model inputs from pre-formatted messages for critic model inference.
-
-    Args:
-        messages: List of message dictionaries in the format expected by the processor
-        processor: The model processor
-
-    Returns:
-        dict: Contains 'inputs' ready for model inference
+    Build a proper batched input by asking the processor to batch
+    two copies (one per label) of the SAME multimodal prompt.
     """
-    # Prepare text and inputs for inference
-    text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    base_text = processor.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+    texts = [f"{base_text}{ANSWER_TAG} {lab}" for lab in labels]
 
-    # Check if any message contains images
+    # Detect and gather vision inputs once from messages
     has_images = any(
         isinstance(msg.get("content"), list) and
         any(item.get("type") == "image" for item in msg["content"])
@@ -48,81 +60,57 @@ def prepare_inputs_from_messages(messages, processor):
     )
 
     if has_images:
-        # Process vision info if images are present
         image_inputs, video_inputs = process_vision_info(messages)
+        # Duplicate the *Python* structures to match the number of texts
+        images_batched = [image_inputs for _ in texts]
+        videos_batched = [video_inputs for _ in texts] if video_inputs is not None else None
         inputs = processor(
-            text=[text],
-            images=image_inputs,
-            videos=video_inputs,
+            text=texts,
+            images=images_batched,
+            videos=videos_batched,
             padding=True,
             return_tensors="pt",
         )
     else:
-        inputs = processor(
-            text=[text],
-            padding=True,
-            return_tensors="pt",
-        )
+        inputs = processor(text=texts, padding=True, return_tensors="pt")
 
-    return {
-        'messages': messages,
-        'text': text,
-        'inputs': inputs
-    }
+    return inputs
 
 
 def predict_from_messages(messages, model, processor):
     """
-    Predict Success/Failure from pre-formatted messages using the critic model.
-
-    Args:
-        messages: List of message dictionaries in the format expected by the processor
-        model: The critic model
-        processor: The model processor
-
-    Returns:
-        tuple: (predicted_label, scores_dict)
+    Single forward pass that scores both labels using processor-batched inputs.
+    Returns: (predicted_label: str, scores_dict: {label: float})
     """
     device = model.device
 
-    # Prepare inputs from messages
-    prepared = prepare_inputs_from_messages(messages, processor)
-    inputs_no_answer = prepared["inputs"]
+    # 1) Build a *batched* pack with two rows (Success/Failure)
+    inputs = _make_batched_inputs_for_labels(messages, processor, LABELS)
 
-    # Move base prompt tensors to device
-    input_ids = inputs_no_answer["input_ids"].to(device)
-    attn = inputs_no_answer.get("attention_mask", torch.ones_like(input_ids)).to(device)
+    # 2) Move everything to the model device (keep dtypes as returned by processor)
+    inputs_on_device = {
+        k: (v.to(device) if isinstance(v, torch.Tensor) else v)
+        for k, v in inputs.items()
+    }
 
-    # Move VLM extras (image/video tensors) to device and correct dtype
-    extras = {}
-    for k, v in inputs_no_answer.items():
-        if k in ("input_ids", "attention_mask", "labels"):
-            continue
-        extras[k] = to_dev_dtype(v, device)
+    # _debug_dump_once(inputs_on_device, model, processor, tag="pre")
 
-    # Cache tokenized versions of common tokens
-    tag_ids = processor.tokenizer(f"{ANSWER_TAG} ", add_special_tokens=False).input_ids
-    label_ids = {y: processor.tokenizer(y, add_special_tokens=False).input_ids for y in LABELS}
+    # 3) Forward once
+    with torch.no_grad():
+        out = model(**inputs_on_device)
+    logits = out.logits                                # [B=2, T, V]
+    attn   = inputs_on_device["attention_mask"]        # [B=2, T]
 
-    # Score each possible label
+    # 4) Compute per-row label logprobs using attention_mask to find the end
     scores = {}
-    for label_text in LABELS:
-        # Append: ANSWER_TAG + ' ' + label
-        lab_ids = label_ids[label_text]
-        tail = torch.tensor([tag_ids + lab_ids], device=device)
-        new_ids = torch.cat([input_ids, tail], dim=1)
-        new_attn = torch.cat([attn, torch.ones_like(tail)], dim=1)
+    for i, label in enumerate(LABELS):
+        lab_ids = processor.tokenizer(label, add_special_tokens=False).input_ids
+        L = len(lab_ids)
+        end = int(attn[i].sum().item()) - 1  # last index
+        step_logits = logits[i, end - L : end, :].float()  # <-- force fp32 here
+        tgt = torch.tensor(lab_ids, device=logits.device, dtype=torch.long).unsqueeze(-1)
+        lp = torch.log_softmax(step_logits, dim=-1).gather(-1, tgt).squeeze(-1)
+        scores[label] = lp.sum().item()
 
-        # Supervise only the label tokens (exclude the tag)
-        labels = torch.full_like(new_ids, -100)
-        lab_len = len(lab_ids)
-        labels[:, -lab_len:] = torch.tensor([lab_ids], device=device)
-
-        # Get model output and compute loss
-        with torch.no_grad():
-            out = model(input_ids=new_ids, attention_mask=new_attn, labels=labels, **extras)
-            scores[label_text] = -out.loss.item() * lab_len  # sum logprob (higher is better)
-
-    # Return the label with highest score
     pred = max(scores, key=scores.get)
     return pred, scores

@@ -73,6 +73,7 @@ class BaseAgent:
         ) as file:
             self._summarization_prompt = file.read()
         self.prev_attempt_summaries = []
+        self.extra_args = extra_args
 
     def reset(self, task_config: TaskConfig) -> None:
         """Reset the agent's state with a new task configuration."""
@@ -129,20 +130,20 @@ class BaseAgent:
                 unexecuted_code = action[len(truncated_code) :]
                 action = truncated_code
 
-        # Logging model outputs.
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"output_{timestamp}.txt"
-        log_dir = self.results_dir / "model_query_logs"
-        log_dir.mkdir(exist_ok=True)
-        filename = log_dir / filename
-        with open(filename, "w") as file:
-            file.write("Prompt:\n")
-            for i in range(len(prompt)):
-                file.write(f"Message {i}:\n")
-                file.write(f"Role: {prompt[i].role}\n")
-                file.write(f"Content: {prompt[i].content}\n\n")
-            file.write("Response:\n")
-            file.write(response + "\n")
+        if "log_model_output" in self.extra_args and self.extra_args["log_model_output"]:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"output_{timestamp}.txt"
+            log_dir = self.results_dir / "model_query_logs"
+            log_dir.mkdir(exist_ok=True)
+            filename = log_dir / filename
+            with open(filename, "w") as file:
+                file.write("Prompt:\n")
+                for i in range(len(prompt)):
+                    file.write(f"Message {i}:\n")
+                    file.write(f"Role: {prompt[i].role}\n")
+                    file.write(f"Content: {prompt[i].content}\n\n")
+                file.write("Response:\n")
+                file.write(response + "\n")
 
         return StepInfo(
             obs=obs,

@@ -165,7 +165,8 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
             f"{args.log_dir}/{args.model}/{args.agent}/{args.prompting_approach}"
         )
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        (results_dir / timestamp).mkdir(parents=True, exist_ok=True)
+        if args.log_model_outputs:
+            (results_dir / timestamp).mkdir(parents=True, exist_ok=True)
         if args.agent == "feedback":
             agent = setup_agent(
                 agent_name=args.agent,
@@ -179,7 +180,8 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 feedback_prompt_approach=args.feedback_prompting_approach,
                 restrict_to_one_step=config.restrict_to_one_step,
                 model_server=args.model_server,
-                extra_args={"scoring_approach": args.plan_scoring_approach}
+                extra_args={"scoring_approach": args.plan_scoring_approach,
+                "num_unique_plan_candidates": args.exp_episodes}
             )
         else:
             agent = setup_agent(
@@ -193,7 +195,8 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 prompt_approach=args.prompting_approach,
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
-                    "scoring_model_name": args.plan_scoring_model_name
+                    "scoring_model_name": args.plan_scoring_model_name,
+                    "num_unique_plan_candidates": args.exp_episodes
                 }
             )
 
@@ -487,6 +490,9 @@ def main():
     )
     parser.add_argument(
         "--plan_scoring_model_name", type=str, default="Qwen/Qwen2.5-VL-7B-Instruct", help="Plan scoring model name"
+    )
+    parser.add_argument(
+        "--log_model_outputs", action="store_true", help="Log model outputs"
     )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")

@@ -158,7 +158,7 @@ class VSCodeConnector:
         #         return extension_list
         # else:
         extension_list = (
-            os.popen(f"{self.executable_path} --list-extensions --show-versions")
+            os.popen(f"{self.executable_path} --no-sandbox --user-data-dir=/tmp/vscode --list-extensions --show-versions")
             .read()
             .strip()
             .split("\n")
@@ -178,14 +178,14 @@ class VSCodeConnector:
         return True
 
     def install_extension(self, extension_name: str) -> bool:
-        os.system(f"{self.executable_path} --install-extension {extension_name}")
+        os.system(f"{self.executable_path} --no-sandbox --user-data-dir=/tmp/vscode --install-extension {extension_name}")
         return extension_name in self.list_extensions()
 
     def uninstall_extension(self, extension_name: str) -> bool:
         if "@" in extension_name:
             extension_name = extension_name.split("@")[0]
         if extension_name in self.list_extensions():
-            os.system(f"{self.executable_path} --uninstall-extension {extension_name}")
+            os.system(f"{self.executable_path} --no-sandbox --user-data-dir=/tmp/vscode --uninstall-extension {extension_name}")
             return extension_name not in self.list_extensions()
         else:
             return True
