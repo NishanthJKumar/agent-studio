@@ -456,9 +456,9 @@ class GUI(QMainWindow):
                 prompt_approach=args.prompting_approach,
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
-                        "scoring_model_name": args.plan_scoring_model_name,
-                        "num_unique_plan_candidates": args.num_plan_hints
-                        }
+                    "scoring_model_name": args.plan_scoring_model_name,
+                    "num_unique_plan_candidates": args.num_plan_hints
+                }
             )
 
         # self.task_thread: None | TaskThread = None
