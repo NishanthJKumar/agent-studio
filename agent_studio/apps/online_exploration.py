@@ -180,7 +180,8 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 feedback_prompt_approach=args.feedback_prompting_approach,
                 restrict_to_one_step=config.restrict_to_one_step,
                 model_server=args.model_server,
-                extra_args={"scoring_approach": args.plan_scoring_approach,
+                extra_args={"scoring_approach": args.plan_scoring_approach, 
+                    "scoring_model_name": args.plan_scoring_model_name,
                 "num_unique_plan_candidates": args.exp_episodes}
             )
         else:
@@ -196,7 +197,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                     "scoring_model_name": args.plan_scoring_model_name,
-                    "num_unique_plan_candidates": args.exp_episodes
+                    "num_unique_plan_candidates": args.exp_episodes,
                 }
             )
 

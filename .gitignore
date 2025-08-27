@@ -148,6 +148,7 @@ dmypy.json
 *.DS_Store
 
 .vscode
+.vscode-root
 *tmp*
 
 # pytype static type analyzer

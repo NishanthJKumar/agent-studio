@@ -63,7 +63,6 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.episode_idx: int = 0
         self.high_level_plan_candidates: list[str] = []
         self.curr_high_level_plan: Optional[str] = None
-        self.rng = np.random.default_rng(23)
         self.extra_args = extra_args
         assert "scoring_approach" in self.extra_args, "Must specify scoring_approach."
         self.critic_model = None
@@ -102,33 +101,41 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         )
         if obs is not None:
             messages.append(Message(role="user", content=obs))
-        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name)
+        logger.info(f"Got new task: generating plan candidates!")
+        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name)        
         self.high_level_plan_candidates = list(set(parse_strategies(hint_response)))
+        logger.info(f"Generated {len(self.high_level_plan_candidates)} high-level plan candidates. Need {self.num_unique_plan_candidates}.")
 
         # Scale up and generate additional plans.
         while len(self.high_level_plan_candidates) < self.num_unique_plan_candidates:
             new_plans_set = self.generate_additional_high_level_plan_candidates(obs, planning_model_name)
             self.high_level_plan_candidates = list(set(self.high_level_plan_candidates) | new_plans_set)
+            logger.info(f"Curr total plan candidates: {len(self.high_level_plan_candidates)}.")
 
         # Score the plans to order them.
         assert len(self.high_level_plan_candidates) > 0, "No high-level plan candidates generated."
-        logger.info(f"Got new task: generated {len(self.high_level_plan_candidates)} high-level plan candidates.")
+        
         logger.info(f"Scoring plans with strategy {scoring_approach}.")
         plans_to_scores = {}
         for i, curr_high_level_plan in enumerate(self.high_level_plan_candidates):
             curr_score = self.score_high_level_plan(curr_high_level_plan, scoring_model_name, scoring_approach)
             plans_to_scores[curr_high_level_plan] = curr_score
-            logger.info(f"Scored plan {i}: {curr_score}")
+            logger.info(f"Scored plan \n {curr_high_level_plan} \n: {curr_score}")
         self.high_level_plan_candidates = [k for k, v in sorted(plans_to_scores.items(), key=lambda item: item[1], reverse=True)]
         assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen (1)!"
         self.curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx]
+        if "critic" in scoring_approach:
+            logger.info(f"RANKED PLANS:\n\n")
+            for i, curr_high_level_plan in enumerate(self.high_level_plan_candidates):
+                logger.info(f"{i}: {curr_high_level_plan}")
 
     
     def generate_additional_high_level_plan_candidates(self, obs: np.ndarray | None, planning_model_name: str) -> set[str]:
         """Generate new high-level plan candidates."""
         assert self.high_level_plan_candidates is not None and len(self.high_level_plan_candidates) > 0, "No high-level plan candidates available."
         sample_size = min(len(self.high_level_plan_candidates), self.num_plan_examples_to_sample)
-        example_plans = self.rng.choice(self.high_level_plan_candidates, sample_size, replace=False)
+        rng = np.random.default_rng(23) # <- ensure determinism; can change later to vary seeds over runs.
+        example_plans = rng.choice(self.high_level_plan_candidates, sample_size, replace=False)
         with open(
             f"agent_studio/agent/prompts/diversity_growth_hint_prompt.txt", "r"
         ) as file:
