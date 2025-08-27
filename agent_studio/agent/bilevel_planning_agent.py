@@ -127,7 +127,8 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         if "critic" in scoring_approach:
             logger.info(f"RANKED PLANS:\n\n")
             for i, curr_high_level_plan in enumerate(self.high_level_plan_candidates[:5]):
-                logger.info(f"{i}: {curr_high_level_plan}")
+                logger.info(f"{i}: {curr_high_level_plan}\n")
+            logger.info(f"\nEND RANKED PLANS\n")
 
     
     def generate_additional_high_level_plan_candidates(self, obs: np.ndarray | None, planning_model_name: str) -> set[str]:
@@ -206,7 +207,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.obs = obs
         if len(self.high_level_plan_candidates) == 0:
             self.generate_new_high_level_plan_candidates(obs, model_name, self.extra_args["scoring_approach"], self.extra_args["scoring_model_name"])
-            logger.info(f"Curr plan: {self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]}")        
+            logger.info(f"\n\nCurr plan: {self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]}\n\n")        
         prompt = self.action_prompt
         assert prompt is not None, "Invalid prompt"
         response, info = self.model.generate_response(messages=prompt, model=model_name)
