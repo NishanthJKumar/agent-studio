@@ -63,7 +63,6 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.episode_idx: int = 0
         self.high_level_plan_candidates: list[str] = []
         self.curr_high_level_plan: Optional[str] = None
-        self.rng = np.random.default_rng(23)
         self.extra_args = extra_args
         assert "scoring_approach" in self.extra_args, "Must specify scoring_approach."
         self.critic_model = None
@@ -126,14 +125,17 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen (1)!"
         self.curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx]
         if "critic" in scoring_approach:
-            logger.info(f"Ranked plans: {self.high_level_plan_candidates[:5]}")
+            logger.info(f"RANKED PLANS:\n\n")
+            for i, curr_high_level_plan in enumerate(self.high_level_plan_candidates):
+                logger.info(f"{i}: {curr_high_level_plan}")
 
     
     def generate_additional_high_level_plan_candidates(self, obs: np.ndarray | None, planning_model_name: str) -> set[str]:
         """Generate new high-level plan candidates."""
         assert self.high_level_plan_candidates is not None and len(self.high_level_plan_candidates) > 0, "No high-level plan candidates available."
         sample_size = min(len(self.high_level_plan_candidates), self.num_plan_examples_to_sample)
-        example_plans = self.rng.choice(self.high_level_plan_candidates, sample_size, replace=False)
+        rng = np.random.default_rng(23) # <- ensure determinism; can change later to vary seeds over runs.
+        example_plans = rng.choice(self.high_level_plan_candidates, sample_size, replace=False)
         with open(
             f"agent_studio/agent/prompts/diversity_growth_hint_prompt.txt", "r"
         ) as file:
