@@ -121,10 +121,12 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         for i, curr_high_level_plan in enumerate(self.high_level_plan_candidates):
             curr_score = self.score_high_level_plan(curr_high_level_plan, scoring_model_name, scoring_approach)
             plans_to_scores[curr_high_level_plan] = curr_score
-            logger.info(f"Scored plan {i}: {curr_score}")
+            logger.info(f"Scored plan \n {curr_high_level_plan} \n: {curr_score}")
         self.high_level_plan_candidates = [k for k, v in sorted(plans_to_scores.items(), key=lambda item: item[1], reverse=True)]
         assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen (1)!"
         self.curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx]
+        if "critic" in scoring_approach:
+            logger.info(f"Ranked plans: {self.high_level_plan_candidates[:5]}")
 
     
     def generate_additional_high_level_plan_candidates(self, obs: np.ndarray | None, planning_model_name: str) -> set[str]:
