@@ -126,7 +126,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx]
         if "critic" in scoring_approach:
             logger.info(f"RANKED PLANS:\n\n")
-            for i, curr_high_level_plan in enumerate(self.high_level_plan_candidates):
+            for i, curr_high_level_plan in enumerate(self.high_level_plan_candidates[:5]):
                 logger.info(f"{i}: {curr_high_level_plan}")
 
     
