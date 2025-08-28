@@ -62,6 +62,14 @@ class OpenAIProvider(BaseModel):
             raise ValueError("Model name is not set")
         temperature = kwargs.get("temperature", config.temperature)
         max_tokens = kwargs.get("max_tokens", config.max_tokens)
+
+        # # HACKING!
+        # if "variety of good ways" in str(messages):
+        #     ret_str = 
+        #     return ret_str, {}
+        # # /HACKING!
+
+
         # Start by checking for the response in the cache.
         cache_ret = self._load_from_cache(model_name, self._hash_input(messages))
         if cache_ret is not None:

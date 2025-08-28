@@ -102,7 +102,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         if obs is not None:
             messages.append(Message(role="user", content=obs))
         logger.info(f"Got new task: generating plan candidates!")
-        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name)        
+        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name, temperature=1.0)        
         self.high_level_plan_candidates = list(set(parse_strategies(hint_response)))
         logger.info(f"Generated {len(self.high_level_plan_candidates)} high-level plan candidates. Need {self.num_unique_plan_candidates}.")
 
@@ -150,7 +150,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             messages.append(Message(role="user", content=obs))
         for i, example_plan in enumerate(example_plans):
             messages.append(Message(role="user", content=f"Example plan {i}: {example_plan}\n"))
-        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name)
+        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name, temperature=1.0)
         return set(parse_strategies(hint_response))
 
 

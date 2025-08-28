@@ -22,10 +22,11 @@ class Keyboard:
         if interval:
             pyautogui.write(text, interval=interval)
         else:
-            clipboard_history = pyperclip.paste()
-            pyperclip.copy(text)
-            self.hotkey([self.modifier_key, "v"])
-            pyperclip.copy(clipboard_history)
+            pyautogui.write(text, interval=0.1)
+            # clipboard_history = pyperclip.paste()
+            # pyperclip.copy(text)
+            # self.hotkey([self.modifier_key, "v"])
+            # pyperclip.copy(clipboard_history)
 
     def press(self, keys: str | list[str], interval: float = 0.1) -> None:
         """Presses a key or a sequence of keys.
