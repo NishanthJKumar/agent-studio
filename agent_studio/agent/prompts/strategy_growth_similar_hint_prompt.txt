@@ -25,6 +25,7 @@ You are provided with the original task instruction, an example plan that attemp
 - ❌ Don't replace keyboard shortcuts with mouse clicks
 - ❌ Don't add new capability types not in the example
 - ❌ No terminal opening steps
+- ❌ DO NOT label strategies with numbers (e.g. "Strategy 1", "Strategy 2", etc.). Carefully follow the output format listed below.
 
 **ALLOWED VARIATIONS (within same capabilities):**
 1. **Technical choices**: Different libraries, methods, parameters when using Python
@@ -40,12 +41,12 @@ ANALYSIS:
 Core Capabilities: [Which capabilities does the example use? Keep these unchanged]
 Implementation Variables: [What specific details can be modified?]
 
-Strategy 1:
+Strategy:
 1. [Step 1]
 2. [Step 2]
 3. [Continue...]
 
-Strategy 2:
+Strategy:
 1. [Step 1]
 2. [Step 2]
 3. [Continue...]

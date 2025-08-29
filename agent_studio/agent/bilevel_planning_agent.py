@@ -91,25 +91,23 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         """Generate new high-level plan candidates."""
         # Start by generating initial candidate plans set.
         with open(
-            f"agent_studio/agent/prompts/diversity_hint_prompt.txt", "r"
+            f"agent_studio/agent/prompts/strategy_generation_prompt.txt", "r"
         ) as file:
             diversity_prompt = file.read()
         messages: MessageList = []
+        diversity_prompt = diversity_prompt.format(task_instruction=self.task_config.instruction)
         messages.append(Message(role="system", content=diversity_prompt))
-        messages.append(
-            Message(role="user", content=f"The task instruction: {self.task_config.instruction}")
-        )
         if obs is not None:
             messages.append(Message(role="user", content=obs))
         logger.info(f"Got new task: generating plan candidates!")
         hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name, temperature=1.0)        
-        self.high_level_plan_candidates = list(set(parse_strategies(hint_response)))
+        self.high_level_plan_candidates = sorted(set(parse_strategies(hint_response)))
         logger.info(f"Generated {len(self.high_level_plan_candidates)} high-level plan candidates. Need {self.num_unique_plan_candidates}.")
 
         # Scale up and generate additional plans.
         while len(self.high_level_plan_candidates) < self.num_unique_plan_candidates:
             new_plans_set = self.generate_additional_high_level_plan_candidates(obs, planning_model_name)
-            self.high_level_plan_candidates = list(set(self.high_level_plan_candidates) | new_plans_set)
+            self.high_level_plan_candidates = sorted(set(self.high_level_plan_candidates) | new_plans_set)
             logger.info(f"Curr total plan candidates: {len(self.high_level_plan_candidates)}.")
 
         # Score the plans to order them.
@@ -138,18 +136,14 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         rng = np.random.default_rng(23) # <- ensure determinism; can change later to vary seeds over runs.
         example_plans = rng.choice(self.high_level_plan_candidates, sample_size, replace=False)
         with open(
-            f"agent_studio/agent/prompts/diversity_growth_hint_prompt.txt", "r"
+            f"agent_studio/agent/prompts/strategy_growth_differencing_hint_prompt.txt", "r"
         ) as file:
-            diversity_prompt = file.read()        
+            diversity_prompt = file.read()
+        diversity_prompt = diversity_prompt.format(example_plans="\n\n".join(plan for plan in example_plans), task_instruction=self.task_config.instruction)
         messages: MessageList = []
         messages.append(Message(role="system", content=diversity_prompt))
-        messages.append(
-            Message(role="user", content=f"The task instruction: {self.task_config.instruction}")
-        )
         if self.obs is not None:
             messages.append(Message(role="user", content=obs))
-        for i, example_plan in enumerate(example_plans):
-            messages.append(Message(role="user", content=f"Example plan {i}: {example_plan}\n"))
         hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name, temperature=1.0)
         return set(parse_strategies(hint_response))
 
