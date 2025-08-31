@@ -17,8 +17,9 @@ You are provided with the original task instruction, and an image of the initial
 - **MUST include strategies using each capability type:**
   - Several strategies primarily using **mouse interactions**
   - Several strategies primarily using **keyboard shortcuts/typing**
-  - Several strategies primarily using **Python code execution**
-  - Some strategies mixing multiple capabilities
+  - Several strategies primarily using **code execution** (could be python apis/libraries, or bash code written in python via OS libraries)
+  - Several strategies **mixing multiple capabilities**
+  - Aim to have roughly similar amounts of strategies of each type
 - Explore different fundamental approaches (GUI-based vs programmatic vs hybrid)
 - Vary implementation details within each capability type
 
