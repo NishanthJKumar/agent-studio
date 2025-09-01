@@ -134,18 +134,21 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         assert self.high_level_plan_candidates is not None and len(self.high_level_plan_candidates) > 0, "No high-level plan candidates available."
         sample_size = min(len(self.high_level_plan_candidates), self.num_plan_examples_to_sample)
         rng = np.random.default_rng(23) # <- ensure determinism; can change later to vary seeds over runs.
-        example_plans = rng.choice(self.high_level_plan_candidates, sample_size, replace=False)
-        with open(
-            f"agent_studio/agent/prompts/strategy_growth_differencing_hint_prompt.txt", "r"
-        ) as file:
-            diversity_prompt = file.read()
-        diversity_prompt = diversity_prompt.format(example_plans="\n\n".join(plan for plan in example_plans), task_instruction=self.task_config.instruction)
-        messages: MessageList = []
-        messages.append(Message(role="system", content=diversity_prompt))
-        if self.obs is not None:
-            messages.append(Message(role="user", content=obs))
-        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name, temperature=0.75)
-        return set(parse_strategies(hint_response))
+        new_plans_set = set()
+        while len(new_plans_set) == 0:
+            example_plans = rng.choice(self.high_level_plan_candidates, sample_size, replace=False)
+            with open(
+                f"agent_studio/agent/prompts/strategy_growth_differencing_hint_prompt.txt", "r"
+            ) as file:
+                diversity_prompt = file.read()
+            diversity_prompt = diversity_prompt.format(example_plans="\n\n".join(plan for plan in example_plans), task_instruction=self.task_config.instruction)
+            messages: MessageList = []
+            messages.append(Message(role="system", content=diversity_prompt))
+            if self.obs is not None:
+                messages.append(Message(role="user", content=obs))
+            hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name, temperature=0.75)
+            new_plans_set = set(parse_strategies(hint_response))
+        return new_plans_set
 
 
     def score_high_level_plan(self, curr_high_level_plan: str, model_name: str, scoring_approach: str) -> float:
