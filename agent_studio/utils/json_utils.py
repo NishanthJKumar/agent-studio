@@ -191,7 +191,7 @@ def export_trajectory(
 ) -> None:
     """Exports the trajectory data to a .jsonl file."""
     # Convert trajectory to the right format based on its type
-    if trajectory and isinstance(trajectory[0], StructuredStepInfo):
+    if trajectory and hasattr(trajectory, "current_high_level_plan"):
         # Handle StructuredTrajectoryInfo
         processed_trajectory = []
         for step in trajectory:

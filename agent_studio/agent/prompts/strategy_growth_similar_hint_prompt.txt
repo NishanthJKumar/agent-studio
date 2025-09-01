@@ -1,0 +1,62 @@
+# TASK: Generate Similar Strategy Variations
+
+## OBJECTIVE
+Generate 5 strategies that use the **same core capabilities** as the example plan but vary the **implementation details**.
+You are provided with the original task instruction, an example plan that attempts to satisfy this task instruction, and an image of the initial state before agent execution.
+
+## AGENT CAPABILITIES
+- Keyboard typing and shortcuts
+- Mouse interactions
+- Direct python code execution
+
+## CRITICAL REQUIREMENTS
+
+**MUST USE IDENTICAL CAPABILITIES:**
+- Use the EXACT SAME capabilities as the example (no substitutions allowed)
+- If example uses Python code execution → ALL strategies must use Python code execution
+- If example uses mouse clicks → ALL strategies must use mouse clicks
+- If example uses keyboard typing/hotkeys → ALL strategies must use keyboard typing/hotkeys
+- If example uses a mixture (some keyboard, some Python) -> ALL strategies must use a similar mixture based on your best judgement
+- **NEVER replace one capability with another** (e.g., don't replace Python with GUI interactions)
+
+**FORBIDDEN CAPABILITY CHANGES:**
+- ❌ Don't replace Python code with mouse/keyboard interactions
+- ❌ Don't replace mouse clicks with Python code
+- ❌ Don't replace keyboard shortcuts with mouse clicks
+- ❌ Don't add new capability types not in the example
+- ❌ No terminal opening steps
+- ❌ DO NOT label strategies with numbers (e.g. "Strategy 1", "Strategy 2", etc.). Carefully follow the output format listed below.
+
+**ALLOWED VARIATIONS (within same capabilities):**
+1. **Technical choices**: Different libraries, methods, parameters when using Python
+2. **Execution paths**: Different menu options, shortcuts when using mouse/keyboard
+3. **Verification steps**: Different validation approaches using same capability type
+4. **Scope**: Single vs batch operations using same approach
+5. **Step count**: More/fewer steps but same capability mix
+
+## OUTPUT FORMAT
+
+```
+ANALYSIS:
+Core Capabilities: [Which capabilities does the example use? Keep these unchanged]
+Implementation Variables: [What specific details can be modified?]
+
+Strategy:
+1. [Step 1]
+2. [Step 2]
+3. [Continue...]
+
+Strategy:
+1. [Step 1]
+2. [Step 2]
+3. [Continue...]
+
+[Continue for 5 strategies total]
+```
+
+TASK INSTRUCTION:
+{task_instruction}
+
+
+EXAMPLE PLAN:
+{example_plan}

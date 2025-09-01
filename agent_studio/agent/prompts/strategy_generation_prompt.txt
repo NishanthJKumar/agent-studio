@@ -1,0 +1,55 @@
+# TASK: Generate Diverse Solution Strategies
+
+## OBJECTIVE
+Generate 10-20 diverse strategies to solve the given computer-use task. Each strategy must use different approaches for at least one step.
+You are provided with the original task instruction, and an image of the initial state before agent execution.
+
+
+## AGENT CAPABILITIES
+- Keyboard typing and shortcuts
+- Mouse interactions
+- Direct Python code execution (no terminal opening required)
+
+## REQUIREMENTS
+
+**STRATEGY DIVERSITY:**
+- Each strategy must differ in approach for at least one step
+- **MUST include strategies using each capability type:**
+  - Several strategies primarily using **mouse interactions**
+  - Several strategies primarily using **keyboard shortcuts/typing**
+  - Several strategies primarily using **code execution** (could be python apis/libraries, or bash code written in python via OS libraries)
+  - Several strategies **mixing multiple capabilities**
+  - Aim to have roughly similar amounts of strategies of each type
+- Explore different fundamental approaches (GUI-based vs programmatic vs hybrid)
+- Vary implementation details within each capability type
+
+**MANDATORY ELEMENTS:**
+- **Verification steps**: Include steps to confirm task completion
+- **Ordering**: List strategies from most likely to succeed to least likely
+- **Completeness**: Ensure strategies fully accomplish the task
+
+**CONSTRAINTS:**
+- No terminal opening steps (Python code can be output directly - do not include any steps that correspond to opening a terminal)
+- Each strategy should be actionable and specific
+- Target 10-20 total strategies
+- DO NOT label strategies with numbers (e.g. "Strategy 1", "Strategy 2", etc.). Carefully follow the output format listed below.
+
+## OUTPUT FORMAT
+
+Strategy:
+1. [Step 1]
+2. [Step 2]
+3. [Continue with numbered steps...]
+4. [Include verification step]
+---
+Strategy:
+1. [Step 1]
+2. [Step 2]
+3. [Continue with numbered steps...]
+4. [Include verification step]
+---
+[Continue for 10-20 strategies total]
+
+
+TASK INSTRUCTION:
+{task_instruction}

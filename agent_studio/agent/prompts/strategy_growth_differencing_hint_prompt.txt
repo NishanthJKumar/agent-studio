@@ -1,0 +1,67 @@
+# TASK: Generate Diverse Alternative Strategies
+
+## OBJECTIVE
+Generate 10-20 strategies that are **as different as possible** from the provided example strategies. Maximize diversity in both capability use and implementation approaches.
+You are provided with the original task instruction, a few example strategies to attempt to be different from, and an image of the initial state before agent execution.
+
+
+## AGENT CAPABILITIES
+- Keyboard typing and shortcuts
+- Mouse interactions
+- Direct Python code execution (no terminal opening required)
+
+## DIVERSITY REQUIREMENTS
+
+**MAXIMIZE DIFFERENCES FROM EXAMPLES:**
+- Use **different capability combinations** than the examples whenever possible
+- If examples use mouse → prioritize keyboard or Python approaches
+- If examples use Python → prioritize mouse or keyboard approaches
+- If examples use keyboard → prioritize mouse or Python approaches
+- Explore completely different solution paths and methodologies
+
+**ENCOURAGED VARIATIONS:**
+1. **Capability switching**: Different primary capability (mouse ↔ keyboard ↔ Python)
+2. **Approach diversity**: Different fundamental methods or workflows
+3. **Technical alternatives**: Different tools, libraries, or implementation paths
+4. **Interface variations**: GUI vs programmatic vs hybrid approaches
+5. **Scope differences**: Single-step vs multi-step, direct vs indirect methods
+
+## MANDATORY ELEMENTS
+
+**EVERY STRATEGY MUST INCLUDE:**
+- **Verification steps**: Confirm task completion
+- **Popup handling**: Address visible popups (handle or ignore)
+- **Complete solution**: Fully accomplish the stated task
+- **Ordering**: Most likely to succeed first, least likely last
+
+**CONSTRAINTS:**
+- No terminal opening steps (Python executes directly)
+- Target 10-20 total strategies
+- Each strategy should be actionable and specific
+- DO NOT label strategies with numbers (e.g. "Strategy 1", "Strategy 2", etc.). Carefully follow the output format listed below.
+
+
+## OUTPUT FORMAT
+
+Strategy:
+1. [Step 1]
+2. [Step 2]
+3. [Continue with numbered steps...]
+4. [Include verification step]
+---
+Strategy:
+1. [Step 1]
+2. [Step 2]
+3. [Continue with numbered steps...]
+4. [Include verification step]
+---
+[Continue for 10-20 strategies total]
+
+
+TASK INSTRUCTION:
+{task_instruction}
+
+
+EXAMPLE PLANS:
+{example_plans}
+
