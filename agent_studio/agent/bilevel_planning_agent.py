@@ -105,20 +105,75 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         return set(parse_strategies(hint_response))
 
 
-    def _generate_high_level_plan_candidates_from_examples(self, example_plans: list[str], obs: np.ndarray | None, planning_model_name: str) -> set[str]:
+    def _generate_high_level_plan_candidates_from_examples(self,
+                                                        example_plans: list[str], 
+                                                        obs: np.ndarray | None, 
+                                                        planning_model_name: str, 
+                                                        example_bootstrapping_approach: str) -> set[str]:
         """Generate new high-level plan candidates."""
         assert len(example_plans) > 0, "No high-level plan candidates available."
+        if example_bootstrapping_approach == "diversity":
+            prompt_hint_filepath = "agent_studio/agent/prompts/strategy_growth_differencing_hint_prompt.txt"
+            temp = 0.75
+        elif example_bootstrapping_approach == "similarity":
+            prompt_hint_filepath = "agent_studio/agent/prompts/strategy_growth_similar_hint_prompt.txt"
+            temp = 0.0
+        else:
+            raise ValueError(f"example_bootstrapping_approach {example_bootstrapping_approach} unknown.")
         with open(
-            f"agent_studio/agent/prompts/strategy_growth_differencing_hint_prompt.txt", "r"
+            prompt_hint_filepath, "r"
         ) as file:
-            diversity_prompt = file.read()
-        diversity_prompt = diversity_prompt.format(example_plans="\n\n".join(plan for plan in example_plans), task_instruction=self.task_config.instruction)
+            growth_prompt = file.read()
+        growth_prompt = growth_prompt.format(example_plans="\n\n".join(plan for plan in example_plans), task_instruction=self.task_config.instruction)
         messages: MessageList = []
-        messages.append(Message(role="system", content=diversity_prompt))
+        messages.append(Message(role="system", content=growth_prompt))
         if self.obs is not None:
             messages.append(Message(role="user", content=obs))
-        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name, temperature=0.75)
+        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name, temperature=temp)
         return set(parse_strategies(hint_response))
+
+
+    def _score_and_order_plans_list(self, plans_list: list[str], scoring_approach: str, scoring_model_name: str) -> list[str]:
+        plans_to_scores = {}
+        for i, curr_high_level_plan in enumerate(plans_list):
+            curr_score = self.score_high_level_plan(curr_high_level_plan, scoring_model_name, scoring_approach)
+            plans_to_scores[curr_high_level_plan] = curr_score
+            logger.info(f"Scored plan \n {curr_high_level_plan} \n: {curr_score}")
+        new_plans_list = [k for k, v in sorted(plans_to_scores.items(), key=lambda item: item[1], reverse=True)]
+        return new_plans_list
+
+
+    def generate_additional_high_level_plans_from_examples(self, obs: np.ndarray | None, 
+                                                            init_plan_candidates_set: set[str], 
+                                                            example_plans_source_set: set[str], 
+                                                            planning_model_name: str, 
+                                                            plan_bootstrapping_approach: str, 
+                                                            scoring_approach: str, 
+                                                            scoring_model_name: str) -> set[str]:
+        """Use some initial plans to bootstrap generation of additional plans that are similar or different to these"""
+        # Scale up and generate additional plans.
+        if plan_bootstrapping_approach == "diversity":
+            while len(init_plan_candidates_set) < self.num_unique_plan_candidates:
+                sample_size = min(len(example_plans_source_set), self.num_plan_examples_to_sample)
+                plan_examples = rng.choice(list(example_plans_source_set), size=sample_size, replace=False)
+                new_plans_set = self._generate_high_level_plan_candidates_from_examples(plan_examples, obs, planning_model_name, "diversity")
+                unique_new_plans_set = new_plans_set - init_plan_candidates_set - example_plans_source_set
+                init_plan_candidates_set = init_plan_candidates_set | unique_new_plans_set
+                example_plans_source_set = example_plans_source_set | unique_new_plans_set
+                logger.info(f"Curr total plan candidates: {len(init_plan_candidates_set)}.")
+        elif plan_bootstrapping_approach == "top_score_similarity":
+            while len(init_plan_candidates_set) < self.num_unique_plan_candidates:
+                new_plans_set = set()
+                ordered_plans = self._score_and_order_plans_list(sorted(init_plan_candidates_set), scoring_approach, scoring_model_name)
+                for i in range(self.num_plan_examples_to_sample):
+                    new_plans_set |= self._generate_high_level_plan_candidates_from_examples([ordered_plans[i]], obs, planning_model_name, "similarity")
+                unique_new_plans_set = new_plans_set - init_plan_candidates_set - example_plans_source_set
+                init_plan_candidates_set = init_plan_candidates_set | unique_new_plans_set
+                example_plans_source_set = example_plans_source_set | unique_new_plans_set
+                logger.info(f"Curr total plan candidates: {len(init_plan_candidates_set)}.")
+        else:
+            raise ValueError(f"plan_bootstrapping_approach {plan_bootstrapping_approach} unknown.")
+        return init_plan_candidates_set
 
 
     def generate_high_level_plan_candidates(self, obs: np.ndarray | None, planning_model_name: str, scoring_approach: str, scoring_model_name: str) -> None:
@@ -151,26 +206,13 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             logger.info(f"Loaded {len(loaded_plans)} existing plans.")
        
         logger.info(f"Currently have {len(plan_candidates_set)} high-level plan candidates. Need {self.num_unique_plan_candidates}.")
-        # Scale up and generate additional plans.
-        while len(plan_candidates_set) < self.num_unique_plan_candidates:
-            sample_size = min(len(example_plans_source_set), self.num_plan_examples_to_sample)
-            plan_examples = rng.choice(list(example_plans_source_set), size=sample_size, replace=False)
-            new_plans_set = self._generate_high_level_plan_candidates_from_examples(plan_examples, obs, planning_model_name)
-            unique_new_plans_set = new_plans_set - plan_candidates_set - example_plans_source_set
-            plan_candidates_set = plan_candidates_set | unique_new_plans_set
-            example_plans_source_set = example_plans_source_set | unique_new_plans_set
-            logger.info(f"Curr total plan candidates: {len(plan_candidates_set)}.")
+
+
+        # TODO: setup the plan_bootstrapping_approach properly, then run and debug accordingly!
+        plan_candidates_set = generate_additional_high_level_plans_from_examples(obs, plan_candidates_set, example_plans_source_set, planning_model_name, plan_bootstrapping_approach, scoring_approach, scoring_model_name)
 
         # Score the plans to order them.
-        self.high_level_plan_candidates = sorted(plan_candidates_set)
-        assert len(self.high_level_plan_candidates) > 0, "No high-level plan candidates generated."        
-        logger.info(f"Scoring plans with strategy {scoring_approach}.")
-        plans_to_scores = {}
-        for i, curr_high_level_plan in enumerate(self.high_level_plan_candidates):
-            curr_score = self.score_high_level_plan(curr_high_level_plan, scoring_model_name, scoring_approach)
-            plans_to_scores[curr_high_level_plan] = curr_score
-            logger.info(f"Scored plan \n {curr_high_level_plan} \n: {curr_score}")
-        self.high_level_plan_candidates = [k for k, v in sorted(plans_to_scores.items(), key=lambda item: item[1], reverse=True)]
+        self.high_level_plan_candidates = self._score_and_order_plans_list(sorted(plan_candidates_set), scoring_approach, scoring_model_name)
         assert self.episode_idx < len(self.high_level_plan_candidates), "Not enough high-level plans available; shouldn't happen (1)!"
         self.curr_high_level_plan = self.high_level_plan_candidates[self.episode_idx]
         if "critic" in scoring_approach:
