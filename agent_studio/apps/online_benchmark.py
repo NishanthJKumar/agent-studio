@@ -443,7 +443,8 @@ class GUI(QMainWindow):
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                     "scoring_model_name": args.plan_scoring_model_name,
-                    "num_unique_plan_candidates": args.num_plan_hints
+                    "num_unique_plan_candidates": args.num_plan_hints,
+                    "existing_plans_location": args.previous_plans_data_path
                 }
             )
         else:
@@ -457,7 +458,8 @@ class GUI(QMainWindow):
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                     "scoring_model_name": args.plan_scoring_model_name,
-                    "num_unique_plan_candidates": args.num_plan_hints
+                    "num_unique_plan_candidates": args.num_plan_hints,
+                    "existing_plans_location": args.previous_plans_data_path
                 }
             )
 
@@ -1057,7 +1059,7 @@ def wait_finish(is_eval: bool, response: AgentStudioStatusResponse):
         raise ValueError(f"Unknown status: {response.status}, {response.content}")
 
 
-def eval(args, interface: NonGUI | None = None) -> None:
+def evaluate(args, interface: NonGUI | None = None) -> None:
     try:
         # Setup agent
         results_dir = Path(
@@ -1081,7 +1083,8 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                         "scoring_model_name": args.plan_scoring_model_name,
-                        "num_unique_plan_candidates": args.num_plan_hints                        
+                        "num_unique_plan_candidates": args.num_plan_hints,
+                        "existing_plans_location": args.previous_plans_data_path
                         }
             )
         else:
@@ -1097,7 +1100,8 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                         "scoring_model_name": args.plan_scoring_model_name,
-                        "num_unique_plan_candidates": args.num_plan_hints                        
+                        "num_unique_plan_candidates": args.num_plan_hints,
+                        "existing_plans_location": args.previous_plans_data_path
                         }
             )
 
@@ -1454,7 +1458,7 @@ def main():
             window_width=args.window_width,
             window_height=args.window_height,
         )
-        eval(args, interface)
+        evaluate(args, interface)
     else:
         try:
             # Create the main interface.

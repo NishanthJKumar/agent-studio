@@ -182,7 +182,9 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                     "scoring_model_name": args.plan_scoring_model_name,
-                "num_unique_plan_candidates": args.exp_episodes}
+                    "num_unique_plan_candidates": args.exp_episodes,
+                    "existing_plans_location": args.previous_plans_data_path,                
+                }
             )
         else:
             agent = setup_agent(
@@ -198,6 +200,7 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                     "scoring_model_name": args.plan_scoring_model_name,
                     "num_unique_plan_candidates": args.exp_episodes,
+                    "existing_plans_location": args.previous_plans_data_path
                 }
             )
 
@@ -485,6 +488,9 @@ def main():
     )
     parser.add_argument(
         "--finetuning_data_path",  type=str, default="finetuning_data", help="Location at which to save finetuning data"
+    )
+    parser.add_argument(
+        "--previous_plans_data_path",  type=str, default=None, help="Location at which to save previous plans data"
     )
     parser.add_argument(
         "--plan_scoring_approach", type=str, default="uniform", help="Plan scoring approach for the bilevel planning approach"

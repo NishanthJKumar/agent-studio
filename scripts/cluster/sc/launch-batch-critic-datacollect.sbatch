@@ -16,8 +16,9 @@ ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
 CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 AGENT="bilevel_planning"
 PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
-EXP_EPISODES=30
-DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_train_30-round0"
+EXP_EPISODES=10
+DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_train_30-naive-round1"
+PREV_PLANS_SAVE_DIR="exploration_for_finetuning_vscode_train_30-round0"
 
 # JSON task list (sorted for consistency)
 JSON_FILES=(
@@ -55,8 +56,8 @@ BASE_NAME=$(basename "$TASK_CONFIG_PATH" .json)
 JOB_NAME="critic-${BASE_NAME}"
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="critic-datacollect-${BASE_NAME}.log"
-ERROR_FILE="critic-datacollect-${BASE_NAME}.err"
+OUTPUT_FILE="critic-datacollect-${BASE_NAME}-round1.log"
+ERROR_FILE="critic-datacollect-${BASE_NAME}-round1.err"
 exec 1>"$OUTPUT_FILE"
 exec 2>"$ERROR_FILE"
 
@@ -263,7 +264,8 @@ run_client_once () {
         --remote \
         --exp_episodes '$EXP_EPISODES' \
         --plan_scoring_approach uniform \
-        --finetuning_data_path '${DATA_COLLECTION_DIR}' \
+        --finetuning_data_path '$DATA_COLLECTION_DIR' \
+        --previous_plans_data_path '$PREV_PLANS_SAVE_DIR' \
         --save_finetuning_data
     "
   return $?
