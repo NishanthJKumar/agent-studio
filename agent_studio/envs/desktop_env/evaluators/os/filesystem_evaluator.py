@@ -271,7 +271,15 @@ class FilesystemEvaluator(Evaluator):
         for key, value in settings.items():
             if key not in content:
                 raise FeedbackException(f"Key {key} not found in {path}")
-            if content[key] != value:
+            elif key == "path":
+                # Allow relative and absolute paths to be considered equal
+                content_path = os.path.abspath(os.path.expanduser(content[key]))
+                value_path = os.path.abspath(os.path.expanduser(value))
+                if content_path != value_path:
+                    raise FeedbackException(
+                        f"Key {key} has wrong value: {content[key]} (expected {value})"
+                    )
+            elif content[key] != value:
                 raise FeedbackException(f"Key {key} has wrong value: {content[key]}")
 
     @staticmethod
