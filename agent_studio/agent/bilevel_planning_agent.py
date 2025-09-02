@@ -165,9 +165,18 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         elif plan_bootstrapping_approach == "top_score_similarity":
             while len(init_plan_candidates_set) < self.num_unique_plan_candidates:
                 new_plans_set = set()
+                logger.info("SCORING AND ORDERING INITIAL PLAN CANDIDATES.")
                 ordered_plans = self._score_and_order_plans_list(sorted(init_plan_candidates_set), scoring_approach, scoring_model_name)
+                logger.info("DONE SCORING AND ORDERING INITIAL PLAN CANDIDATES.")
+                # NOTE: we only use the top 5 plans for now; could change this in the future.
+                logger.info("ORDERED INIT PLAN CANDIDATES:")
+                for i, curr_high_level_plan in enumerate(ordered_plans[:5]):
+                    logger.info(f"{i}: {curr_high_level_plan}\n")
+                logger.info(f"\nEND ORDERED INIT PLANS\n")
                 for i in range(self.num_plan_examples_to_sample):
+                    logger.info(f"GENERATING PLANS SIMILAR TO PLAN {i}: {ordered_plans[i]}.")
                     new_plans_set |= self._generate_high_level_plan_candidates_from_examples([ordered_plans[i]], obs, planning_model_name, "similarity")
+                    logger.info(f"DONE GENERATING PLANS SIMILAR TO PLAN {i}.")
                 unique_new_plans_set = new_plans_set - init_plan_candidates_set - example_plans_source_set
                 init_plan_candidates_set = init_plan_candidates_set | unique_new_plans_set
                 example_plans_source_set = example_plans_source_set | unique_new_plans_set
