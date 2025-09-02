@@ -216,7 +216,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         # Could make more intricate in the future!
         plan_bootstrapping_approach = "diversity"
         if "critic" in scoring_approach:
-            plan_bootstrapping_approach = "similarity"
+            plan_bootstrapping_approach = "top_score_similarity"
 
         # Come up with a set of candidates - this may or may not use the scoring model implicitly.
         plan_candidates_set = self.generate_additional_high_level_plans_from_examples(obs, 
