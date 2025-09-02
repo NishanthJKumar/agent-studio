@@ -73,6 +73,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.num_plan_examples_to_sample: int = self.extra_args.get("num_plan_examples_to_sample", 5)
         self.num_unique_plan_candidates: int = self.extra_args.get("num_unique_plan_candidates", 5)
         self.existing_plans_location: Optional[str] = self.extra_args.get("existing_plans_location", None)
+        self.rng = np.random.default_rng(23)
 
 
     def reset(self, task_config: TaskConfig) -> None:
@@ -155,7 +156,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         if plan_bootstrapping_approach == "diversity":
             while len(init_plan_candidates_set) < self.num_unique_plan_candidates:
                 sample_size = min(len(example_plans_source_set), self.num_plan_examples_to_sample)
-                plan_examples = rng.choice(list(example_plans_source_set), size=sample_size, replace=False)
+                plan_examples = self.rng.choice(list(example_plans_source_set), size=sample_size, replace=False)
                 new_plans_set = self._generate_high_level_plan_candidates_from_examples(plan_examples, obs, planning_model_name, "diversity")
                 unique_new_plans_set = new_plans_set - init_plan_candidates_set - example_plans_source_set
                 init_plan_candidates_set = init_plan_candidates_set | unique_new_plans_set
@@ -176,9 +177,13 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         return init_plan_candidates_set
 
 
-    def generate_high_level_plan_candidates(self, obs: np.ndarray | None, planning_model_name: str, scoring_approach: str, scoring_model_name: str) -> None:
+    def generate_high_level_plan_candidates(self, 
+                                            obs: np.ndarray | None, 
+                                            planning_model_name: str, 
+                                            scoring_approach: str, 
+                                            scoring_model_name: str) -> None:
         """Generate new high-level plan candidates."""
-        rng = np.random.default_rng(23) # <- ensure determinism; can change later to vary seeds over runs.
+        self.rng = np.random.default_rng(23) # <- ensure determinism; can change later to vary seeds over runs.
         plan_candidates_set = set()
         example_plans_source_set = set()
         if self.existing_plans_location is None:
@@ -207,9 +212,20 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
        
         logger.info(f"Currently have {len(plan_candidates_set)} high-level plan candidates. Need {self.num_unique_plan_candidates}.")
 
+        # NOTE: only two modes for now, and they're determined directly by the scoring approach.
+        # Could make more intricate in the future!
+        plan_bootstrapping_approach = "diversity"
+        if "critic" in scoring_approach:
+            plan_bootstrapping_approach = "similarity"
 
-        # TODO: setup the plan_bootstrapping_approach properly, then run and debug accordingly!
-        plan_candidates_set = generate_additional_high_level_plans_from_examples(obs, plan_candidates_set, example_plans_source_set, planning_model_name, plan_bootstrapping_approach, scoring_approach, scoring_model_name)
+        # Come up with a set of candidates - this may or may not use the scoring model implicitly.
+        plan_candidates_set = self.generate_additional_high_level_plans_from_examples(obs, 
+                                    plan_candidates_set, 
+                                    example_plans_source_set, 
+                                    planning_model_name, 
+                                    plan_bootstrapping_approach, 
+                                    scoring_approach, 
+                                    scoring_model_name)
 
         # Score the plans to order them.
         self.high_level_plan_candidates = self._score_and_order_plans_list(sorted(plan_candidates_set), scoring_approach, scoring_model_name)

@@ -1428,6 +1428,9 @@ def main():
     parser.add_argument(
         "--num_plan_hints", type=int, default=5, help="Number of plan hints to use"
     )
+    parser.add_argument(
+        "--previous_plans_data_path",  type=str, default=None, help="Location at which to save previous plans data"
+    )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
     assert args.task_configs_path is not None, "Task config is not set."
