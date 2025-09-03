@@ -16,9 +16,10 @@ ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
 CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 AGENT="bilevel_planning"
 PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
-EXP_EPISODES=10
+EXP_EPISODES=
 DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_train_30-naive-round1"
 PREV_PLANS_SAVE_DIR="exploration_for_finetuning_vscode_train_30-round0"
+PLAN_GENERATION_APPROACH="diversity" # "top_score_similarity"
 
 # JSON task list (sorted for consistency)
 JSON_FILES=(
@@ -266,6 +267,7 @@ run_client_once () {
         --plan_scoring_approach uniform \
         --finetuning_data_path '$DATA_COLLECTION_DIR' \
         --previous_plans_data_path '$PREV_PLANS_SAVE_DIR' \
+        --plan_proposing_approach '$PLAN_GENERATION_APPROACH' \
         --save_finetuning_data
     "
   return $?
