@@ -20,6 +20,7 @@ EXP_EPISODES=30
 DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_train_30-similarityscore-round1"
 PREV_PLANS_SAVE_DIR="exploration_for_finetuning_vscode_train_30-round0"
 PLAN_GENERATION_APPROACH="top_score_similarity" # "diversity"
+PLAN_SCORING_APPROACH="critic_log_prob_diff"
 SAVED_WEIGHTS_DIR="../agentic-value-function-finetuning/train-30-finetuned-round1/"
 NUM_TRAINING_EPOCHS="150"
 
@@ -349,7 +350,7 @@ run_client_once () {
         --model_server 0.0.0.0:'$MODEL_SERVER_PORT' \
         --remote \
         --exp_episodes '$EXP_EPISODES' \
-        --plan_scoring_approach uniform \
+        --plan_scoring_approach '$PLAN_SCORING_APPROACH' \
         --finetuning_data_path '$DATA_COLLECTION_DIR' \
         --previous_plans_data_path '$PREV_PLANS_SAVE_DIR' \
         --plan_proposing_approach '$PLAN_GENERATION_APPROACH' \
