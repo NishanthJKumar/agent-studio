@@ -98,7 +98,6 @@ API_WEB_SOCKET=$(generate_random_port)
 API_SOCKET=$(generate_random_port)
 SERVER_SOCKET=$(generate_random_port)
 HF_SERVER_PORT=$(generate_random_port)
-MODEL_SERVER_PORT=$(generate_random_port)
 
 echo_ts "Processing task: $TASK_CONFIG_PATH"
 echo_ts "Job name: $JOB_NAME"
@@ -110,7 +109,7 @@ echo_ts "  VNC_PORT: $VNC_PORT"
 echo_ts "  API_WEB_SOCKET: $API_WEB_SOCKET"
 echo_ts "  API_SOCKET: $API_SOCKET"
 echo_ts "  SERVER_SOCKET: $SERVER_SOCKET"
-echo_ts "  MODEL_SERVER_PORT: $MODEL_SERVER_PORT"
+echo_ts "  HF_SERVER_PORT: $HF_SERVER_PORT"
 
 SERVER_CONTAINER="agent-studio-server-${SLURM_JOB_ID}-${SLURM_ARRAY_TASK_ID}"
 CLIENT_CONTAINER="agent-studio-client-${SLURM_JOB_ID}-${SLURM_ARRAY_TASK_ID}"
@@ -347,7 +346,7 @@ run_client_once () {
         --model '$ACTOR_MODEL_NAME' \
         --vnc_port '$VNC_PORT' \
         --env_server_port '$ENV_SERVER_PORT' \
-        --model_server 0.0.0.0:'$MODEL_SERVER_PORT' \
+        --model_server 0.0.0.0:$HF_SERVER_PORT \
         --remote \
         --exp_episodes '$EXP_EPISODES' \
         --plan_scoring_approach '$PLAN_SCORING_APPROACH' \
