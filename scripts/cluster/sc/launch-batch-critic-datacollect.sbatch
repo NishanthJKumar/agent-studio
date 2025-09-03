@@ -17,9 +17,9 @@ CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
 AGENT="bilevel_planning"
 PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
 EXP_EPISODES=30
-DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_train_30-naive-round1"
+DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_train_30-similarityscore-round1"
 PREV_PLANS_SAVE_DIR="exploration_for_finetuning_vscode_train_30-round0"
-PLAN_GENERATION_APPROACH="diversity" # "top_score_similarity"
+PLAN_GENERATION_APPROACH="top_score_similarity" # "diversity"
 SAVED_WEIGHTS_DIR="../agentic-value-function-finetuning/train-30-finetuned-round1/"
 NUM_TRAINING_EPOCHS="150"
 
@@ -59,8 +59,8 @@ BASE_NAME=$(basename "$TASK_CONFIG_PATH" .json)
 JOB_NAME="critic-${BASE_NAME}"
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="critic-datacollect-${BASE_NAME}-round1.log"
-ERROR_FILE="critic-datacollect-${BASE_NAME}-round1.err"
+OUTPUT_FILE="critic-datacollect-${BASE_NAME}-round1-similarityscore.log"
+ERROR_FILE="critic-datacollect-${BASE_NAME}-round1-similarityscore.err"
 exec 1>"$OUTPUT_FILE"
 exec 2>"$ERROR_FILE"
 
