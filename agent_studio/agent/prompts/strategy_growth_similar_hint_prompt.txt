@@ -59,4 +59,4 @@ TASK INSTRUCTION:
 
 
 EXAMPLE PLAN:
-{example_plan}
+{example_plans}

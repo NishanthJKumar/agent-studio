@@ -442,8 +442,10 @@ class GUI(QMainWindow):
                 feedback_prompt_approach=args.feedback_prompting_approach,
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
-                    "scoring_model_name": args.plan_scoring_model_name,
-                    "num_unique_plan_candidates": args.num_plan_hints
+                        "scoring_model_name": args.plan_scoring_model_name,
+                        "num_unique_plan_candidates": args.num_plan_hints,
+                        "existing_plans_location": args.previous_plans_data_path,
+                        "plan_proposing_approach": args.plan_proposing_approach,    
                 }
             )
         else:
@@ -456,8 +458,10 @@ class GUI(QMainWindow):
                 prompt_approach=args.prompting_approach,
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
-                    "scoring_model_name": args.plan_scoring_model_name,
-                    "num_unique_plan_candidates": args.num_plan_hints
+                        "scoring_model_name": args.plan_scoring_model_name,
+                        "num_unique_plan_candidates": args.num_plan_hints,
+                        "existing_plans_location": args.previous_plans_data_path,
+                        "plan_proposing_approach": args.plan_proposing_approach,    
                 }
             )
 
@@ -1057,7 +1061,7 @@ def wait_finish(is_eval: bool, response: AgentStudioStatusResponse):
         raise ValueError(f"Unknown status: {response.status}, {response.content}")
 
 
-def eval(args, interface: NonGUI | None = None) -> None:
+def evaluate(args, interface: NonGUI | None = None) -> None:
     try:
         # Setup agent
         results_dir = Path(
@@ -1081,7 +1085,9 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                         "scoring_model_name": args.plan_scoring_model_name,
-                        "num_unique_plan_candidates": args.num_plan_hints                        
+                        "num_unique_plan_candidates": args.num_plan_hints,
+                        "existing_plans_location": args.previous_plans_data_path,
+                        "plan_proposing_approach": args.plan_proposing_approach,    
                         }
             )
         else:
@@ -1097,7 +1103,9 @@ def eval(args, interface: NonGUI | None = None) -> None:
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                         "scoring_model_name": args.plan_scoring_model_name,
-                        "num_unique_plan_candidates": args.num_plan_hints                        
+                        "num_unique_plan_candidates": args.num_plan_hints,
+                        "existing_plans_location": args.previous_plans_data_path,
+                        "plan_proposing_approach": args.plan_proposing_approach,    
                         }
             )
 
@@ -1424,6 +1432,12 @@ def main():
     parser.add_argument(
         "--num_plan_hints", type=int, default=5, help="Number of plan hints to use"
     )
+    parser.add_argument(
+        "--plan_proposing_approach", type=str, default="diversity", help="Plan proposal approach for the bilevel planning approach"
+    )
+    parser.add_argument(
+        "--previous_plans_data_path",  type=str, default=None, help="Location at which to save previous plans data"
+    )
     args = parser.parse_args()
     logger.info(f"Running with args: {args}")
     assert args.task_configs_path is not None, "Task config is not set."
@@ -1454,7 +1468,7 @@ def main():
             window_width=args.window_width,
             window_height=args.window_height,
         )
-        eval(args, interface)
+        evaluate(args, interface)
     else:
         try:
             # Create the main interface.

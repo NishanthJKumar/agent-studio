@@ -182,7 +182,10 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                     "scoring_model_name": args.plan_scoring_model_name,
-                "num_unique_plan_candidates": args.exp_episodes}
+                    "num_unique_plan_candidates": args.exp_episodes,
+                    "existing_plans_location": args.previous_plans_data_path,
+                    "plan_proposing_approach": args.plan_proposing_approach,                
+                }
             )
         else:
             agent = setup_agent(
@@ -198,6 +201,8 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                     "scoring_model_name": args.plan_scoring_model_name,
                     "num_unique_plan_candidates": args.exp_episodes,
+                    "existing_plans_location": args.previous_plans_data_path,
+                    "plan_proposing_approach": args.plan_proposing_approach,
                 }
             )
 
@@ -487,10 +492,16 @@ def main():
         "--finetuning_data_path",  type=str, default="finetuning_data", help="Location at which to save finetuning data"
     )
     parser.add_argument(
+        "--previous_plans_data_path",  type=str, default=None, help="Location at which to save previous plans data"
+    )
+    parser.add_argument(
         "--plan_scoring_approach", type=str, default="uniform", help="Plan scoring approach for the bilevel planning approach"
     )
     parser.add_argument(
         "--plan_scoring_model_name", type=str, default="Qwen/Qwen2.5-VL-7B-Instruct", help="Plan scoring model name"
+    )
+    parser.add_argument(
+        "--plan_proposing_approach", type=str, default="diversity", help="Plan proposal approach for the bilevel planning approach"
     )
     parser.add_argument(
         "--log_model_outputs", action="store_true", help="Log model outputs"

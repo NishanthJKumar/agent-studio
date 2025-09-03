@@ -1,6 +1,6 @@
 {
   "task_id": "8a48df09-4141-4cf9-89c6-e193e0f42451",
-  "instruction": "Please help me modify the setting of VS Code to keep my cursor focused on the debug console when debugging in VS Code, instead of automatically focusing back on the Editor whenever I hit a breakpoint or pause.",
+  "instruction": "Please help me modify the global setting of VS Code to keep my cursor focused on the debug console when debugging in VS Code, instead of automatically focusing back on the Editor whenever I hit a breakpoint or pause.",
   "visual": true,
   "max_steps": 30,
   "eval_procedure": [
