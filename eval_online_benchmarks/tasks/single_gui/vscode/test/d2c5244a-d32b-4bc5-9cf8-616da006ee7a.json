@@ -90,11 +90,19 @@
           "--no-sandbox",
           "--new-window",
           "--disable-restore-windows",
+          "--disable-workspace-trust",
           "--user-data-dir=${AS_ROOT}/.vscode-root",
           "--disable-extension=GitHub.copilot",
           "--disable-extension=GitHub.copilot-chat"
         ],
         "wait_for": "code"
+      }
+    },
+    {
+      "evaluator": "system",
+      "function": "sleep",
+      "params": {
+        "seconds": 10
       }
     }
   ],

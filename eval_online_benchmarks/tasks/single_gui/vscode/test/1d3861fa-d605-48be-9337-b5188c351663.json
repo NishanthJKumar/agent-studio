@@ -54,6 +54,7 @@
           "--no-sandbox",
           "--new-window",
           "--disable-restore-windows",
+          "--disable-workspace-trust",
           "--skip-add-to-recently-opened",
           "--user-data-dir=${AS_ROOT}/.vscode-root",
           "--disable-extension=GitHub.copilot",
