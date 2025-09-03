@@ -70,6 +70,8 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         if "critic" in self.extra_args["scoring_approach"]:
             model_manager = ModelManager()
             self.critic_model = model_manager.get_model(self.extra_args["scoring_model_name"], model_server=model_server)
+        assert "plan_proposing_approach" in self.extra_args, "Must specify plan_proposing_approach."
+        self.plan_proposing_approach: str = self.extra_args["plan_proposing_approach"]
         self.num_plan_examples_to_sample: int = self.extra_args.get("num_plan_examples_to_sample", 5)
         self.num_unique_plan_candidates: int = self.extra_args.get("num_unique_plan_candidates", 5)
         self.existing_plans_location: Optional[str] = self.extra_args.get("existing_plans_location", None)
@@ -148,12 +150,11 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
                                                             init_plan_candidates_set: set[str], 
                                                             example_plans_source_set: set[str], 
                                                             planning_model_name: str, 
-                                                            plan_bootstrapping_approach: str, 
                                                             scoring_approach: str, 
                                                             scoring_model_name: str) -> set[str]:
         """Use some initial plans to bootstrap generation of additional plans that are similar or different to these"""
         # Scale up and generate additional plans.
-        if plan_bootstrapping_approach == "diversity":
+        if self.plan_proposing_approach == "diversity":
             while len(init_plan_candidates_set) < self.num_unique_plan_candidates:
                 sample_size = min(len(example_plans_source_set), self.num_plan_examples_to_sample)
                 plan_examples = self.rng.choice(list(example_plans_source_set), size=sample_size, replace=False)
@@ -162,7 +163,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
                 init_plan_candidates_set = init_plan_candidates_set | unique_new_plans_set
                 example_plans_source_set = example_plans_source_set | unique_new_plans_set
                 logger.info(f"Curr total plan candidates: {len(init_plan_candidates_set)}.")
-        elif plan_bootstrapping_approach == "top_score_similarity":
+        elif self.plan_proposing_approach == "top_score_similarity":
             while len(init_plan_candidates_set) < self.num_unique_plan_candidates:
                 new_plans_set = set()
                 logger.info("SCORING AND ORDERING INITIAL PLAN CANDIDATES.")
@@ -182,7 +183,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
                 example_plans_source_set = example_plans_source_set | unique_new_plans_set
                 logger.info(f"Curr total plan candidates: {len(init_plan_candidates_set)}.")
         else:
-            raise ValueError(f"plan_bootstrapping_approach {plan_bootstrapping_approach} unknown.")
+            raise ValueError(f"plan_proposing_approach {self.plan_proposing_approach} unknown.")
         return init_plan_candidates_set
 
 
@@ -221,18 +222,11 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
        
         logger.info(f"Currently have {len(plan_candidates_set)} high-level plan candidates. Need {self.num_unique_plan_candidates}.")
 
-        # NOTE: only two modes for now, and they're determined directly by the scoring approach.
-        # Could make more intricate in the future!
-        plan_bootstrapping_approach = "diversity"
-        if "critic" in scoring_approach:
-            plan_bootstrapping_approach = "top_score_similarity"
-
         # Come up with a set of candidates - this may or may not use the scoring model implicitly.
         plan_candidates_set = self.generate_additional_high_level_plans_from_examples(obs, 
                                     plan_candidates_set, 
                                     example_plans_source_set, 
                                     planning_model_name, 
-                                    plan_bootstrapping_approach, 
                                     scoring_approach, 
                                     scoring_model_name)
 

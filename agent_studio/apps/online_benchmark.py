@@ -442,9 +442,10 @@ class GUI(QMainWindow):
                 feedback_prompt_approach=args.feedback_prompting_approach,
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
-                    "scoring_model_name": args.plan_scoring_model_name,
-                    "num_unique_plan_candidates": args.num_plan_hints,
-                    "existing_plans_location": args.previous_plans_data_path
+                        "scoring_model_name": args.plan_scoring_model_name,
+                        "num_unique_plan_candidates": args.num_plan_hints,
+                        "existing_plans_location": args.previous_plans_data_path,
+                        "plan_proposing_approach": args.plan_proposing_approach,    
                 }
             )
         else:
@@ -457,9 +458,10 @@ class GUI(QMainWindow):
                 prompt_approach=args.prompting_approach,
                 model_server=args.model_server,
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
-                    "scoring_model_name": args.plan_scoring_model_name,
-                    "num_unique_plan_candidates": args.num_plan_hints,
-                    "existing_plans_location": args.previous_plans_data_path
+                        "scoring_model_name": args.plan_scoring_model_name,
+                        "num_unique_plan_candidates": args.num_plan_hints,
+                        "existing_plans_location": args.previous_plans_data_path,
+                        "plan_proposing_approach": args.plan_proposing_approach,    
                 }
             )
 
@@ -1084,7 +1086,8 @@ def evaluate(args, interface: NonGUI | None = None) -> None:
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                         "scoring_model_name": args.plan_scoring_model_name,
                         "num_unique_plan_candidates": args.num_plan_hints,
-                        "existing_plans_location": args.previous_plans_data_path
+                        "existing_plans_location": args.previous_plans_data_path,
+                        "plan_proposing_approach": args.plan_proposing_approach,    
                         }
             )
         else:
@@ -1101,7 +1104,8 @@ def evaluate(args, interface: NonGUI | None = None) -> None:
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                         "scoring_model_name": args.plan_scoring_model_name,
                         "num_unique_plan_candidates": args.num_plan_hints,
-                        "existing_plans_location": args.previous_plans_data_path
+                        "existing_plans_location": args.previous_plans_data_path,
+                        "plan_proposing_approach": args.plan_proposing_approach,    
                         }
             )
 
@@ -1427,6 +1431,9 @@ def main():
     )
     parser.add_argument(
         "--num_plan_hints", type=int, default=5, help="Number of plan hints to use"
+    )
+    parser.add_argument(
+        "--plan_proposing_approach", type=str, default="diversity", help="Plan proposal approach for the bilevel planning approach"
     )
     parser.add_argument(
         "--previous_plans_data_path",  type=str, default=None, help="Location at which to save previous plans data"

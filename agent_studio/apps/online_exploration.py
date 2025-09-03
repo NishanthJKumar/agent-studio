@@ -183,7 +183,8 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                     "scoring_model_name": args.plan_scoring_model_name,
                     "num_unique_plan_candidates": args.exp_episodes,
-                    "existing_plans_location": args.previous_plans_data_path,                
+                    "existing_plans_location": args.previous_plans_data_path,
+                    "plan_proposing_approach": args.plan_proposing_approach,                
                 }
             )
         else:
@@ -200,7 +201,8 @@ def run_exploration(args, interface: NonGUI | None = None) -> None:
                 extra_args={"scoring_approach": args.plan_scoring_approach, 
                     "scoring_model_name": args.plan_scoring_model_name,
                     "num_unique_plan_candidates": args.exp_episodes,
-                    "existing_plans_location": args.previous_plans_data_path
+                    "existing_plans_location": args.previous_plans_data_path,
+                    "plan_proposing_approach": args.plan_proposing_approach,
                 }
             )
 
@@ -497,6 +499,9 @@ def main():
     )
     parser.add_argument(
         "--plan_scoring_model_name", type=str, default="Qwen/Qwen2.5-VL-7B-Instruct", help="Plan scoring model name"
+    )
+    parser.add_argument(
+        "--plan_proposing_approach", type=str, default="diversity", help="Plan proposal approach for the bilevel planning approach"
     )
     parser.add_argument(
         "--log_model_outputs", action="store_true", help="Log model outputs"
