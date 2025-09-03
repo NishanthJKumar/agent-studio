@@ -13,7 +13,7 @@
 ############################################
 USER="njkmr"
 ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
-CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
+CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct-critic"
 AGENT="bilevel_planning"
 PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
 EXP_EPISODES=30
@@ -346,7 +346,7 @@ run_client_once () {
         --model '$ACTOR_MODEL_NAME' \
         --vnc_port '$VNC_PORT' \
         --env_server_port '$ENV_SERVER_PORT' \
-        --model_server 0.0.0.0:$HF_SERVER_PORT \
+        --model_server http://0.0.0.0:$HF_SERVER_PORT \
         --remote \
         --exp_episodes '$EXP_EPISODES' \
         --plan_scoring_approach '$PLAN_SCORING_APPROACH' \
