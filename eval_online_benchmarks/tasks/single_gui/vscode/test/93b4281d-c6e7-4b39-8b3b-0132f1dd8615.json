@@ -1,6 +1,6 @@
 {
   "task_id": "93b4281d-c6e7-4b39-8b3b-0132f1dd8615",
-  "instruction": "I want to make the tabs wrapped over multiple lines when exceeding available space, please help modify the setting of VS Code.",
+  "instruction": "I want to make the tabs wrapped over multiple lines when exceeding available space, please help modify the global setting of VS Code.",
   "visual": true,
   "max_steps": 30,
   "eval_procedure": [
