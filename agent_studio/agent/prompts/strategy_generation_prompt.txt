@@ -26,7 +26,7 @@ You are provided with the original task instruction, and an image of the initial
 - Vary implementation details within each capability type
 
 **CONSTRAINTS:**
-- **NO TERMINAL OPENING**: Never include steps to open terminals, command prompts, or shells. Python code executes directly in the environment.
+- **NO TERMINAL OPENING**: Python code executes after being output directly; it doess not require a terminal to type within. Do not include steps to open a terminal within a strategy.
 - **DIRECT CODE EXECUTION**: When writing code-based strategies, specify the exact Python code to execute. Examples:
   - Opening LibreOffice Writer: `subprocess.Popen(["libreoffice", "--writer"]); time.sleep(5)`
   - Opening a file browser: `subprocess.Popen(["xdg-open", "/path/to/directory"]); time.sleep(5)`
