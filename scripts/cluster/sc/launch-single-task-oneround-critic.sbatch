@@ -25,6 +25,7 @@ FINETUNING_SCRIPT_PATH="../agentic-value-function-finetuning/agentic_value_funct
 FINETUNING_LOGGING_PATH="direct_training-vscode.log"
 NUM_TRAINING_EPOCHS="150"
 CRITIQUE_APPROACH="critic_log_prob_diff"
+PLAN_GENERATION_APPROACH="top_score_similarity" # "diversity"
 
 # Ensure there's no buffering and we actually print training details to the 
 # logging files immediately.
@@ -179,6 +180,7 @@ for ((i=1; i<=RETRIES; i++)); do
           --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT \
           --plan_scoring_approach $CRITIQUE_APPROACH \
           --num_plan_hints $EXP_EPISODES \
+          --plan_proposing_approach $PLAN_GENERATION_APPROACH \
           --remote
     "
 
