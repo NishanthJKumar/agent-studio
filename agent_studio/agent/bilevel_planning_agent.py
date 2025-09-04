@@ -150,12 +150,14 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
                                                             init_plan_candidates_set: set[str], 
                                                             example_plans_source_set: set[str], 
                                                             planning_model_name: str, 
-                                                            scoring_approach: str, 
-                                                            scoring_model_name: str) -> set[str]:
+                                                            scoring_approach: str,
+                                                            plan_proposing_approach: str, 
+                                                            scoring_model_name: str,
+                                                            num_candidates_to_generate: str,) -> set[str]:
         """Use some initial plans to bootstrap generation of additional plans that are similar or different to these"""
         # Scale up and generate additional plans.
-        if self.plan_proposing_approach == "diversity":
-            while len(init_plan_candidates_set) < self.num_unique_plan_candidates:
+        if plan_proposing_approach == "diversity":
+            while len(init_plan_candidates_set) < num_candidates_to_generate:
                 sample_size = min(len(example_plans_source_set), self.num_plan_examples_to_sample)
                 plan_examples = self.rng.choice(list(example_plans_source_set), size=sample_size, replace=False)
                 new_plans_set = self._generate_high_level_plan_candidates_from_examples(plan_examples, obs, planning_model_name, "diversity")
@@ -163,8 +165,8 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
                 init_plan_candidates_set = init_plan_candidates_set | unique_new_plans_set
                 example_plans_source_set = example_plans_source_set | unique_new_plans_set
                 logger.info(f"Curr total plan candidates: {len(init_plan_candidates_set)}.")
-        elif self.plan_proposing_approach == "top_score_similarity":
-            while len(init_plan_candidates_set) < self.num_unique_plan_candidates:
+        elif plan_proposing_approach == "top_score_similarity":
+            while len(init_plan_candidates_set) < num_candidates_to_generate:
                 new_plans_set = set()
                 logger.info("SCORING AND ORDERING INITIAL PLAN CANDIDATES.")
                 ordered_plans = self._score_and_order_plans_list(sorted(init_plan_candidates_set), scoring_approach, scoring_model_name)
@@ -183,7 +185,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
                 example_plans_source_set = example_plans_source_set | unique_new_plans_set
                 logger.info(f"Curr total plan candidates: {len(init_plan_candidates_set)}.")
         else:
-            raise ValueError(f"plan_proposing_approach {self.plan_proposing_approach} unknown.")
+            raise ValueError(f"plan_proposing_approach {plan_proposing_approach} unknown.")
         return init_plan_candidates_set
 
 
@@ -219,7 +221,20 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             example_plans_source_set = set(loaded_plans)
             assert len(loaded_plans) == len(example_plans_source_set), "Duplicate plans found!"
             logger.info(f"Loaded {len(loaded_plans)} existing plans.")
-       
+            if self.plan_proposing_approach != "diversity":
+                # Now, we need to generate an initial set of new plans to bootstrap the 
+                # similarity generation process.
+                plan_candidates_set = self.generate_additional_high_level_plans_from_examples(obs, 
+                                        plan_candidates_set, 
+                                        example_plans_source_set, 
+                                        planning_model_name, 
+                                        scoring_approach,
+                                        "diversity",
+                                        scoring_model_name,
+                                        self.num_plan_examples_to_sample)
+                example_plans_source_set = example_plans_source_set | plan_candidates_set
+
+
         logger.info(f"Currently have {len(plan_candidates_set)} high-level plan candidates. Need {self.num_unique_plan_candidates}.")
 
         # Come up with a set of candidates - this may or may not use the scoring model implicitly.
@@ -227,8 +242,10 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
                                     plan_candidates_set, 
                                     example_plans_source_set, 
                                     planning_model_name, 
-                                    scoring_approach, 
-                                    scoring_model_name)
+                                    scoring_approach,
+                                    self.plan_proposing_approach,
+                                    scoring_model_name,
+                                    self.num_unique_plan_candidates)
 
         # Score the plans to order them.
         self.high_level_plan_candidates = self._score_and_order_plans_list(sorted(plan_candidates_set), scoring_approach, scoring_model_name)

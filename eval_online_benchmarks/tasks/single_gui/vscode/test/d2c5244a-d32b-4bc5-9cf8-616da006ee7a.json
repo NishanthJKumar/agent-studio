@@ -92,6 +92,7 @@
           "--disable-restore-windows",
           "--disable-workspace-trust",
           "--user-data-dir=${AS_ROOT}/.vscode-root",
+          "--skip-add-to-recently-opened",
           "--disable-extension=GitHub.copilot",
           "--disable-extension=GitHub.copilot-chat"
         ],

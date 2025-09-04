@@ -13,12 +13,16 @@
 ############################################
 USER="njkmr"
 ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
-CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct"
+CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct-critic"
 AGENT="bilevel_planning"
 PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
-EXP_EPISODES=10
-DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_train_30-naive-round1"
+EXP_EPISODES=30
+DATA_COLLECTION_DIR="exploration_for_finetuning_vscode_train_30-similarityscore-round1"
 PREV_PLANS_SAVE_DIR="exploration_for_finetuning_vscode_train_30-round0"
+PLAN_GENERATION_APPROACH="top_score_similarity" # "diversity"
+PLAN_SCORING_APPROACH="critic_log_prob_diff"
+SAVED_WEIGHTS_DIR="../agentic-value-function-finetuning/train-30-finetuned-round1/"
+NUM_TRAINING_EPOCHS="150"
 
 # JSON task list (sorted for consistency)
 JSON_FILES=(
@@ -56,8 +60,8 @@ BASE_NAME=$(basename "$TASK_CONFIG_PATH" .json)
 JOB_NAME="critic-${BASE_NAME}"
 
 # Set output and error file paths using JOB_NAME
-OUTPUT_FILE="critic-datacollect-${BASE_NAME}-round1.log"
-ERROR_FILE="critic-datacollect-${BASE_NAME}-round1.err"
+OUTPUT_FILE="critic-datacollect-${BASE_NAME}-round1-similarityscore.log"
+ERROR_FILE="critic-datacollect-${BASE_NAME}-round1-similarityscore.err"
 exec 1>"$OUTPUT_FILE"
 exec 2>"$ERROR_FILE"
 
@@ -94,7 +98,6 @@ API_WEB_SOCKET=$(generate_random_port)
 API_SOCKET=$(generate_random_port)
 SERVER_SOCKET=$(generate_random_port)
 HF_SERVER_PORT=$(generate_random_port)
-MODEL_SERVER_PORT=$(generate_random_port)
 
 echo_ts "Processing task: $TASK_CONFIG_PATH"
 echo_ts "Job name: $JOB_NAME"
@@ -106,7 +109,7 @@ echo_ts "  VNC_PORT: $VNC_PORT"
 echo_ts "  API_WEB_SOCKET: $API_WEB_SOCKET"
 echo_ts "  API_SOCKET: $API_SOCKET"
 echo_ts "  SERVER_SOCKET: $SERVER_SOCKET"
-echo_ts "  MODEL_SERVER_PORT: $MODEL_SERVER_PORT"
+echo_ts "  HF_SERVER_PORT: $HF_SERVER_PORT"
 
 SERVER_CONTAINER="agent-studio-server-${SLURM_JOB_ID}-${SLURM_ARRAY_TASK_ID}"
 CLIENT_CONTAINER="agent-studio-client-${SLURM_JOB_ID}-${SLURM_ARRAY_TASK_ID}"
@@ -135,6 +138,7 @@ trap cleanup EXIT INT TERM
 # Health check helpers
 ############################################
 HEALTH_URL="http://127.0.0.1:${ENV_SERVER_PORT}/health"
+HF_READY_URL="http://127.0.0.1:${HF_SERVER_PORT}/ready"
 
 check_health () {
   # Returns 0 on HTTP 200 OK and "OK" content, else non-zero
@@ -173,6 +177,48 @@ wait_for_health () {
     waited=$((waited + poll_every_secs))
   done
   echo_ts "Server health check timed out after ${max_wait_secs}s."
+  return 1
+}
+
+check_hf_server_ready () {
+  # Returns 0 if HuggingFace server is ready, else non-zero
+  if command -v curl >/dev/null 2>&1; then
+    curl -sS --max-time 5 "$HF_READY_URL" | grep -q '"status":"ready"'
+    return $?
+  else
+    # Fallback: python
+    python - <<PY 2>/dev/null
+import sys, urllib.request, json
+try:
+    with urllib.request.urlopen("${HF_READY_URL}", timeout=5) as r:
+        body = r.read().decode("utf-8", errors="ignore")
+        data = json.loads(body)
+        sys.exit(0 if data.get("status") == "ready" else 1)
+except Exception:
+    sys.exit(1)
+PY
+    return $?
+  fi
+}
+
+wait_for_hf_server () {
+  local max_wait_secs="$1"   # e.g., 500 (100 attempts * 5 sec)
+  local poll_every_secs="${2:-5}"
+  local waited=0
+  local attempt=1
+  local max_attempts=$((max_wait_secs / poll_every_secs))
+
+  while [ "$waited" -lt "$max_wait_secs" ]; do
+    echo_ts "Checking if HF server is ready (attempt $attempt/$max_attempts)..."
+    if check_hf_server_ready; then
+      echo_ts "HuggingFace server is ready at $HF_READY_URL"
+      return 0
+    fi
+    sleep "$poll_every_secs"
+    waited=$((waited + poll_every_secs))
+    attempt=$((attempt + 1))
+  done
+  echo_ts "HuggingFace server readiness check timed out after ${max_wait_secs}s."
   return 1
 }
 
@@ -235,6 +281,46 @@ ensure_server_alive () {
 }
 
 ############################################
+# HuggingFace Server lifecycle
+############################################
+start_huggingface_server () {
+  echo_ts "Starting HuggingFace model server with trained weights..."
+  # Activate conda environment
+  source /home/$USER/miniconda3/etc/profile.d/conda.sh
+  conda activate agent-studio
+
+  # Launch the server in background
+  python scripts/huggingface_model_server.py \
+    --model "$CRITIC_ACTOR_MODEL_NAME" \
+    --port "$HF_SERVER_PORT" \
+    --model_weights_path "$SAVED_WEIGHTS_DIR/checkpoint-$NUM_TRAINING_EPOCHS/" &
+
+  HUGGINGFACE_SERVER_PID=$!
+  echo_ts "HuggingFace server launched with PID $HUGGINGFACE_SERVER_PID"
+}
+
+start_hf_server_with_retries () {
+  local retries="${1:-3}"
+  local i
+  for ((i=1; i<=retries; i++)); do
+    # Ensure old server is gone
+    if [ -n "$HUGGINGFACE_SERVER_PID" ]; then
+      kill "$HUGGINGFACE_SERVER_PID" 2>/dev/null || true
+      wait "$HUGGINGFACE_SERVER_PID" 2>/dev/null || true
+      HUGGINGFACE_SERVER_PID=""
+    fi
+
+    start_huggingface_server
+    if wait_for_hf_server 500 5; then
+      return 0
+    fi
+    echo_ts "HuggingFace server start attempt $i/$retries failed (not ready). Retrying..."
+  done
+  echo_ts "HuggingFace server failed to reach ready state after $retries attempts."
+  return 1
+}
+
+############################################
 # Client run
 ############################################
 run_client_once () {
@@ -260,12 +346,13 @@ run_client_once () {
         --model '$ACTOR_MODEL_NAME' \
         --vnc_port '$VNC_PORT' \
         --env_server_port '$ENV_SERVER_PORT' \
-        --model_server 0.0.0.0:'$MODEL_SERVER_PORT' \
+        --model_server http://0.0.0.0:$HF_SERVER_PORT \
         --remote \
         --exp_episodes '$EXP_EPISODES' \
-        --plan_scoring_approach uniform \
+        --plan_scoring_approach '$PLAN_SCORING_APPROACH' \
         --finetuning_data_path '$DATA_COLLECTION_DIR' \
         --previous_plans_data_path '$PREV_PLANS_SAVE_DIR' \
+        --plan_proposing_approach '$PLAN_GENERATION_APPROACH' \
         --save_finetuning_data
     "
   return $?
@@ -274,8 +361,15 @@ run_client_once () {
 ############################################
 # Orchestration
 ############################################
-# Start / ensure healthy server up-front
+# Start / ensure healthy agent-studio server up-front
 restart_server_with_retries 3 || { echo_ts "Fatal: could not start healthy server."; exit 1; }
+
+# Start HuggingFace model server with trained weights (only if not using diversity approach)
+if [ "$PLAN_GENERATION_APPROACH" != "diversity" ]; then
+  echo_ts "PLAN_GENERATION_APPROACH is '$PLAN_GENERATION_APPROACH', starting HuggingFace server..."
+  start_hf_server_with_retries 3 || { echo_ts "Fatal: could not start HuggingFace server."; exit 1; }
+fi
+
 
 # Run client with retries; restart server if it dies mid-run
 MAX_CLIENT_ATTEMPTS=5

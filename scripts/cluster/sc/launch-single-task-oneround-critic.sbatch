@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=critic-oneround
-#SBATCH --output=test-vscode-log_prob_diff-eval30-similarityscoring.log
-#SBATCH --error=test-vscode-log_prob_diff-eval30-similarityscoring.err
+#SBATCH --output=test-vscode-log_prob_diff-eval30-similarityscoring-scoregeneration-round1-d2c.log
+#SBATCH --error=test-vscode-log_prob_diff-eval30-similarityscoring-scoregeneration-round1-d2c.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=24:00:00
@@ -12,7 +12,7 @@
 
 # Define variables
 USER="njkmr"
-TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/test/"
+TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/test/d2c5244a-d32b-4bc5-9cf8-616da006ee7a.json"
 ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
 CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct-critic"
 AGENT="bilevel_planning"
@@ -20,11 +20,12 @@ PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
 EXP_EPISODES=30
 OUTPUT_DIR="experiment_results_$(date +%Y%m%d_%H%M%S)"
 DATA_COLLECTION_DIR="single-task-finetuning-explo-test-fresh/" # TODO: change this to be more meaningful/unique later!
-SAVED_WEIGHTS_DIR="../agentic-value-function-finetuning/train-30-finetuned-round1/" # TODO: once we turn this to run multiple rounds, we need to change this with every round
+SAVED_WEIGHTS_DIR="../agentic-value-function-finetuning/train-30-finetuned-naive-round1/" # TODO: once we turn this to run multiple rounds, we need to change this with every round
 FINETUNING_SCRIPT_PATH="../agentic-value-function-finetuning/agentic_value_functions/plan_hints/agent-studio-hint-finetuning.py"
 FINETUNING_LOGGING_PATH="direct_training-vscode.log"
-NUM_TRAINING_EPOCHS="150"
+NUM_TRAINING_EPOCHS="300"
 CRITIQUE_APPROACH="critic_log_prob_diff"
+PLAN_GENERATION_APPROACH="top_score_similarity" # "diversity" "top_score_similarity"
 
 # Ensure there's no buffering and we actually print training details to the 
 # logging files immediately.
@@ -179,6 +180,7 @@ for ((i=1; i<=RETRIES; i++)); do
           --vnc_port $VNC_PORT --model_server http://0.0.0.0:$HF_SERVER_PORT \
           --plan_scoring_approach $CRITIQUE_APPROACH \
           --num_plan_hints $EXP_EPISODES \
+          --plan_proposing_approach $PLAN_GENERATION_APPROACH \
           --remote
     "
 
