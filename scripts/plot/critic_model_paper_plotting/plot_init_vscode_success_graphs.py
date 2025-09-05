@@ -1,6 +1,5 @@
-import matplotlib
 import matplotlib.pyplot as plt
-matplotlib.use('TkAgg') # Or 'Qt5Agg', 'MacOSX', etc.
+from matplotlib.ticker import PercentFormatter
 
 # Use a clean style
 plt.style.use("seaborn-v0_8-whitegrid")
@@ -27,6 +26,10 @@ ax.plot(
 # Axis labels
 ax.set_xlabel("# datapoints", fontsize=14)
 ax.set_ylabel("Test task success rate", fontsize=14)
+
+# Lock y-axis from 0% to 100%
+ax.set_ylim(0, 100)
+ax.yaxis.set_major_formatter(PercentFormatter(xmax=100))
 
 # Tick settings
 ax.tick_params(axis="both", which="major", labelsize=12)
