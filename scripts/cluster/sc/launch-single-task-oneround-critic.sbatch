@@ -1,18 +1,18 @@
 #!/bin/bash
 #SBATCH --job-name=critic-oneround
-#SBATCH --output=test-vscode-log_prob_diff-eval30-similarityscoring-naivegeneration-init.log
-#SBATCH --error=test-vscode-log_prob_diff-eval30-similarityscoring-naivegeneration-init.err
+#SBATCH --output=train-vscode-log_prob_diff-eval30-similarityscoring-scoregeneration-round0-8a4.log
+#SBATCH --error=train-vscode-log_prob_diff-eval30-similarityscoring-scoregeneration-round0-8a4.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=24:00:00
 #SBATCH --mem=500G
 #SBATCH --account=comem
-#SBATCH --qos=h100_lowest
+#SBATCH --qos=h200_lowest
 #SBATCH --ntasks-per-node=1
 
 # Define variables
 USER="njkmr"
-TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/test/"
+TASK_PATH="eval_online_benchmarks/tasks/single_gui/vscode/train/8a48df09-4141-4cf9-89c6-e193e0f42451.json"
 ACTOR_MODEL_NAME="gpt-4o-2024-11-20"
 CRITIC_ACTOR_MODEL_NAME="Qwen/Qwen2.5-VL-7B-Instruct-critic"
 AGENT="bilevel_planning"
@@ -20,12 +20,12 @@ PROMPTING_APPROACH="structured_planning_decoupled_bilevel"
 EXP_EPISODES=30
 OUTPUT_DIR="experiment_results_$(date +%Y%m%d_%H%M%S)"
 DATA_COLLECTION_DIR="single-task-finetuning-explo-test-fresh/" # TODO: change this to be more meaningful/unique later!
-SAVED_WEIGHTS_DIR="../agentic-value-function-finetuning/train-30-finetuned-similarityscoregen-round1/" # TODO: once we turn this to run multiple rounds, we need to change this with every round
+SAVED_WEIGHTS_DIR="../agentic-value-function-finetuning/train-30-finetuned-round0" # TODO: once we turn this to run multiple rounds, we need to change this with every round
 FINETUNING_SCRIPT_PATH="../agentic-value-function-finetuning/agentic_value_functions/plan_hints/agent-studio-hint-finetuning.py"
 FINETUNING_LOGGING_PATH="direct_training-vscode.log"
 NUM_TRAINING_EPOCHS="300"
 CRITIQUE_APPROACH="critic_log_prob_diff"
-PLAN_GENERATION_APPROACH="diversity" # "diversity" "top_score_similarity"
+PLAN_GENERATION_APPROACH="top_score_similarity" # "diversity" "top_score_similarity"
 
 # Ensure there's no buffering and we actually print training details to the 
 # logging files immediately.
@@ -64,6 +64,7 @@ enroot start --env VNC_PASSWORD=123456 \
     --mount /dev/shm:/dev/shm  \
     --mount ${PWD}/agent_studio:/home/ubuntu/agent_studio/agent_studio:rbind,ro \
     --mount ${PWD}/eval_online_benchmarks/files:/home/ubuntu/agent_studio/data:rbind,ro \
+    --mount ${PWD}/supervisor_logs/:/var/log \
     --root --rw agent-studio-server &
 SERVER_PID=$!
 echo "Server launched with PID $SERVER_PID"
@@ -130,7 +131,8 @@ echo "Launching server with trained model weights!"
 # Activate the conda environment
 source /home/$USER/miniconda3/etc/profile.d/conda.sh
 conda activate agent-studio
-python scripts/huggingface_model_server.py --model $CRITIC_ACTOR_MODEL_NAME --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
+python scripts/huggingface_model_server.py --model $CRITIC_ACTOR_MODEL_NAME --port $HF_SERVER_PORT --model_weights_path $SAVED_WEIGHTS_DIR/checkpoint-$CHECKPOINT_TO_USE/ 2>&1 | tee hugging_server_output.log &
+# python scripts/huggingface_model_server.py --model $CRITIC_ACTOR_MODEL_NAME --port $HF_SERVER_PORT 2>&1 | tee hugging_server_output.log &
 HUGGINGFACE_SERVER_PID=$!
 echo "Huggingface model server launched with PID $HUGGINGFACE_SERVER_PID"
 # Wait for the server to initialize

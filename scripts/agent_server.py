@@ -107,10 +107,8 @@ async def health() -> Response:
 @app.post("/execute")
 async def execute_code(request: AgentStudioTextRequest) -> dict:
     logger.info(f"Execute code: {request.message}")
-    if "pkill" in request.message and "-f" in request.message and "code" in request.message:
-        result = {status: "success", content: "", message: "Not allowed to run pkill with -f"}
-    else:
-        result = runtimes["python"](request.message)
+
+    result = runtimes["python"](request.message)
     return result
 
 

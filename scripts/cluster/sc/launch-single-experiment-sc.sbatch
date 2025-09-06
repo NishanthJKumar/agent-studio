@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=agent_experiment
-#SBATCH --output=test.log
-#SBATCH --error=test.err
+#SBATCH --output=test-vscode-nocritic.log
+#SBATCH --error=test-vscode-nocritic.err
 #SBATCH --cpus-per-task=50
 #SBATCH --gres=gpu:1
 #SBATCH --time=10:00:00  # Adjust the time as needed
@@ -12,7 +12,7 @@
 
 # Define variables
 USER="njkmr"
-PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/vscode/train/8bbe5ae1-611f-474e-a334-ad56c875e4bc.json"
+PARTICULAR_PATH="eval_online_benchmarks/tasks/single_gui/vscode/test/"
 MODEL_NAME="gpt-4o-2024-11-20"
 
 # Generate random port numbers
