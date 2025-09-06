@@ -248,10 +248,11 @@ class FeedbackBasedAgent(BaseAgent):
             else:
                 code = code_clean
             logger.debug(f"Code to execute:\n{code}\n")
-            # import ipdb
-
-            # ipdb.set_trace()
-            result = self.runtime(code)
+            unsafe, reason = self.check_action_code_for_unsafe_exec(code)
+            if not unsafe:
+                result = self.runtime(code)
+            else:
+                result = {"output": reason}
             step_info.result = copy.deepcopy(result)
             step_info.timestamp = time.time()
             self.trajectory.append(step_info)

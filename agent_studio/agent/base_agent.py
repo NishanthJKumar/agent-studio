@@ -156,6 +156,13 @@ class BaseAgent:
             timestamp=0.0,
         )
 
+    def check_action_code_for_unsafe_exec(self, code_clean: str) -> tuple[bool, str]:
+        """Some actions (e.g. pkill) wreak havoc when executed on the cluste env.
+        We thus check for these actions and manually return a failure reason"""
+        if "pkill" in code_clean and "-f" in code_clean and "code" in code_clean:
+            return True, "pkill -f not allowed; "
+        return False, ""
+
     def step_action(
         self, failure_msg: str | None, step_info: StepInfo
     ) -> tuple[dict, bool]:
@@ -174,7 +181,11 @@ class BaseAgent:
                 code = code_clean
             logger.info(f"Code to execute:\n{code}\n")
             if len(code) > 0:
-                result = self.runtime(code)
+                unsafe, reason = self.check_action_code_for_unsafe_exec(code)
+                if not unsafe:
+                    result = self.runtime(code)
+                else:
+                    result = {"output": reason}
             else:
                 result = {}
             # TODO: there might be other conditions to check for.

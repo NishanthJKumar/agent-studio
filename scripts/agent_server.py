@@ -107,6 +107,7 @@ async def health() -> Response:
 @app.post("/execute")
 async def execute_code(request: AgentStudioTextRequest) -> dict:
     logger.info(f"Execute code: {request.message}")
+
     result = runtimes["python"](request.message)
     return result
 
