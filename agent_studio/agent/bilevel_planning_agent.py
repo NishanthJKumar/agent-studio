@@ -195,7 +195,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
                                             scoring_approach: str, 
                                             scoring_model_name: str) -> None:
         """Generate new high-level plan candidates."""
-        self.rng = np.random.default_rng(23) # <- ensure determinism; can change later to vary seeds over runs.
+        self.rng = np.random.default_rng(self.seed) # <- ensure determinism; can change later to vary seeds over runs.
         plan_candidates_set = set()
         example_plans_source_set = set()
         if self.existing_plans_location is None:

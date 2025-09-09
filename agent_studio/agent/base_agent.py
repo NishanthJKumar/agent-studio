@@ -32,6 +32,7 @@ class BaseAgent:
 
     def __init__(
         self,
+        seed:int,
         model: str,
         remote: bool,
         runtime_server_addr: str,
@@ -45,6 +46,7 @@ class BaseAgent:
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
         model_manager = ModelManager()
+        self.seed = seed
         self.model = model_manager.get_model(model, model_server=model_server)
         self.remote = remote
         self.runtime_server_addr = runtime_server_addr
