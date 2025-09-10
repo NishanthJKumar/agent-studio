@@ -142,13 +142,17 @@
         "name": "tilix"
       }
     },
-
     {
       "evaluator": "process",
       "function": "pkill_by_name",
       "params": {
         "name": "lxterminal"
       }
+    },
+    {
+      "evaluator": "vscode",
+      "function": "uninstall_all_extensions",
+      "params": {}
     }
   ],
   "max_time": 60

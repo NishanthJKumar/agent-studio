@@ -45,29 +45,60 @@
       }
     },
     {
+      "evaluator": "filesystem",
+      "function": "mkdir",
+      "params": {
+        "path": "${AS_ROOT}/vscode_workspace/extensions"
+      }
+    },
+    {
       "evaluator": "vscode",
       "function": "uninstall_all_extensions",
       "params": {}
     },
     {
-      "evaluator": "vscode",
-      "function": "install_extension",
+      "evaluator": "filesystem",
+      "function": "copy",
       "params": {
-        "extension_id": "vscjava.vscode-maven"
+        "src": "${AS_ROOT}/data/88f3f498-7cd0-4f3b-b7ae-40cb8e951aa7/davidanson.vscode-markdownlint-0.60.0.vsix",
+        "dest": "${AS_ROOT}/vscode_workspace/extensions/davidanson.vscode-markdownlint-0.60.0.vsix"
+      }
+    },
+    {
+      "evaluator": "filesystem",
+      "function": "copy",
+      "params": {
+        "src": "${AS_ROOT}/data/88f3f498-7cd0-4f3b-b7ae-40cb8e951aa7/visualstudioexptteam.intellicode-api-usage-examples-0.2.9.vsix",
+        "dest": "${AS_ROOT}/vscode_workspace/extensions/visualstudioexptteam.intellicode-api-usage-examples-0.2.9.vsix"
+      }
+    },
+    {
+      "evaluator": "filesystem",
+      "function": "copy",
+      "params": {
+        "src": "${AS_ROOT}/data/88f3f498-7cd0-4f3b-b7ae-40cb8e951aa7/vscjava.vscode-maven-0.44.0.vsix",
+        "dest": "${AS_ROOT}/vscode_workspace/extensions/vscjava.vscode-maven-0.44.0.vsix"
       }
     },
     {
       "evaluator": "vscode",
       "function": "install_extension",
       "params": {
-        "extension_id": "visualstudioexptteam.intellicode-api-usage-examples"
+        "extension_id": "${AS_ROOT}/vscode_workspace/extensions/davidanson.vscode-markdownlint-0.60.0.vsix"
       }
     },
     {
       "evaluator": "vscode",
       "function": "install_extension",
       "params": {
-        "extension_id": "davidanson.vscode-markdownlint"
+        "extension_id": "${AS_ROOT}/vscode_workspace/extensions/visualstudioexptteam.intellicode-api-usage-examples-0.2.9.vsix"
+      }
+    },
+    {
+      "evaluator": "vscode",
+      "function": "install_extension",
+      "params": {
+        "extension_id": "${AS_ROOT}/vscode_workspace/extensions/vscjava.vscode-maven-0.44.0.vsix"
       }
     },
     {

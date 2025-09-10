@@ -31,10 +31,25 @@
       "params": {}
     },
     {
+      "evaluator": "filesystem",
+      "function": "mkdir",
+      "params": {
+        "path": "${AS_ROOT}/vscode_workspace/extensions"
+      }
+    },
+    {
+      "evaluator": "filesystem",
+      "function": "copy",
+      "params": {
+        "src": "${AS_ROOT}/data/6034aa6c-2892-4ebd-bdfb-a7cfdddd0cbf/davidanson.vscode-markdownlint-0.60.0.vsix",
+        "dest": "${AS_ROOT}/vscode_workspace/extensions/davidanson.vscode-markdownlint-0.60.0.vsix"
+      }
+    },
+    {
       "evaluator": "vscode",
       "function": "install_extension",
       "params": {
-        "extension_id": "davidanson.vscode-markdownlint"
+        "extension_id": "${AS_ROOT}/vscode_workspace/extensions/davidanson.vscode-markdownlint-0.60.0.vsix"
       }
     },
     {
@@ -79,7 +94,7 @@
       "evaluator": "system",
       "function": "sleep",
       "params": {
-        "seconds": 3
+        "seconds": 10
       }
     }
   ],
@@ -89,6 +104,13 @@
       "function": "rmdir",
       "params": {
         "path": "${AS_ROOT}/vscode_workspace"
+      }
+    },
+    {
+      "evaluator": "filesystem",
+      "function": "rmdir",
+      "params": {
+        "path": "${AS_ROOT}/.vscode-root"
       }
     },
     {

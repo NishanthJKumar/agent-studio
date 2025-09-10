@@ -112,7 +112,8 @@ class VSCodeEvaluator(Evaluator):
             vscode_state_db = [os.path.expanduser(
                 "~/.config/Code/User/globalStorage/state.vscdb"
             ),
-            os.path.expanduser("/tmp/vscode/User/globalStorage/state.vscdb")
+            os.path.expanduser("/tmp/vscode/User/globalStorage/state.vscdb"),
+            os.path.expanduser("~/agent_studio/.vscode-root/User/globalStorage/state.vscdb"),
             ]
         else:
             raise Exception("Unsupported OS")
