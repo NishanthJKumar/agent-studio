@@ -432,6 +432,7 @@ class GUI(QMainWindow):
 
         if "feedback" in self.args.agent:
             self.agent = setup_agent(
+                seed=self.args.seed,
                 agent_name=self.args.agent,
                 model=self.args.model,
                 remote=self.args.remote,
@@ -450,6 +451,7 @@ class GUI(QMainWindow):
             )
         else:
             self.agent = setup_agent(
+                seed=self.args.seed,
                 agent_name=self.args.agent,
                 model=self.args.model,
                 remote=self.args.remote,
@@ -1072,6 +1074,7 @@ def evaluate(args, interface: NonGUI | None = None) -> None:
             (results_dir / timestamp).mkdir(parents=True, exist_ok=True)
         if args.agent == "feedback":
             agent = setup_agent(
+                seed=args.seed,
                 agent_name=args.agent,
                 model=args.model,
                 remote=args.remote,
@@ -1092,6 +1095,7 @@ def evaluate(args, interface: NonGUI | None = None) -> None:
             )
         else:
             agent = setup_agent(
+                seed=args.seed,
                 agent_name=args.agent,
                 model=args.model,
                 remote=args.remote,
@@ -1359,6 +1363,7 @@ def evaluate(args, interface: NonGUI | None = None) -> None:
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", type=int, required=True, help="Seed for the approach!")
     parser.add_argument("--model", type=str, help="Model name")
     parser.add_argument("--agent", type=str, default="direct", help="Agent type")
     parser.add_argument(

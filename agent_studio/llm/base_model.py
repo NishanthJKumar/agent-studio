@@ -14,8 +14,9 @@ class BaseModel:
 
     name: str = "base"
 
-    def __init__(self) -> None:
+    def __init__(self, seed: int) -> None:
         Path(config.pretrained_model_cache_dir).mkdir(parents=True, exist_ok=True)
+        self.seed = seed
 
     def _format_messages(
         self,
@@ -23,11 +24,13 @@ class BaseModel:
     ) -> Any:
         raise NotImplementedError
 
-    def _hash_input(self, messages: MessageList) -> str:
+    def _hash_input(self, messages: MessageList, temperature: float) -> str:
         """Create a hash for the input messages."""
         hasher = hashlib.sha256()
         for message in messages:
             hasher.update(str(message).encode("utf-8"))
+        hasher.update(str(temperature).encode("utf-8"))
+        hasher.update(str(self.seed).encode("utf-8"))
         return hasher.hexdigest()
 
     def _load_from_cache(

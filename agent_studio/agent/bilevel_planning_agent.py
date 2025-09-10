@@ -38,6 +38,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
 
     def __init__(
         self,
+        seed: int,
         model: str,
         remote: bool,
         runtime_server_addr: str,
@@ -51,6 +52,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
         super().__init__(
+            seed=seed,
             model=model,
             remote=remote,
             runtime_server_addr=runtime_server_addr,
@@ -59,6 +61,8 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             restrict_to_one_step=restrict_to_one_step,
             prompt_approach=prompt_approach,
             model_server=model_server,
+            summarization_prompt_approach=summarization_prompt_approach,
+            extra_args=extra_args,
         )
         self.prev_task_config: Optional[TaskConfig] = None
         self.episode_idx: int = 0
@@ -69,7 +73,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.critic_model = None
         if "critic" in self.extra_args["scoring_approach"]:
             model_manager = ModelManager()
-            self.critic_model = model_manager.get_model(self.extra_args["scoring_model_name"], model_server=model_server)
+            self.critic_model = model_manager.get_model(self.extra_args["scoring_model_name"], model_server=model_server, seed=seed)
         assert "plan_proposing_approach" in self.extra_args, "Must specify plan_proposing_approach."
         self.plan_proposing_approach: str = self.extra_args["plan_proposing_approach"]
         self.num_plan_examples_to_sample: int = self.extra_args.get("num_plan_examples_to_sample", 5)
@@ -104,14 +108,14 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         if obs is not None:
             messages.append(Message(role="user", content=obs))
         logger.info(f"Got new task: generating plan candidates!")
-        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name, temperature=0.75)        
+        hint_response, _ = self.model.generate_response(messages=messages, model=planning_model_name, temperature=0.75)
         return set(parse_strategies(hint_response))
 
 
     def _generate_high_level_plan_candidates_from_examples(self,
-                                                        example_plans: list[str], 
-                                                        obs: np.ndarray | None, 
-                                                        planning_model_name: str, 
+                                                        example_plans: list[str],
+                                                        obs: np.ndarray | None,
+                                                        planning_model_name: str,
                                                         example_bootstrapping_approach: str) -> set[str]:
         """Generate new high-level plan candidates."""
         assert len(example_plans) > 0, "No high-level plan candidates available."
@@ -146,12 +150,12 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         return new_plans_list
 
 
-    def generate_additional_high_level_plans_from_examples(self, obs: np.ndarray | None, 
-                                                            init_plan_candidates_set: set[str], 
-                                                            example_plans_source_set: set[str], 
-                                                            planning_model_name: str, 
+    def generate_additional_high_level_plans_from_examples(self, obs: np.ndarray | None,
+                                                            init_plan_candidates_set: set[str],
+                                                            example_plans_source_set: set[str],
+                                                            planning_model_name: str,
                                                             scoring_approach: str,
-                                                            plan_proposing_approach: str, 
+                                                            plan_proposing_approach: str,
                                                             scoring_model_name: str,
                                                             num_candidates_to_generate: str,) -> set[str]:
         """Use some initial plans to bootstrap generation of additional plans that are similar or different to these"""
@@ -189,17 +193,17 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         return init_plan_candidates_set
 
 
-    def generate_high_level_plan_candidates(self, 
-                                            obs: np.ndarray | None, 
-                                            planning_model_name: str, 
-                                            scoring_approach: str, 
+    def generate_high_level_plan_candidates(self,
+                                            obs: np.ndarray | None,
+                                            planning_model_name: str,
+                                            scoring_approach: str,
                                             scoring_model_name: str) -> None:
         """Generate new high-level plan candidates."""
-        self.rng = np.random.default_rng(23) # <- ensure determinism; can change later to vary seeds over runs.
+        self.rng = np.random.default_rng(self.seed) # <- ensure determinism; can change later to vary seeds over runs.
         plan_candidates_set = set()
         example_plans_source_set = set()
         if self.existing_plans_location is None:
-            plan_candidates_set = self._generate_high_level_plan_candidates_from_scratch(obs, planning_model_name)         
+            plan_candidates_set = self._generate_high_level_plan_candidates_from_scratch(obs, planning_model_name)
             example_plans_source_set = copy.deepcopy(plan_candidates_set)
         else:
             # TODO: need to potentially load from multiple folders for rounds beyond 2!
@@ -222,12 +226,12 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
             assert len(loaded_plans) == len(example_plans_source_set), "Duplicate plans found!"
             logger.info(f"Loaded {len(loaded_plans)} existing plans.")
             if self.plan_proposing_approach != "diversity":
-                # Now, we need to generate an initial set of new plans to bootstrap the 
+                # Now, we need to generate an initial set of new plans to bootstrap the
                 # similarity generation process.
-                plan_candidates_set = self.generate_additional_high_level_plans_from_examples(obs, 
-                                        plan_candidates_set, 
-                                        example_plans_source_set, 
-                                        planning_model_name, 
+                plan_candidates_set = self.generate_additional_high_level_plans_from_examples(obs,
+                                        plan_candidates_set,
+                                        example_plans_source_set,
+                                        planning_model_name,
                                         scoring_approach,
                                         "diversity",
                                         scoring_model_name,
@@ -238,10 +242,10 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         logger.info(f"Currently have {len(plan_candidates_set)} high-level plan candidates. Need {self.num_unique_plan_candidates}.")
 
         # Come up with a set of candidates - this may or may not use the scoring model implicitly.
-        plan_candidates_set = self.generate_additional_high_level_plans_from_examples(obs, 
-                                    plan_candidates_set, 
-                                    example_plans_source_set, 
-                                    planning_model_name, 
+        plan_candidates_set = self.generate_additional_high_level_plans_from_examples(obs,
+                                    plan_candidates_set,
+                                    example_plans_source_set,
+                                    planning_model_name,
                                     scoring_approach,
                                     self.plan_proposing_approach,
                                     scoring_model_name,
@@ -260,7 +264,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
 
     def score_high_level_plan(self, curr_high_level_plan: str, model_name: str, scoring_approach: str) -> float:
         """Score a high-level plan.
-        
+
         Right now, this is hardcoded to a specific scoring function and scheme. But in
         the future, we can make this more flexible.
         """
@@ -297,9 +301,9 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
                 logit_scores = extra_info["logit_scores"]
                 success_logit = logit_scores["Success."]
                 failure_logit = logit_scores["Failure."]
-                return success_logit - failure_logit              
+                return success_logit - failure_logit
             else:
-                raise ValueError(f"Unknown scoring approach: {scoring_approach}")  
+                raise ValueError(f"Unknown scoring approach: {scoring_approach}")
         else:
             raise ValueError(f"Unknown scoring approach: {scoring_approach}")
 
@@ -311,7 +315,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         self.obs = obs
         if len(self.high_level_plan_candidates) == 0:
             self.generate_high_level_plan_candidates(obs, model_name, self.extra_args["scoring_approach"], self.extra_args["scoring_model_name"])
-            logger.info(f"\n\nCurr plan: {self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]}\n\n")        
+            logger.info(f"\n\nCurr plan: {self.high_level_plan_candidates[self.episode_idx % len(self.high_level_plan_candidates)]}\n\n")
         prompt = self.action_prompt
         assert prompt is not None, "Invalid prompt"
         response, info = self.model.generate_response(messages=prompt, model=model_name)
@@ -411,7 +415,7 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
     @property
     def action_prompt(self) -> MessageList:
         messages: MessageList = []
-        messages.append(Message(role="system", content=self._system_prompt))        
+        messages.append(Message(role="system", content=self._system_prompt))
         messages.append(
             Message(role="user", content=f"The task instruction: {self.instruction}")
         )
@@ -480,6 +484,5 @@ class BilevelPlanningAgent(StructuredPlanningAgent):
         filename = save_dir / f"{self.task_config.task_id}_traj_{timestamp}.json"
         # Save the JSON file
         with open(filename, "w") as f:
-            json.dump(data, f, indent=2)        
+            json.dump(data, f, indent=2)
         logger.info(f"Saved finetuning data to {filename}")
-

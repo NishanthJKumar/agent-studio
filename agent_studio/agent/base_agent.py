@@ -32,6 +32,7 @@ class BaseAgent:
 
     def __init__(
         self,
+        seed:int,
         model: str,
         remote: bool,
         runtime_server_addr: str,
@@ -45,7 +46,8 @@ class BaseAgent:
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
         model_manager = ModelManager()
-        self.model = model_manager.get_model(model, model_server=model_server)
+        self.seed = seed
+        self.model = model_manager.get_model(model, model_server=model_server, seed=seed)
         self.remote = remote
         self.runtime_server_addr = runtime_server_addr
         self.runtime_server_port = runtime_server_port
@@ -217,7 +219,7 @@ class BaseAgent:
 
     def construct_traj_summary(self, model_name: str, succeeded: bool, test_feedback: str) -> str:
         """Construct a summary of the trajectory.
-        
+
         Useful for REFLEXION-style learning and
         exploration.
         """
