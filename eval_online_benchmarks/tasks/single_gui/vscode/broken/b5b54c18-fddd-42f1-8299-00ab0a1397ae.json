@@ -1,6 +1,6 @@
 {
   "task_id": "b5b54c18-fddd-42f1-8299-00ab0a1397ae",
-  "instruction": "Install the 'markdownlint' by David Anson from the VSCode Marketplace.",
+  "instruction": "Install the 'markdownlint' by David Anson from the VSCode Marketplace. You can find a VSIX file for the extension at ${AS_ROOT}/vscode_workspace/extensions/",
   "visual": true,
   "max_steps": 30,
   "eval_procedure": [
@@ -45,6 +45,21 @@
       "function": "sleep",
       "params": {
         "seconds": 1
+      }
+    },
+    {
+      "evaluator": "filesystem",
+      "function": "mkdir",
+      "params": {
+        "path": "${AS_ROOT}/vscode_workspace/extensions"
+      }
+    },
+    {
+      "evaluator": "filesystem",
+      "function": "copy",
+      "params": {
+        "src": "${AS_ROOT}/data/6034aa6c-2892-4ebd-bdfb-a7cfdddd0cbf/davidanson.vscode-markdownlint-0.60.0.vsix",
+        "dest": "${AS_ROOT}/vscode_workspace/extensions/davidanson.vscode-markdownlint-0.60.0.vsix"
       }
     },
     {

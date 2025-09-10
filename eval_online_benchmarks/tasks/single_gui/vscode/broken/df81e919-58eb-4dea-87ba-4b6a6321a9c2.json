@@ -1,6 +1,6 @@
 {
   "task_id": "df81e919-58eb-4dea-87ba-4b6a6321a9c2",
-  "instruction": "Please modify VS Code's settings to disable error reporting for Python missing imports.",
+  "instruction": "Please modify VS Code's settings to turn off 'missing import' diagnostics for Python language server.",
   "visual": true,
   "max_steps": 30,
   "eval_procedure": [
@@ -26,10 +26,25 @@
       }
     },
     {
+      "evaluator": "filesystem",
+      "function": "mkdir",
+      "params": {
+        "path": "${AS_ROOT}/vscode_workspace/extensions"
+      }
+    },
+    {
+      "evaluator": "filesystem",
+      "function": "copy",
+      "params": {
+        "src": "${AS_ROOT}/data/df81e919-58eb-4dea-87ba-4b6a6321a9c2/ms-python.python-2024.8.1.vsix",
+        "dest": "${AS_ROOT}/vscode_workspace/extensions/ms-python.python-2024.8.1.vsix"
+      }
+    },
+    {
       "evaluator": "vscode",
       "function": "install_extension",
       "params": {
-        "extension_id": "ms-python.vscode-pylance"
+        "extension_id": "${AS_ROOT}/vscode_workspace/extensions/ms-python.python-2024.8.1.vsix"
       }
     },
     {
