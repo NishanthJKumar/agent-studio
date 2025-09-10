@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 class VertexAIProvider(BaseModel):
     name = "vertexai"
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__()
+    def __init__(self, seed: int, **kwargs) -> None:
+        super().__init__(seed=seed)
         vertexai.init(
             project=config.vertexai_project_id, location=config.vertexai_location
         )
@@ -111,8 +111,8 @@ class VertexAIProvider(BaseModel):
 class VertexAIAnthropicProvider(BaseModel):
     name = "vertexai-anthropic"
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__()
+    def __init__(self, seed: int, **kwargs) -> None:
+        super().__init__(seed=seed)
         self.client = AnthropicVertex(
             project_id=config.vertexai_project_id, region=config.vertexai_location
         )

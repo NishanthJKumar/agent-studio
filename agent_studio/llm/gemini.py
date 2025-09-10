@@ -27,48 +27,42 @@ logger = logging.getLogger(__name__)
 class GeminiProvider(BaseModel):
     name = "gemini"
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__()
+    def __init__(self, seed: int, **kwargs) -> None:
+        super().__init__(seed=seed)
         genai.configure(api_key=config.gemini_api_key)
 
-    def _format_messages(
-        self,
-        raw_messages: MessageList,
-    ) -> Any:
-        model_message: dict[str, Any] = {
-            "role": "user",
-            "parts": [],
-        }
-        past_role = None
+    def _format_messages(self, raw_messages: MessageList):
+        contents = []
         for msg in raw_messages:
-            current_role = msg.role if "role" != "system" else "user"
-            if past_role != current_role:
-                model_message["parts"].append(f"[{current_role.capitalize()}]: ")
-                past_role = current_role
+            role = msg.role
+            if role == "system":
+                role = "user"
+            if role == "assistant":
+                role = "model"
 
-            content: str | Image.Image
+            parts = []
             if isinstance(msg.content, str):
-                content = msg.content
+                parts.append(msg.content)
             elif isinstance(msg.content, np.ndarray):
-                # convert from RGB NDArray to PIL RGB Image
-                content = Image.fromarray(msg.content).convert("RGB")
+                parts.append(Image.fromarray(msg.content).convert("RGB"))
             elif isinstance(msg.content, Path):
-                content = Image.open(msg.content).convert("RGB")
+                parts.append(Image.open(msg.content).convert("RGB"))
             else:
-                assert (
-                    False
-                ), f"Unknown message type: {type(msg.content)}, {msg.content}"
-            model_message["parts"].append(content)
+                raise TypeError(f"Unknown message type: {type(msg.content)}")
 
-        return model_message
+            contents.append({"role": role, "parts": parts})
+        return contents
 
     def generate_response(
         self, messages: MessageList, **kwargs
     ) -> tuple[str, dict[str, Any]]:
         """Creates a chat completion using the Gemini API."""
         model_name = kwargs.get("model", None)
+        if model_name is None:
+            raise ValueError("Model name is not set")
+        temperature=kwargs.get("temperature", config.temperature)
         # Start by checking for the response in the cache.
-        cache_ret = self._load_from_cache(model_name, self._hash_input(messages))
+        cache_ret = self._load_from_cache(model_name, self._hash_input(messages, temperature))
         if cache_ret is not None:
             logger.info("Found response in cache.")
             return cache_ret, {}  # TODO: for now we don't have any info to return
@@ -81,7 +75,7 @@ class GeminiProvider(BaseModel):
         logger.info(f"Creating chat completion with model {model_name}.")
 
         generation_config = GenerationConfig(
-            temperature=kwargs.get("temperature", config.temperature),
+            temperature=temperature,
             # top_p=kwargs.get("top_p", config.max_tokens),
             top_k=kwargs.get("top_k", config.top_k),
             candidate_count=1,
@@ -95,12 +89,9 @@ class GeminiProvider(BaseModel):
             interval=10,
         )
         def _generate_response_with_retry() -> tuple[str, dict[str, int]]:
-            try:
-                response = model.generate_content(
-                    contents=model_message, generation_config=generation_config
-                )
-            except Exception:
-                raise genai.types.IncompleteIterationError
+            response = model.generate_content(
+                contents=model_message, generation_config=generation_config
+            )
             token_count = model.count_tokens(model_message)
             info = {
                 "total_tokens": token_count.total_tokens,
@@ -112,7 +103,7 @@ class GeminiProvider(BaseModel):
                 logger.error(f"Failed to generate response: {e}")
 
             logger.info(f"\nReceived response:\n{message}\nInfo:\n{info}")
-            self._save_to_cache(model_name, self._hash_input(messages), message)
+            self._save_to_cache(model_name, self._hash_input(messages, temperature), message)
             return message, info
 
         return _generate_response_with_retry()

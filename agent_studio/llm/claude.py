@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 class AnthropicProvider(BaseModel):
     name = "claude"
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__()
+    def __init__(self, seed: int, **kwargs: Any) -> None:
+        super().__init__(seed=seed)
         self.client = Anthropic(api_key=config.anthropic_api_key)
         self.system_prompt = None
 

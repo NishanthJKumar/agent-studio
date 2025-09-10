@@ -47,7 +47,7 @@ class BaseAgent:
         """Initialize with model, prompt template, and initilization code."""
         model_manager = ModelManager()
         self.seed = seed
-        self.model = model_manager.get_model(model, model_server=model_server)
+        self.model = model_manager.get_model(model, model_server=model_server, seed=seed)
         self.remote = remote
         self.runtime_server_addr = runtime_server_addr
         self.runtime_server_port = runtime_server_port
@@ -219,7 +219,7 @@ class BaseAgent:
 
     def construct_traj_summary(self, model_name: str, succeeded: bool, test_feedback: str) -> str:
         """Construct a summary of the trajectory.
-        
+
         Useful for REFLEXION-style learning and
         exploration.
         """

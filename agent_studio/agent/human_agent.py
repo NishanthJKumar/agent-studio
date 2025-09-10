@@ -20,12 +20,14 @@ class HumanAgent(BaseAgent):
 
     def __init__(
         self,
+        seed: int,
         model: str,
         remote: bool,
         runtime_server_addr: str,
         runtime_server_port: int,
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
+        self.seed = seed
         self.remote = remote
         self.runtime_server_addr = runtime_server_addr
         self.runtime_server_port = runtime_server_port

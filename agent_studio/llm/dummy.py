@@ -17,6 +17,9 @@ class DummyProvider(BaseModel):
 
     name = "dummy"
 
+    def __init__(self, seed: int, **kwargs) -> None:
+        super().__init__(seed=seed)
+
     def generate_response(
         self, messages: MessageList, **kwargs
     ) -> tuple[str, dict[str, Any]]:

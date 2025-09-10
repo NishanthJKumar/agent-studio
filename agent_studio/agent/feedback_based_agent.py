@@ -23,6 +23,7 @@ class FeedbackBasedAgent(BaseAgent):
 
     def __init__(
         self,
+        seed: int,
         model: str,
         remote: bool,
         runtime_server_addr: str,
@@ -40,6 +41,7 @@ class FeedbackBasedAgent(BaseAgent):
         """Initialize everything the same way as the parent class, but also
         initialize a feedback model and buffer."""
         super().__init__(
+            seed=seed,
             model=model,
             remote=remote,
             runtime_server_addr=runtime_server_addr,
@@ -47,6 +49,9 @@ class FeedbackBasedAgent(BaseAgent):
             results_dir=results_dir,
             prompt_approach=prompt_approach,
             restrict_to_one_step=restrict_to_one_step,
+            model_server=model_server,
+            summarization_prompt_approach=summarization_prompt_approach,
+            extra_args=extra_args,
         )
         with open(
             f"agent_studio/agent/prompts/{prompt_approach}_system_prompt.txt", "r"
@@ -64,7 +69,7 @@ class FeedbackBasedAgent(BaseAgent):
             ) as file:
                 self._feedback_prompt = file.read()
             feedback_model_manager = ModelManager()
-            self.feedback_model = feedback_model_manager.get_model(feedback_model)
+            self.feedback_model = feedback_model_manager.get_model(feedback_model, seed=seed)
         else:
             self.feedback_model = None
         self.feedback_model_name = feedback_model

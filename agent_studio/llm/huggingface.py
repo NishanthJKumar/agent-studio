@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 class HuggingFaceProvider(BaseModel):
     name = "huggingface"
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__()
+    def __init__(self, seed: int, **kwargs) -> None:
+        super().__init__(seed=seed)
         self.tokenizer = None
         self.model = None
         self.processor = None

@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 class RemoteProvider(BaseModel):
     name = "remote"
 
-    def __init__(self, model_server: str | None = None, **kwargs) -> None:
-        super().__init__()
+    def __init__(self, seed: int, model_server: str | None = None, **kwargs) -> None:
+        super().__init__(seed=seed)
         assert model_server is not None
         self.model_server = model_server
         assert self.model_server, "Model server is not set"

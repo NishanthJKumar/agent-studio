@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 class OpenAIProvider(BaseModel):
     name = "openai"
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__()
+    def __init__(self, seed: int, **kwargs: Any) -> None:
+        super().__init__(seed=seed)
         self.client = OpenAI(api_key=config.openai_api_key)
 
     def _format_messages(
@@ -63,7 +63,7 @@ class OpenAIProvider(BaseModel):
         temperature = kwargs.get("temperature", config.temperature)
         max_tokens = kwargs.get("max_tokens", config.max_tokens)
         # Start by checking for the response in the cache.
-        cache_ret = self._load_from_cache(model_name, self._hash_input(messages))
+        cache_ret = self._load_from_cache(model_name, self._hash_input(messages, temperature))
         if cache_ret is not None:
             logger.info("Found response in cache.")
             logger.info(f"Returning response:\n{cache_ret}")
@@ -111,7 +111,7 @@ class OpenAIProvider(BaseModel):
 
             logger.info(f"\nReceived response:\n{response_message}\nInfo:\n{info}")
             self._save_to_cache(
-                model_name, self._hash_input(messages), response_message
+                model_name, self._hash_input(messages, temperature), response_message
             )
             return response_message, info
 

@@ -35,6 +35,7 @@ class StructuredPlanningAgent(BaseAgent):
 
     def __init__(
         self,
+        seed: int,
         model: str,
         remote: bool,
         runtime_server_addr: str,
@@ -48,6 +49,7 @@ class StructuredPlanningAgent(BaseAgent):
     ) -> None:
         """Initialize with model, prompt template, and initilization code."""
         super().__init__(
+            seed=seed,
             model=model,
             remote=remote,
             runtime_server_addr=runtime_server_addr,
@@ -56,6 +58,8 @@ class StructuredPlanningAgent(BaseAgent):
             restrict_to_one_step=restrict_to_one_step,
             prompt_approach=prompt_approach,
             model_server=model_server,
+            summarization_prompt_approach=summarization_prompt_approach,
+            extra_args=extra_args,
         )
 
         # Override the following variables
@@ -196,7 +200,7 @@ class StructuredPlanningAgent(BaseAgent):
     @property
     def action_prompt(self) -> MessageList:
         messages: MessageList = []
-        messages.append(Message(role="system", content=self._system_prompt))        
+        messages.append(Message(role="system", content=self._system_prompt))
         messages.append(
             Message(role="user", content=f"The task instruction: {self.instruction}")
         )

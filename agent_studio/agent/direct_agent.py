@@ -11,6 +11,7 @@ class DirectAgent(BaseAgent):
 
     def __init__(
         self,
+        seed: int,
         model: str,
         remote: bool,
         runtime_server_addr: str,
@@ -25,6 +26,7 @@ class DirectAgent(BaseAgent):
         """Initialize everything the same way as the parent class, but also
         initialize a feedback model and buffer."""
         super().__init__(
+            seed=seed,
             model=model,
             remote=remote,
             runtime_server_addr=runtime_server_addr,
@@ -33,6 +35,8 @@ class DirectAgent(BaseAgent):
             restrict_to_one_step=restrict_to_one_step,
             prompt_approach=prompt_approach,
             model_server=model_server,
+            summarization_prompt_approach=summarization_prompt_approach,
+            extra_args=extra_args,
         )
         with open(
             f"agent_studio/agent/prompts/{prompt_approach}_system_prompt.txt", "r"
