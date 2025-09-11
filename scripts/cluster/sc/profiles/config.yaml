@@ -1,14 +1,23 @@
-# Snakemake v8/9 style
+# scripts/cluster/sc/profiles/config.yaml
 executor: slurm
 
-# keep your usual defaults
-jobs: 200
+# good defaults
+jobs: 32
 latency-wait: 120
 rerun-incomplete: true
 printshellcmds: true
 keep-going: true
 
-# optional: plugin-specific settings (see plugin docs)
-slurm-logdir: "runs/_slurm_logs"
-slurm-qos: "h200_lowest"
-slurm-no-account: false
+# map SLURM specifics
+# account/partition are provided as RESOURCES (not flags)
+default-resources:
+  - slurm_account=comem        # <-- your SLURM account
+  # optional:
+  # - slurm_partition=gpu
+  # - mem_mb=65536             # if you prefer MB; or mem="64G" via rule resources
+
+# QoS is a real plugin CLI option, so it can sit at top-level
+slurm-qos: "h200_lowest"       # optional; remove if your cluster doesn’t use QoS
+# optional: keep logs instead of auto-deleting on success
+# slurm-keep-successful-logs: true
+# slurm-logdir: "runs/_slurm_logs"
