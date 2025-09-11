@@ -82,7 +82,8 @@ AGG_LOG         = os.path.join(run_root(), "round_{r}", "eval", "aggregate.log")
 rule all:
     input:
         os.path.join(run_root(), "manifest.snapshot.yaml"),
-        *[ckpt_selected(r) for r in ROUNDS]
+        *[ckpt_selected(r) for r in ROUNDS],
+        expand(EVAL_SUCCESS, r=ROUNDS, task_id=EVAL_IDS)
 
 rule snapshot_manifest:
     output:
@@ -126,22 +127,37 @@ rule collect_task:
 # ---- train ----
 rule train_model:
     output:
-        BEST_EPOCH_FILE,
-        SELECTED_LINK
+        best = BEST_EPOCH_FILE,
+        selected_dir = directory(SELECTED_LINK)
     resources:
         time=SLURM["time"]["train"], mem=SLURM["resources"]["train"]["mem"],
         gpus=SLURM["resources"]["train"]["gpus"], qos=SLURM["qos"],
         account=SLURM["account"], partition=SLURM.get("partition") or ""
     threads: SLURM["resources"]["train"]["cpus"]
-    log:
-        TRAIN_LOG
+    log: TRAIN_LOG
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "$(dirname "{output[0]}")"  # .../train
-        mkdir -p "$(dirname "{output[1]}")"  # .../train/checkpoints
+
+        best="{output.best}"
+        selected="{output.selected_dir}"    # this path will be a symlink-to-dir
+        ckpt_parent=$(dirname "$selected")
+
+        # Ensure parent dirs exist
+        mkdir -p "$(dirname "$best")"
+        mkdir -p "$ckpt_parent"
+
+        # "Training" stub
         echo "BEST_EPOCH=300" | tee "{log}"
-        echo 300 > "{output[0]}"
+        echo 300 > "$best"
+
+        # Make a dummy checkpoint directory with a file inside
+        mkdir -p "$ckpt_parent/checkpoint-300"
+        echo "dummy" > "$ckpt_parent/checkpoint-300/MODEL.bin"
+
+        # Force SELECTED to point at checkpoint-300 (clean up any leftovers)
+        rm -rf "$selected"
+        ln -s "$ckpt_parent/checkpoint-300" "$selected"
         """
 
 # ---- eval (fan-out) ----
