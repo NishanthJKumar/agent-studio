@@ -82,9 +82,7 @@ AGG_LOG         = os.path.join(run_root(), "round_{r}", "eval", "aggregate.log")
 rule all:
     input:
         os.path.join(run_root(), "manifest.snapshot.yaml"),
-        *[merged_path(r) for r in ROUNDS],
-        *[ckpt_selected(r) for r in ROUNDS],
-        *[eval_summary(r) for r in ROUNDS]
+        *[ckpt_selected(r) for r in ROUNDS]
 
 rule snapshot_manifest:
     output:
@@ -124,31 +122,9 @@ rule collect_task:
         touch "{output}"
         """
 
-# ---- merge (fan-in) ----
-rule merge_dataset:
-    input:
-        lambda w: expand(COLLECT_SUCCESS, r=w.r, task_id=TRAIN_IDS)
-    output:
-        MERGED_FILE
-    resources:
-        time=SLURM["time"]["merge"], mem=SLURM["resources"]["merge"]["mem"],
-        gpus=SLURM["resources"]["merge"]["gpus"], qos=SLURM["qos"],
-        account=SLURM["account"], partition=SLURM.get("partition") or ""
-    threads: SLURM["resources"]["merge"]["cpus"]
-    log:
-        MERGE_LOG
-    shell:
-        r"""
-        set -euo pipefail
-        mkdir -p "$(dirname "{output}")"
-        echo "[stub] merge" | tee "{log}"
-        echo "DUMMY" > "{output}"
-        """
 
 # ---- train ----
 rule train_model:
-    input:
-        lambda w: merged_path(int(w.r))
     output:
         BEST_EPOCH_FILE,
         SELECTED_LINK
@@ -192,25 +168,4 @@ rule eval_task:
         mkdir -p "$(dirname "{output}")"
         echo "[stub] eval {params.task_path} (task_id={wildcards.task_id}) using {input}" | tee "{log}"
         touch "{output}"
-        """
-
-# ---- aggregate (fan-in) ----
-rule aggregate_eval:
-    input:
-        lambda w: expand(EVAL_SUCCESS, r=w.r, task_id=EVAL_IDS)
-    output:
-        EVAL_SUMMARY
-    resources:
-        time=SLURM["time"]["aggregate"], mem=SLURM["resources"]["aggregate"]["mem"],
-        gpus=SLURM["resources"]["aggregate"]["gpus"], qos=SLURM["qos"],
-        account=SLURM["account"], partition=SLURM.get("partition") or ""
-    threads: SLURM["resources"]["aggregate"]["cpus"]
-    log:
-        AGG_LOG
-    shell:
-        r"""
-        set -euo pipefail
-        mkdir -p "$(dirname "{output}")"
-        echo '{{"status":"ok","round":{wildcards.r}}}' > "{output}"
-        echo "[stub] aggregate" | tee "{log}"
         """
