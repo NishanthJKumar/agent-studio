@@ -1,0 +1,68 @@
+# experiment.yaml
+
+run:
+  run_id: "exp_{date:%Y%m%d_%H%M%S}" # auto-filled by Snakemake
+  rounds: 3  # how many collection→train→eval cycles to run
+  seed: 0
+
+paths:
+  base_dir: "runs"                     # all outputs will live under runs/<run_id>
+  finetune_script: "../agentic-value-function-finetuning/agentic_value_functions/plan_hints/agent-studio-hint-finetuning.py"
+  conda_sh: "/home/njkmr/miniconda3/etc/profile.d/conda.sh"
+  conda_env: "agent-studio"
+  server_container: "agent-studio-server.sqsh"
+  client_container: "agent-studio-client.sqsh"
+
+models:
+  actor: "gpt-4o-2024-11-20"
+  critic: "Qwen/Qwen2.5-VL-7B-Instruct-critic"
+
+hyperparams:
+  # training
+  num_train_epochs: 300
+  learning_rate: 5.0e-5
+  batch_size: 16
+  optimizer: "adamw"
+  warmup_steps: 100
+  weight_decay: 0.01
+
+  # data collection
+  exp_episodes: 30
+  max_retries: 5
+
+  # planning & prompting
+  agent: "bilevel_planning"
+  prompting_approach: "structured_planning_decoupled_bilevel"
+  critique_approach: "critic_log_prob_diff"
+  plan_generation_approach: "top_score_similarity"
+
+tasks:
+  train:
+    - "eval_online_benchmarks/tasks/single_gui/vscode/train/"
+  eval:
+    - "eval_online_benchmarks/tasks/single_gui/vscode/test/"
+
+slurm_defaults:
+  account: "comem"
+  qos: "h200_lowest"
+  partition: null
+  # walltime limits per stage
+  time:
+    collect: "10:00:00"
+    merge:   "00:30:00"
+    train:   "24:00:00"
+    serve:   "00:30:00"
+    eval:    "04:00:00"
+    aggregate: "00:15:00"
+  # resources per stage
+  resources:
+    collect: {cpus: 16, mem: "64G", gpus: 1}
+    merge:   {cpus: 8,  mem: "32G", gpus: 0}
+    train:   {cpus: 32, mem: "300G", gpus: 1}
+    eval:    {cpus: 16, mem: "64G", gpus: 1}
+    aggregate: {cpus: 4, mem: "16G", gpus: 0}
+
+logging:
+  log_to_jsonl: true
+  log_dir: "logs"
+  wandb: false # TODO: wandb is not yet setup.

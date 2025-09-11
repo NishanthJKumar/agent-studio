@@ -37,6 +37,9 @@ dependencies = [
     "python-dateutil",
     "xvfbwrapper",
     "ipdb",
+    "snakemake",
+    "snakemake-executor-plugin-slurm",
+    "snakemake-storage-plugin-fs"
 ]
 
 [tool.setuptools]

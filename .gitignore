@@ -164,6 +164,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
+# Snakemake
+.snakemake
+
 agent_studio/config/*
 !agent_studio/config/config.py
 !agent_studio/config/__init__.py
@@ -200,3 +203,4 @@ web/*
 finetuning_data/*
 *finetun*/*
 debug_images/*
+runs/

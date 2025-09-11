@@ -1,0 +1,14 @@
+# Snakemake v8/9 style
+executor: slurm
+
+# keep your usual defaults
+jobs: 200
+latency-wait: 120
+rerun-incomplete: true
+printshellcmds: true
+keep-going: true
+
+# optional: plugin-specific settings (see plugin docs)
+slurm-logdir: "runs/_slurm_logs"
+slurm-qos: "h200_lowest"
+slurm-no-account: false

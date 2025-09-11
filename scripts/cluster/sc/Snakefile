@@ -1,0 +1,180 @@
+import datetime, os
+from pathlib import Path
+
+configfile: "scripts/cluster/sc/yaml_files/single-seed-multiround-config.yaml"
+
+REPO  = str(Path(__file__).resolve().parents[3])
+RUNS  = os.path.join(REPO, "runs")
+
+RUN_ID = config["run"]["run_id"].format(date=datetime.datetime.now())
+ROUNDS = list(range(config["run"]["rounds"]))
+TRAIN  = config["tasks"]["train"]
+EVAL   = config["tasks"]["eval"]
+SLURM  = config["slurm_defaults"]
+
+# ---- task_id maps ----
+TRAIN_IDS = [Path(p).stem for p in TRAIN]
+EVAL_IDS  = [Path(p).stem for p in EVAL]
+TRAIN_MAP = {Path(p).stem: p for p in TRAIN}
+EVAL_MAP  = {Path(p).stem: p for p in EVAL}
+
+# ---- helpers returning strings ----
+def run_root():         return os.path.join(RUNS, RUN_ID)
+def rdir(r):            return os.path.join(run_root(), f"round_{r}")
+def merged_path(r):     return os.path.join(rdir(r), "collect", "merged", "finetune_dataset.parquet")
+def best_epoch(r):      return os.path.join(rdir(r), "train", "BEST_EPOCH.txt")
+def ckpt_selected(r):   return os.path.join(rdir(r), "train", "checkpoints", "SELECTED")
+def eval_summary(r):    return os.path.join(rdir(r), "eval", "summary", "metrics.json")
+
+# ---- patterns (strings with wildcards) ----
+COLLECT_SUCCESS = os.path.join(run_root(), "round_{r}", "collect", "tasks", "{task_id}", "_SUCCESS")
+COLLECT_LOG     = os.path.join(run_root(), "round_{r}", "collect", "tasks", "{task_id}", "collect.log")
+
+MERGED_FILE     = os.path.join(run_root(), "round_{r}", "collect", "merged", "finetune_dataset.parquet")
+MERGE_LOG       = os.path.join(run_root(), "round_{r}", "collect", "merge.log")
+
+BEST_EPOCH_FILE = os.path.join(run_root(), "round_{r}", "train", "BEST_EPOCH.txt")
+SELECTED_LINK   = os.path.join(run_root(), "round_{r}", "train", "checkpoints", "SELECTED")
+TRAIN_LOG       = os.path.join(run_root(), "round_{r}", "train", "train.log")
+
+EVAL_SUCCESS    = os.path.join(run_root(), "round_{r}", "eval", "tasks", "{task_id}", "_SUCCESS")
+EVAL_LOG        = os.path.join(run_root(), "round_{r}", "eval", "tasks", "{task_id}", "eval.log")
+
+EVAL_SUMMARY    = os.path.join(run_root(), "round_{r}", "eval", "summary", "metrics.json")
+AGG_LOG         = os.path.join(run_root(), "round_{r}", "eval", "aggregate.log")
+
+# ---------------- rules ----------------
+
+rule all:
+    input:
+        os.path.join(run_root(), "manifest.snapshot.yaml"),
+        *[merged_path(r) for r in ROUNDS],
+        *[ckpt_selected(r) for r in ROUNDS],
+        *[eval_summary(r) for r in ROUNDS]
+
+rule snapshot_manifest:
+    output:
+        os.path.join(run_root(), "manifest.snapshot.yaml")
+    shell:
+        r"""
+        mkdir -p "$(dirname "{output}")"
+        cp "scripts/cluster/sc/yaml_files/single-seed-multiround-config.yaml" "{output}"
+        """
+
+# ---- collect (fan-out) ----
+rule collect_task:
+    input:
+        os.path.join(run_root(), "manifest.snapshot.yaml")
+    output:
+        COLLECT_SUCCESS
+    wildcard_constraints:
+        r="|".join(map(str, ROUNDS)),
+        task_id="|".join(TRAIN_IDS)
+    params:
+        task_path = lambda w: TRAIN_MAP[w.task_id]
+    resources:
+        time=SLURM["time"]["collect"], mem=SLURM["resources"]["collect"]["mem"],
+        gpus=SLURM["resources"]["collect"]["gpus"], qos=SLURM["qos"],
+        account=SLURM["account"], partition=SLURM.get("partition") or ""
+    threads: SLURM["resources"]["collect"]["cpus"]
+    log:
+        COLLECT_LOG
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname "{output}")"
+        echo "[stub] collect {params.task_path} (task_id={wildcards.task_id}) round {wildcards.r}" | tee "{log}"
+        touch "{output}"
+        """
+
+# ---- merge (fan-in) ----
+rule merge_dataset:
+    input:
+        lambda w: expand(COLLECT_SUCCESS, r=w.r, task_id=TRAIN_IDS)
+    output:
+        MERGED_FILE
+    resources:
+        time=SLURM["time"]["merge"], mem=SLURM["resources"]["merge"]["mem"],
+        gpus=SLURM["resources"]["merge"]["gpus"], qos=SLURM["qos"],
+        account=SLURM["account"], partition=SLURM.get("partition") or ""
+    threads: SLURM["resources"]["merge"]["cpus"]
+    log:
+        MERGE_LOG
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname "{output}")"
+        echo "[stub] merge" | tee "{log}"
+        echo "DUMMY" > "{output}"
+        """
+
+# ---- train ----
+rule train_model:
+    input:
+        lambda w: merged_path(int(w.r))
+    output:
+        BEST_EPOCH_FILE,
+        SELECTED_LINK
+    resources:
+        time=SLURM["time"]["train"], mem=SLURM["resources"]["train"]["mem"],
+        gpus=SLURM["resources"]["train"]["gpus"], qos=SLURM["qos"],
+        account=SLURM["account"], partition=SLURM.get("partition") or ""
+    threads: SLURM["resources"]["train"]["cpus"]
+    log:
+        TRAIN_LOG
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname "{output[0]}")"  # BEST_EPOCH.txt's dir = .../train
+        mkdir -p "$(dirname "{output[1]}")"  # SELECTED's dir  = .../train/checkpoints
+        echo "BEST_EPOCH=300" | tee "{log}"
+        echo 300 > "{output[0]}"
+        ln -sfn "$(dirname "{output[1]}")/checkpoint-300" "{output[1]}"
+        """
+
+# ---- eval (fan-out) ----
+rule eval_task:
+    input:
+        lambda w: ckpt_selected(int(w.r))
+    output:
+        EVAL_SUCCESS
+    wildcard_constraints:
+        r="|".join(map(str, ROUNDS)),
+        task_id="|".join(EVAL_IDS)
+    params:
+        task_path = lambda w: EVAL_MAP[w.task_id]
+    resources:
+        time=SLURM["time"]["eval"], mem=SLURM["resources"]["eval"]["mem"],
+        gpus=SLURM["resources"]["eval"]["gpus"], qos=SLURM["qos"],
+        account=SLURM["account"], partition=SLURM.get("partition") or ""
+    threads: SLURM["resources"]["eval"]["cpus"]
+    log:
+        EVAL_LOG
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname "{output}")"
+        echo "[stub] eval {params.task_path} (task_id={wildcards.task_id}) using {input}" | tee "{log}"
+        touch "{output}"
+        """
+
+# ---- aggregate (fan-in) ----
+rule aggregate_eval:
+    input:
+        lambda w: expand(EVAL_SUCCESS, r=w.r, task_id=EVAL_IDS)
+    output:
+        EVAL_SUMMARY
+    resources:
+        time=SLURM["time"]["aggregate"], mem=SLURM["resources"]["aggregate"]["mem"],
+        gpus=SLURM["resources"]["aggregate"]["gpus"], qos=SLURM["qos"],
+        account=SLURM["account"], partition=SLURM.get("partition") or ""
+    threads: SLURM["resources"]["aggregate"]["cpus"]
+    log:
+        AGG_LOG
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname "{output}")"
+        echo '{{"status":"ok","round":{wildcards.r}}}' > "{output}"
+        echo "[stub] aggregate" | tee "{log}"
+        """
