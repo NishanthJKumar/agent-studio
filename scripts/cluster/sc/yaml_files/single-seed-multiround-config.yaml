@@ -1,7 +1,7 @@
 # experiment.yaml
 
 run:
-  run_id: "exp_{date:%Y%m%d_%H%M%S}" # auto-filled by Snakemake
+  run_id: "test_snakemake_rules"
   rounds: 3  # how many collection→train→eval cycles to run
   seed: 0
 
@@ -38,9 +38,9 @@ hyperparams:
 
 tasks:
   train:
-    - "eval_online_benchmarks/tasks/single_gui/vscode/train/"
+    - "eval_online_benchmarks/tasks/single_gui/vscode/train/0d38e311-29b5-4925-a480-14a6a82836c8.json"
   eval:
-    - "eval_online_benchmarks/tasks/single_gui/vscode/test/"
+    - "eval_online_benchmarks/tasks/single_gui/vscode/test/1d3861fa-d605-48be-9337-b5188c351663.json"
 
 slurm_defaults:
   account: "comem"

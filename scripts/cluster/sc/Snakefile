@@ -1,24 +1,58 @@
-import datetime, os
+import datetime, os, glob, hashlib, re
 from pathlib import Path
+from snakemake.exceptions import WorkflowError
+from snakemake.logging import logger
 
 configfile: "scripts/cluster/sc/yaml_files/single-seed-multiround-config.yaml"
+# run these rules on the driver (not via Slurm)
+localrules: snapshot_manifest
 
-REPO  = str(Path(__file__).resolve().parents[3])
-RUNS  = os.path.join(REPO, "runs")
+# -------- basics --------
+PROJECT_ROOT = os.getcwd()
+RUNS = os.path.join(PROJECT_ROOT, config.get("paths", {}).get("base_dir", "runs"))
 
 RUN_ID = config["run"]["run_id"].format(date=datetime.datetime.now())
 ROUNDS = list(range(config["run"]["rounds"]))
-TRAIN  = config["tasks"]["train"]
-EVAL   = config["tasks"]["eval"]
 SLURM  = config["slurm_defaults"]
 
-# ---- task_id maps ----
-TRAIN_IDS = [Path(p).stem for p in TRAIN]
-EVAL_IDS  = [Path(p).stem for p in EVAL]
-TRAIN_MAP = {Path(p).stem: p for p in TRAIN}
-EVAL_MAP  = {Path(p).stem: p for p in EVAL}
+# -------- task resolution (dirs -> *.json files) --------
+def _resolve_tasks(entries, root):
+    resolved = []
+    for e in entries:
+        p = Path(e)
+        abs_p = p if p.is_absolute() else Path(root) / p
+        if abs_p.is_dir():
+            files = sorted(str(x) for x in abs_p.glob("*.json"))
+            if not files:
+                raise WorkflowError(f"No *.json tasks found in directory: {abs_p}")
+            resolved.extend(files)
+        else:
+            if abs_p.suffix != ".json":
+                raise WorkflowError(f"Task entry is not a .json file or directory: {abs_p}")
+            resolved.append(str(abs_p))
+    return resolved
 
-# ---- helpers returning strings ----
+TRAIN = _resolve_tasks(config["tasks"]["train"], PROJECT_ROOT)
+EVAL  = _resolve_tasks(config["tasks"]["eval"],  PROJECT_ROOT)
+
+if not TRAIN:
+    raise WorkflowError("tasks.train resolved to an empty list. Check your config paths.")
+if not EVAL:
+    raise WorkflowError("tasks.eval resolved to an empty list. Check your config paths.")
+
+# -------- stable, safe IDs --------
+def make_task_id(path: str) -> str:
+    rel = os.path.relpath(path, PROJECT_ROOT)
+    h = hashlib.sha1(rel.encode()).hexdigest()[:8]
+    stem = Path(path).stem
+    return f"{stem}-{h}"
+
+TRAIN_IDS = [make_task_id(p) for p in TRAIN]
+EVAL_IDS  = [make_task_id(p) for p in EVAL]
+TRAIN_MAP = {tid: path for tid, path in zip(TRAIN_IDS, TRAIN)}
+EVAL_MAP  = {eid: path for eid, path in zip(EVAL_IDS, EVAL)}
+
+# -------- helpers for concrete paths --------
 def run_root():         return os.path.join(RUNS, RUN_ID)
 def rdir(r):            return os.path.join(run_root(), f"round_{r}")
 def merged_path(r):     return os.path.join(rdir(r), "collect", "merged", "finetune_dataset.parquet")
@@ -26,7 +60,7 @@ def best_epoch(r):      return os.path.join(rdir(r), "train", "BEST_EPOCH.txt")
 def ckpt_selected(r):   return os.path.join(rdir(r), "train", "checkpoints", "SELECTED")
 def eval_summary(r):    return os.path.join(rdir(r), "eval", "summary", "metrics.json")
 
-# ---- patterns (strings with wildcards) ----
+# -------- pattern strings (use ONE style: run_root()) --------
 COLLECT_SUCCESS = os.path.join(run_root(), "round_{r}", "collect", "tasks", "{task_id}", "_SUCCESS")
 COLLECT_LOG     = os.path.join(run_root(), "round_{r}", "collect", "tasks", "{task_id}", "collect.log")
 
@@ -57,11 +91,14 @@ rule snapshot_manifest:
         os.path.join(run_root(), "manifest.snapshot.yaml")
     shell:
         r"""
+        set -euo pipefail
         mkdir -p "$(dirname "{output}")"
         cp "scripts/cluster/sc/yaml_files/single-seed-multiround-config.yaml" "{output}"
         """
 
 # ---- collect (fan-out) ----
+safe_id_re = r"[A-Za-z0-9_-]+"
+
 rule collect_task:
     input:
         os.path.join(run_root(), "manifest.snapshot.yaml")
@@ -69,9 +106,9 @@ rule collect_task:
         COLLECT_SUCCESS
     wildcard_constraints:
         r="|".join(map(str, ROUNDS)),
-        task_id="|".join(TRAIN_IDS)
+        task_id=safe_id_re
     params:
-        task_path = lambda w: TRAIN_MAP[w.task_id]
+        task_path=lambda w: TRAIN_MAP[w.task_id]
     resources:
         time=SLURM["time"]["collect"], mem=SLURM["resources"]["collect"]["mem"],
         gpus=SLURM["resources"]["collect"]["gpus"], qos=SLURM["qos"],
@@ -125,11 +162,10 @@ rule train_model:
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "$(dirname "{output[0]}")"  # BEST_EPOCH.txt's dir = .../train
-        mkdir -p "$(dirname "{output[1]}")"  # SELECTED's dir  = .../train/checkpoints
+        mkdir -p "$(dirname "{output[0]}")"  # .../train
+        mkdir -p "$(dirname "{output[1]}")"  # .../train/checkpoints
         echo "BEST_EPOCH=300" | tee "{log}"
         echo 300 > "{output[0]}"
-        ln -sfn "$(dirname "{output[1]}")/checkpoint-300" "{output[1]}"
         """
 
 # ---- eval (fan-out) ----
@@ -140,9 +176,9 @@ rule eval_task:
         EVAL_SUCCESS
     wildcard_constraints:
         r="|".join(map(str, ROUNDS)),
-        task_id="|".join(EVAL_IDS)
+        task_id=safe_id_re
     params:
-        task_path = lambda w: EVAL_MAP[w.task_id]
+        task_path=lambda w: EVAL_MAP[w.task_id]
     resources:
         time=SLURM["time"]["eval"], mem=SLURM["resources"]["eval"]["mem"],
         gpus=SLURM["resources"]["eval"]["gpus"], qos=SLURM["qos"],
