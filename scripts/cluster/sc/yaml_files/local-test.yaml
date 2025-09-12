@@ -1,0 +1,4 @@
+paths:
+  base_dir: runs
+run:
+  run_id: test_snakemake_rules

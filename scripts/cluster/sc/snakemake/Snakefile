@@ -11,7 +11,7 @@ localrules: snapshot_manifest
 PROJECT_ROOT = os.getcwd()
 RUNS = os.path.join(PROJECT_ROOT, config.get("paths", {}).get("base_dir", "runs"))
 
-RUN_ID = config["run"]["run_id"].format(date=datetime.datetime.now())
+RUN_ID = config["run"]["run_id"]
 ROUNDS = list(range(config["run"]["rounds"]))
 SLURM  = config["slurm_defaults"]
 
@@ -91,31 +91,38 @@ rule all:
 rule snapshot_manifest:
     output:
         os.path.join(run_root(), "manifest.snapshot.yaml")
-    shell:
-        r"""
-        set -euo pipefail
-        mkdir -p "$(dirname "{output}")"
-        cp "scripts/cluster/sc/yaml_files/single-seed-multiround-config.yaml" "{output}"
-        """
+    run:
+        import yaml, time
+        os.makedirs(os.path.dirname(output[0]), exist_ok=True)
+        payload = dict(config)
+        # add provenance
+        payload["_snapshot_meta"] = {
+            "run_id": RUN_ID,
+            "snapshot_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        with open(output[0], "w") as f:
+            yaml.safe_dump(payload, f, sort_keys=False)
 
 # ---- collect (fan-out) ----
 safe_id_re = r"[A-Za-z0-9_-]+"
 
 rule collect_task:
     input:
-        # We need the manifest snapshot to be available for sure, but for any round after 0,
-        # we also need the previous round's completion indicator.
-        # Without the dependency on previous round's completion, rounds will execute in parallel,
-        # which is definitely not what we want.
+        # serialize rounds: r>0 waits for previous round_complete
         lambda w: os.path.join(run_root(), "manifest.snapshot.yaml") if int(w.r) == 0 else 
-                    [os.path.join(run_root(), "manifest.snapshot.yaml"), round_complete(int(w.r) - 1)]
+                  [os.path.join(run_root(), "manifest.snapshot.yaml"), round_complete(int(w.r) - 1)]
     output:
         COLLECT_SUCCESS
     wildcard_constraints:
         r="|".join(map(str, ROUNDS)),
-        task_id=safe_id_re
+        task_id=r"[A-Za-z0-9_-]+"
     params:
-        task_path=lambda w: TRAIN_MAP[w.task_id]
+        task_path=lambda w: TRAIN_MAP[w.task_id],
+        # round-scoped output dir for data collection (example; tune as you like)
+        data_dir=lambda w: os.path.join(rdir(int(w.r)), "collect", "raw"),
+        # where to get previous plans/weights if needed (example)
+        prev_plans=lambda w: None,
+        prev_ckpt=lambda w: os.path.join(rdir(max(0, int(w.r)-1)), "train", "checkpoints", "SELECTED")
     resources:
         time=SLURM["time"]["collect"], mem=SLURM["resources"]["collect"]["mem"],
         gpus=SLURM["resources"]["collect"]["gpus"], qos=SLURM["qos"],
@@ -123,13 +130,8 @@ rule collect_task:
     threads: SLURM["resources"]["collect"]["cpus"]
     log:
         COLLECT_LOG
-    shell:
-        r"""
-        set -euo pipefail
-        mkdir -p "$(dirname "{output}")"
-        echo "[stub] collect {params.task_path} (task_id={wildcards.task_id}) round {wildcards.r}" | tee "{log}"
-        touch "{output}"
-        """
+    script:
+        "datacollect_one_task.py"
 
 # ---- collect completion aggregation ----
 rule collect_complete:
