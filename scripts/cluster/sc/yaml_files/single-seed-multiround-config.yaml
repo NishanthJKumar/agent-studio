@@ -2,7 +2,7 @@
 
 run:
   run_id: "test_snakemake_rules"
-  rounds: 3  # how many collection→train→eval cycles to run
+  rounds: 2  # how many collection→train→eval cycles to run
   seed: 0
 
 paths:

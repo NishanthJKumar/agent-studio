@@ -59,6 +59,9 @@ def merged_path(r):     return os.path.join(rdir(r), "collect", "merged", "finet
 def best_epoch(r):      return os.path.join(rdir(r), "train", "BEST_EPOCH.txt")
 def ckpt_selected(r):   return os.path.join(rdir(r), "train", "checkpoints", "SELECTED")
 def eval_summary(r):    return os.path.join(rdir(r), "eval", "summary", "metrics.json")
+def collect_complete(r): return os.path.join(rdir(r), "collect", "_COLLECT_COMPLETE")
+def eval_complete(r):   return os.path.join(rdir(r), "eval", "_EVAL_COMPLETE")
+def round_complete(r):  return os.path.join(rdir(r), "_ROUND_COMPLETE")
 
 # -------- pattern strings (use ONE style: run_root()) --------
 COLLECT_SUCCESS = os.path.join(run_root(), "round_{r}", "collect", "tasks", "{task_id}", "_SUCCESS")
@@ -100,7 +103,12 @@ safe_id_re = r"[A-Za-z0-9_-]+"
 
 rule collect_task:
     input:
-        os.path.join(run_root(), "manifest.snapshot.yaml")
+        # We need the manifest snapshot to be available for sure, but for any round after 0,
+        # we also need the previous round's completion indicator.
+        # Without the dependency on previous round's completion, rounds will execute in parallel,
+        # which is definitely not what we want.
+        lambda w: os.path.join(run_root(), "manifest.snapshot.yaml") if int(w.r) == 0 else 
+                    [os.path.join(run_root(), "manifest.snapshot.yaml"), round_complete(int(w.r) - 1)]
     output:
         COLLECT_SUCCESS
     wildcard_constraints:
@@ -123,9 +131,25 @@ rule collect_task:
         touch "{output}"
         """
 
+# ---- collect completion aggregation ----
+rule collect_complete:
+    input:
+        lambda w: [COLLECT_SUCCESS.format(r=w.r, task_id=tid) for tid in TRAIN_IDS]
+    output:
+        os.path.join(run_root(), "round_{r}", "collect", "_COLLECT_COMPLETE")
+    wildcard_constraints:
+        r="|".join(map(str, ROUNDS))
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname "{output}")"
+        echo "All collect tasks for round {wildcards.r} completed at $(date)" > "{output}"
+        """
 
 # ---- train ----
 rule train_model:
+    input:
+        lambda w: collect_complete(int(w.r))
     output:
         best = BEST_EPOCH_FILE,
         selected_dir = directory(SELECTED_LINK)
@@ -184,4 +208,34 @@ rule eval_task:
         mkdir -p "$(dirname "{output}")"
         echo "[stub] eval {params.task_path} (task_id={wildcards.task_id}) using {input}" | tee "{log}"
         touch "{output}"
+        """
+
+# ---- eval completion aggregation ----
+rule eval_complete:
+    input:
+        lambda w: [EVAL_SUCCESS.format(r=w.r, task_id=tid) for tid in EVAL_IDS]
+    output:
+        os.path.join(run_root(), "round_{r}", "eval", "_EVAL_COMPLETE")
+    wildcard_constraints:
+        r="|".join(map(str, ROUNDS))
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname "{output}")"
+        echo "All eval tasks for round {wildcards.r} completed at $(date)" > "{output}"
+        """
+
+# ---- round completion (serial dependency) ----
+rule round_complete:
+    input:
+        lambda w: eval_complete(int(w.r)) if int(w.r) == 0 else [eval_complete(int(w.r)), round_complete(int(w.r) - 1)]
+    output:
+        os.path.join(run_root(), "round_{r}", "_ROUND_COMPLETE")
+    wildcard_constraints:
+        r="|".join(map(str, ROUNDS))
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname "{output}")"
+        echo "Round {wildcards.r} completed at $(date)" > "{output}"
         """
